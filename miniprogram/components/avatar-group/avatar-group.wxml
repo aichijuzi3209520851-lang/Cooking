@@ -1,0 +1,34 @@
+<!-- components/avatar-group/avatar-group.wxml -->
+<view class="avatar-group">
+  <block wx:for="{{displayList}}" wx:key="openid">
+    <view
+      class="avatar-item {{index === 0 ? 'avatar-first' : ''}}"
+      style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;"
+      data-index="{{index}}"
+      bindtap="onAvatarTap"
+    >
+      <image
+        wx:if="{{item.avatarUrl}}"
+        class="avatar-img"
+        src="{{item.avatarUrl}}"
+        mode="aspectFill"
+        style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;"
+      />
+      <view
+        wx:else
+        class="avatar-fallback"
+        style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;background:{{item.gradient}};font-size:{{fontSize}}rpx;"
+      >
+        {{item.initial}}
+      </view>
+    </view>
+  </block>
+
+  <view
+    wx:if="{{overflow > 0}}"
+    class="avatar-item avatar-overflow"
+    style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;font-size:{{fontSize}}rpx;"
+  >
+    +{{overflow}}
+  </view>
+</view>

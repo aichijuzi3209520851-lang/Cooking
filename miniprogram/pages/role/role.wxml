@@ -1,0 +1,51 @@
+<!--pages/role/role.wxml-->
+<view class="container role-page {{themeClass}}">
+  <view class="role-header">
+    <view class="title-lg">选择你的身份</view>
+    <view class="caption role-subtitle">在不同家庭可以有不同身份哦</view>
+  </view>
+
+  <view class="role-cards">
+    <!-- 掌勺的 -->
+    <view
+      class="role-card {{selectedRole === 'chef' ? 'role-card-selected' : ''}}"
+      data-role="chef"
+      bindtap="onSelectRole"
+    >
+      <view class="role-emoji">🍳</view>
+      <view class="role-info">
+        <view class="title-sm role-name">掌勺的</view>
+        <view class="caption role-desc">管理菜品库，决定今天做什么</view>
+      </view>
+      <view class="role-check" wx:if="{{selectedRole === 'chef'}}">
+        <view class="role-check-icon">✓</view>
+      </view>
+    </view>
+
+    <!-- 等饭的 -->
+    <view
+      class="role-card {{selectedRole === 'eater' ? 'role-card-selected' : ''}}"
+      data-role="eater"
+      bindtap="onSelectRole"
+    >
+      <view class="role-emoji">🍚</view>
+      <view class="role-info">
+        <view class="title-sm role-name">等饭的</view>
+        <view class="caption role-desc">点菜就完事了，等开饭！</view>
+      </view>
+      <view class="role-check" wx:if="{{selectedRole === 'eater'}}">
+        <view class="role-check-icon">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="role-footer safe-bottom">
+    <button
+      class="btn btn-primary btn-block {{!selectedRole || loading ? 'btn-disabled' : ''}}"
+      bindtap="onConfirm"
+      disabled="{{!selectedRole || loading}}"
+    >
+      {{loading ? '提交中...' : '确认'}}
+    </button>
+  </view>
+</view>

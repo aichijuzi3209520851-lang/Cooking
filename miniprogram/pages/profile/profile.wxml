@@ -1,0 +1,86 @@
+<!--pages/profile/profile.wxml-->
+<view class="container profile-page {{themeClass}}">
+
+  <!-- 用户信息卡片 -->
+  <view class="profile-card">
+    <view class="profile-avatar" style="{{avatarStyle}}">
+      <image
+        wx:if="{{avatarUrl}}"
+        class="profile-avatar-img"
+        src="{{avatarUrl}}"
+        mode="aspectFill"
+      />
+      <text wx:else class="profile-avatar-text">{{avatarText}}</text>
+    </view>
+    <view class="profile-info">
+      <view class="profile-name-row">
+        <text class="profile-name">{{nickname}}</text>
+        <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}} profile-badge">
+          {{roleEmoji}} {{roleName}}
+        </view>
+      </view>
+      <view class="profile-family" wx:if="{{currentFamily}}">
+        {{currentFamily.name}}
+      </view>
+      <view class="profile-family" wx:else>
+        暂未加入家庭
+      </view>
+    </view>
+  </view>
+
+  <!-- 第一组：家庭 -->
+  <view class="section">
+    <view class="section-header">家庭</view>
+    <view class="group-card">
+      <view class="list-item" bindtap="onFamilyManage">
+        <text class="list-item-label">家庭管理</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+      <view
+        wx:if="{{isChef}}"
+        class="list-item list-item-bordered"
+        bindtap="onDishList"
+      >
+        <text class="list-item-label">菜品库管理</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+      <view
+        class="list-item {{isChef ? 'list-item-bordered' : ''}}"
+        bindtap="onHistory"
+      >
+        <text class="list-item-label">历史记录</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 第二组：偏好 -->
+  <view class="section">
+    <view class="section-header">偏好</view>
+    <view class="group-card">
+      <view class="list-item" bindtap="onSwitchRole">
+        <text class="list-item-label">切换身份</text>
+        <view class="list-item-right">
+          <text class="list-item-value">{{roleEmoji}} {{roleName}}</text>
+          <text class="list-item-arrow">›</text>
+        </view>
+      </view>
+      <view class="list-item list-item-bordered" bindtap="onThemeSettings">
+        <text class="list-item-label">主题设置</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 第三组：其他 -->
+  <view class="section">
+    <view class="section-header">其他</view>
+    <view class="group-card">
+      <view class="list-item" bindtap="onAbout">
+        <text class="list-item-label">关于</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+</view>

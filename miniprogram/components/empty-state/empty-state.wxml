@@ -1,0 +1,6 @@
+<!-- components/empty-state/empty-state.wxml -->
+<view class="empty-state">
+  <view class="empty-icon">{{icon}}</view>
+  <view class="empty-title">{{title}}</view>
+  <view wx:if="{{description}}" class="empty-desc">{{description}}</view>
+</view>

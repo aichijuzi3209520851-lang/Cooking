@@ -1,0 +1,66 @@
+/* pages/welcome/welcome.wxss */
+.welcome-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 100vh;
+  padding: 0 64rpx;
+  padding-top: 120rpx;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 80rpx);
+  box-sizing: border-box;
+  background-color: var(--color-bg-secondary);
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.welcome-emoji {
+  font-size: 144rpx;
+  line-height: 1;
+  margin-bottom: 48rpx;
+}
+
+.welcome-title {
+  font-size: 76rpx;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: 2rpx;
+  line-height: 1.2;
+  margin-bottom: 24rpx;
+}
+
+.welcome-title-highlight {
+  color: var(--color-accent);
+}
+
+.welcome-subtitle {
+  font-size: 30rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  letter-spacing: 1rpx;
+}
+
+.welcome-actions {
+  width: 84%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-btn {
+  margin-bottom: 24rpx;
+}
+
+.welcome-footer {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  margin-top: 24rpx;
+  text-align: center;
+  letter-spacing: 2rpx;
+}

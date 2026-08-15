@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/menu/menu",
+    "pages/summary/summary",
+    "pages/profile/profile",
+    "pages/welcome/welcome",
+    "pages/role/role",
+    "pages/family/create/create",
+    "pages/family/join/join",
+    "pages/family/manage/manage",
+    "pages/dishes/list/list",
+    "pages/dishes/edit/edit",
+    "pages/history/history",
+    "pages/settings/theme/theme"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#FAF6F0",
+    "navigationBarTitleText": "今天吃啥",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FAF6F0"
+  },
+  "tabBar": {
+    "color": "#8A7E72",
+    "selectedColor": "#D93A2B",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/menu/menu",
+        "text": "点菜"
+      },
+      {
+        "pagePath": "pages/summary/summary",
+        "text": "汇总"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

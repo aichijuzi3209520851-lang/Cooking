@@ -1,0 +1,196 @@
+/* pages/dishes/list/list.wxss */
+.list-page {
+  padding-top: 24rpx;
+  padding-bottom: 160rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 分类筛选 */
+.category-scroll {
+  white-space: nowrap;
+  margin: 0 -32rpx;
+  padding: 8rpx 32rpx 16rpx;
+}
+
+.category-list {
+  display: inline-flex;
+  gap: 16rpx;
+  padding-right: 32rpx;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 28rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-card);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.category-chip:active {
+  transform: scale(0.96);
+}
+
+.category-chip-active {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  box-shadow: var(--shadow-accent);
+}
+
+.category-chip-emoji {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.category-chip-name {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.category-chip-active .category-chip-name {
+  color: #FFFFFF;
+}
+
+/* 菜品列表 */
+.dish-list {
+  margin-top: 16rpx;
+}
+
+.dish-item {
+  display: flex;
+  align-items: center;
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  transition: background 0.2s ease;
+}
+
+.dish-item:active {
+  background: var(--color-bg-tertiary);
+}
+
+.dish-item-hidden {
+  opacity: 0.45;
+}
+
+/* 缩略图 */
+.dish-thumb {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+  background: var(--color-card-inner);
+}
+
+.dish-thumb-img {
+  width: 100%;
+  height: 100%;
+}
+
+.dish-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-card-inner);
+}
+
+.dish-thumb-emoji {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+/* 菜品信息 */
+.dish-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.dish-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dish-hidden-badge {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  flex-shrink: 0;
+}
+
+.dish-meta {
+  margin-top: 8rpx;
+}
+
+.dish-category {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+/* 编辑按钮 */
+.dish-edit {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  margin-left: 16rpx;
+  font-size: 26rpx;
+  color: var(--color-accent);
+  border-radius: var(--radius-pill);
+}
+
+.dish-edit:active {
+  background: var(--color-accent-soft);
+}
+
+/* 列表底部 */
+.list-footer {
+  display: flex;
+  justify-content: center;
+  padding: 32rpx 0;
+}
+
+/* 悬浮按钮 */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 120rpx);
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-accent);
+  z-index: 100;
+  transition: transform 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.92);
+}
+
+.fab-icon {
+  font-size: 64rpx;
+  font-weight: 300;
+  color: #FFFFFF;
+  line-height: 1;
+  margin-top: -6rpx;
+}

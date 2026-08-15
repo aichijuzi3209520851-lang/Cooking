@@ -1,0 +1,109 @@
+<!--pages/summary/summary.wxml-->
+<view class="container summary-page {{themeClass}}">
+
+  <!-- 顶部标题 -->
+  <view class="header">
+    <view class="header-title">点菜汇总</view>
+    <view class="header-sub">{{dateText}}</view>
+  </view>
+
+  <!-- 无家庭 -->
+  <block wx:if="{{!hasFamily}}">
+    <empty-state
+      icon="🏠"
+      title="先加入家庭吧"
+      description="创建或加入一个家庭后即可查看汇总"
+    />
+  </block>
+
+  <!-- 有家庭 -->
+  <block wx:else>
+    <!-- 汇总列表 -->
+    <block wx:if="{{summaryList.length > 0}}">
+      <view class="summary-list">
+        <view
+          class="summary-card"
+          wx:for="{{summaryList}}"
+          wx:key="_id"
+        >
+          <view class="summary-main">
+            <!-- 左侧菜品图/emoji -->
+            <view class="dish-thumb" bindtap="onPreviewImage" data-url="{{item.imageUrl}}">
+              <image
+                wx:if="{{item.imageUrl}}"
+                class="dish-thumb-img"
+                src="{{item.imageUrl}}"
+                mode="aspectFill"
+              />
+              <view wx:else class="dish-thumb-placeholder">
+                <text class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
+              </view>
+            </view>
+
+            <!-- 中间信息 -->
+            <view class="dish-info">
+              <view class="dish-name">{{item.name}}</view>
+              <view class="voter-list">
+                <view
+                  class="voter-item"
+                  wx:for="{{item.voters}}"
+                  wx:for-item="voter"
+                  wx:key="openid"
+                >
+                  <view class="voter-avatar" style="{{voter.avatarStyle}}">
+                    <image
+                      wx:if="{{voter.avatarUrl}}"
+                      class="voter-avatar-img"
+                      src="{{voter.avatarUrl}}"
+                      mode="aspectFill"
+                    />
+                    <text wx:else class="voter-avatar-text">{{voter.avatarText}}</text>
+                  </view>
+                  <text class="voter-name">{{voter.nickname}}</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 右侧热度 -->
+            <view class="dish-heat">
+              <text class="heat-num">{{item.voterCount}}</text>
+              <text class="heat-label">人想吃</text>
+            </view>
+          </view>
+
+          <!-- chef 撤下按钮 -->
+          <view
+            wx:if="{{isChef}}"
+            class="chef-cancel-btn"
+            data-id="{{item._id}}"
+            data-name="{{item.name}}"
+            bindtap="onChefCancel"
+          >
+            撤下这道菜
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部统计 -->
+      <view class="bottom-stats safe-bottom">
+        <text class="bottom-stats-text">
+          共 <text class="bottom-stats-num">{{stats.dishCount}}</text> 道菜
+        </text>
+        <text class="bottom-stats-dot">·</text>
+        <text class="bottom-stats-text">
+          <text class="bottom-stats-num">{{stats.voterCount}}</text> 人参与
+        </text>
+      </view>
+    </block>
+
+    <!-- 空状态 -->
+    <block wx:else>
+      <empty-state
+        icon="🍽️"
+        title="今天还没有人点菜"
+        description="快去点几道想吃的菜吧"
+      />
+    </block>
+  </block>
+
+</view>

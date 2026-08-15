@@ -1,0 +1,47 @@
+/* components/avatar-group/avatar-group.wxss */
+.avatar-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.avatar-item {
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-left: -12rpx;
+  box-sizing: border-box;
+  border: 2rpx solid #FFFFFF;
+  background: var(--color-bg-secondary);
+}
+
+.avatar-first {
+  margin-left: 0;
+}
+
+.avatar-img {
+  display: block;
+  border-radius: 50%;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.avatar-overflow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary, #F1E9DE);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  border-radius: 50%;
+  box-sizing: border-box;
+}

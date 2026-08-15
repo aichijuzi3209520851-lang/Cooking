@@ -1,0 +1,118 @@
+/* pages/settings/theme/theme.wxss */
+.theme-page {
+  padding-top: 32rpx;
+  padding-bottom: 48rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.section {
+  margin-bottom: 40rpx;
+}
+
+.section-title {
+  padding: 0 8rpx 16rpx;
+  font-size: 26rpx;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+
+/* iOS 分组列表 */
+.group-list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx;
+  border-bottom: 1rpx solid var(--color-separator);
+  transition: background 0.2s ease;
+}
+
+.group-item:last-child {
+  border-bottom: none;
+}
+
+.group-item:active {
+  background: var(--color-bg-tertiary);
+}
+
+.group-item-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.group-item-icon {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.group-item-name {
+  font-size: 32rpx;
+  color: var(--color-text-primary);
+}
+
+.group-item-check {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+/* 强调色 */
+.accent-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8rpx 0;
+}
+
+.accent-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.accent-circle {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 4rpx solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.accent-circle:active {
+  transform: scale(0.92);
+}
+
+.accent-circle-selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4rpx var(--color-bg-secondary);
+}
+
+.accent-check {
+  color: #FFFFFF;
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.accent-name {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+/* 预览提示 */
+.preview-tip {
+  display: flex;
+  justify-content: center;
+  padding: 32rpx 0;
+}

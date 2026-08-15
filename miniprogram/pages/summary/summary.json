@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "点菜汇总",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

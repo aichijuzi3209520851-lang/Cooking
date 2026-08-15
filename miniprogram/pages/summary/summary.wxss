@@ -1,0 +1,193 @@
+/* pages/summary/summary.wxss */
+.summary-page {
+  padding-top: 24rpx;
+  padding-bottom: 48rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* ===== 顶部标题 ===== */
+.header {
+  padding: 24rpx 8rpx 32rpx;
+}
+
+.header-title {
+  font-size: 52rpx;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5rpx;
+  line-height: 1.2;
+}
+
+.header-sub {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+/* ===== 汇总卡片 ===== */
+.summary-list {
+  padding-top: 8rpx;
+}
+
+.summary-card {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+}
+
+.summary-main {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 左侧缩略图 */
+.dish-thumb {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+}
+
+.dish-thumb-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dish-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-cream);
+}
+
+.dish-thumb-emoji {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+/* 中间信息 */
+.dish-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 16rpx;
+}
+
+.dish-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+  margin-bottom: 16rpx;
+}
+
+.voter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 20rpx;
+}
+
+.voter-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.voter-avatar {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.voter-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.voter-avatar-text {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.voter-name {
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.2;
+}
+
+/* 右侧热度 */
+.dish-heat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding-top: 4rpx;
+}
+
+.heat-num {
+  font-size: 52rpx;
+  font-weight: 800;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.heat-label {
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+  margin-top: 6rpx;
+}
+
+/* chef 撤下按钮 */
+.chef-cancel-btn {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid var(--color-separator);
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-primary-red);
+  font-weight: 500;
+}
+
+.chef-cancel-btn:active {
+  opacity: 0.6;
+}
+
+/* ===== 底部统计 ===== */
+.bottom-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0 24rpx;
+}
+
+.bottom-stats-text {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+.bottom-stats-num {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.bottom-stats-dot {
+  margin: 0 16rpx;
+  color: var(--color-text-tertiary);
+}

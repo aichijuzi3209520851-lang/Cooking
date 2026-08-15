@@ -1,0 +1,54 @@
+<!-- components/dish-card/dish-card.wxml -->
+<view class="dish-card">
+  <!-- 左侧图片 -->
+  <view class="dish-thumb">
+    <image
+      wx:if="{{hasImage}}"
+      class="dish-thumb-img"
+      src="{{dish.imageUrl}}"
+      mode="aspectFill"
+    />
+    <view wx:else class="dish-thumb-placeholder">
+      <text class="dish-thumb-emoji">{{emoji}}</text>
+    </view>
+  </view>
+
+  <!-- 中间信息 -->
+  <view class="dish-info">
+    <view class="dish-name">{{dish.name}}</view>
+    <view class="dish-voters">
+      <avatar-group
+        wx:if="{{voters.length > 0}}"
+        members="{{voters}}"
+        max="{{5}}"
+        size="{{40}}"
+      />
+      <text wx:else class="dish-voters-empty">还没有人想吃</text>
+    </view>
+  </view>
+
+  <!-- 右侧按钮 -->
+  <view class="dish-action">
+    <view
+      wx:if="{{hasVoted}}"
+      class="btn-pill btn-pill-filled"
+      bindtap="onCancel"
+    >
+      已想吃
+    </view>
+    <view
+      wx:else
+      class="btn-pill btn-pill-outline"
+      bindtap="onVote"
+    >
+      我想吃
+    </view>
+    <view
+      wx:if="{{showChefCancel}}"
+      class="chef-cancel"
+      catchtap="onChefCancel"
+    >
+      撤下
+    </view>
+  </view>
+</view>

@@ -1,0 +1,49 @@
+<!--pages/settings/theme/theme.wxml-->
+<view class="container theme-page {{themeClass}}">
+  <!-- 外观模式 -->
+  <view class="section">
+    <view class="section-title caption">外观</view>
+    <view class="card group-list">
+      <view
+        class="group-item"
+        wx:for="{{themeOptions}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onSelectTheme"
+      >
+        <view class="group-item-left">
+          <text class="group-item-icon">{{item.icon}}</text>
+          <text class="group-item-name">{{item.name}}</text>
+        </view>
+        <text class="group-item-check" wx:if="{{theme === item.key}}">✓</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 强调色 -->
+  <view class="section">
+    <view class="section-title caption">强调色</view>
+    <view class="accent-row">
+      <view
+        class="accent-item"
+        wx:for="{{accentOptions}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onSelectAccent"
+      >
+        <view
+          class="accent-circle {{accentColor === item.key ? 'accent-circle-selected' : ''}}"
+          style="background-color: {{item.color}};"
+        >
+          <text class="accent-check" wx:if="{{accentColor === item.key}}">✓</text>
+        </view>
+        <text class="accent-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 预览提示 -->
+  <view class="preview-tip">
+    <text class="caption">设置将立即生效</text>
+  </view>
+</view>

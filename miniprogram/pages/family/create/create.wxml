@@ -1,0 +1,31 @@
+<!--pages/family/create/create.wxml-->
+<view class="container create-page {{themeClass}}">
+  <view class="create-header">
+    <view class="create-emoji">🏠</view>
+    <view class="title-md create-title">创建你的家庭</view>
+    <view class="caption create-tip">创建后你将默认成为掌勺的</view>
+  </view>
+
+  <view class="create-form">
+    <view class="form-label">家庭名称</view>
+    <input
+      class="input form-input"
+      placeholder="给你的家庭起个名字，如：姐姐的家"
+      placeholder-class="input-placeholder"
+      value="{{familyName}}"
+      bindinput="onNameInput"
+      maxlength="20"
+      confirm-type="done"
+    />
+  </view>
+
+  <view class="create-footer safe-bottom">
+    <button
+      class="btn btn-primary btn-block {{!canCreate || loading ? 'btn-disabled' : ''}}"
+      bindtap="onCreate"
+      disabled="{{!canCreate || loading}}"
+    >
+      {{loading ? '创建中...' : '创建家庭'}}
+    </button>
+  </view>
+</view>

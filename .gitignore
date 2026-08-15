@@ -1,0 +1,30 @@
+# ---- 依赖 ----
+node_modules/
+package-lock.json
+yarn.lock
+
+# ---- AI 编程工具本地配置（与项目源码无关）----
+.agents/
+.codebuddy/
+.ui-check/
+skills-lock.json
+
+# ---- 微信开发者工具私有配置 ----
+project.private.config.json
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 编辑器 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- 日志与临时文件 ----
+*.log
+*.tmp
+.env
+.env.*

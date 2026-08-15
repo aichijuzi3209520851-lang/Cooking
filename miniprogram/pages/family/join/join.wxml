@@ -1,0 +1,36 @@
+<!--pages/family/join/join.wxml-->
+<view class="container join-page {{themeClass}}">
+  <view class="join-header">
+    <view class="title-md join-title">加入家庭</view>
+    <view class="caption join-tip">请输入掌勺的分享的6位家庭码</view>
+  </view>
+
+  <!-- 6位字母数字输入区域 -->
+  <view class="code-input-wrapper" bindtap="onTapInput">
+    <view class="code-boxes">
+      <view
+        class="code-box {{index === focusIndex && inputFocus ? 'code-box-focus' : ''}} {{digits[index] ? 'code-box-filled' : ''}}"
+        wx:for="{{digits}}"
+        wx:key="index"
+      >
+        <text class="code-digit">{{item}}</text>
+      </view>
+    </view>
+    <!-- 隐藏的输入框 -->
+    <input
+      class="code-hidden-input"
+      type="text"
+      maxlength="6"
+      focus="{{inputFocus}}"
+      value="{{codeValue}}"
+      bindinput="onInput"
+      bindblur="onInputBlur"
+      confirm-type="done"
+      cursor-spacing="200"
+    />
+  </view>
+
+  <view class="join-loading" wx:if="{{loading}}">
+    <view class="caption">正在加入...</view>
+  </view>
+</view>

@@ -1,0 +1,41 @@
+<!--pages/history/history.wxml-->
+<view class="container history-page {{themeClass}}">
+  <!-- 日期选择器 -->
+  <view class="date-bar card">
+    <view class="date-arrow" bindtap="onPrevDay">
+      <text class="date-arrow-icon">‹</text>
+    </view>
+    <view class="date-display">
+      <text class="date-text">{{dateDisplay}}</text>
+    </view>
+    <view
+      class="date-arrow {{canGoNext ? '' : 'date-arrow-disabled'}}"
+      bindtap="onNextDay"
+    >
+      <text class="date-arrow-icon">›</text>
+    </view>
+  </view>
+
+  <!-- 历史列表 -->
+  <view class="history-list" wx:if="{{historyList.length > 0}}">
+    <view class="history-card card" wx:for="{{historyList}}" wx:key="dishId">
+      <view class="history-dish-name">{{item.dishName}}</view>
+      <view class="voters-row">
+        <view class="voter-item" wx:for="{{item.voters}}" wx:for-item="voter" wx:key="openid">
+          <view class="voter-avatar" style="{{voter.avatarStyle}}">
+            <text class="voter-avatar-text">{{voter.avatarText}}</text>
+          </view>
+          <text class="voter-name">{{voter.nickname}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <empty-state
+    wx:if="{{!loading && historyList.length === 0}}"
+    icon="📅"
+    title="这一天没有点菜记录"
+    description=""
+  ></empty-state>
+</view>

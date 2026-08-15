@@ -1,0 +1,63 @@
+<!--pages/dishes/edit/edit.wxml-->
+<view class="container edit-page {{themeClass}}">
+  <!-- 图片上传区域 -->
+  <view class="image-section">
+    <view class="image-uploader" bindtap="onChooseImage">
+      <block wx:if="{{imageUrl}}">
+        <image class="image-preview" src="{{imageUrl}}" mode="aspectFill"></image>
+        <view class="image-delete" catchtap="onDeleteImage">
+          <text class="image-delete-icon">×</text>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="image-placeholder">
+          <text class="image-placeholder-icon">{{uploading ? '⏳' : '📷'}}</text>
+          <text class="image-placeholder-text">{{uploading ? '上传中...' : '添加图片'}}</text>
+        </view>
+      </block>
+    </view>
+    <view class="caption image-tip">不上传将使用分类默认图</view>
+  </view>
+
+  <!-- 菜名输入 -->
+  <view class="form-section">
+    <view class="form-label">菜名</view>
+    <input
+      class="input form-input"
+      placeholder="输入菜名，如：西红柿炒蛋"
+      placeholder-class="input-placeholder"
+      value="{{dishName}}"
+      bindinput="onNameInput"
+      maxlength="20"
+      confirm-type="done"
+    />
+  </view>
+
+  <!-- 分类选择 -->
+  <view class="form-section">
+    <view class="form-label">分类</view>
+    <view class="category-grid">
+      <view
+        class="category-btn {{category === item.key ? 'category-btn-active' : ''}}"
+        wx:for="{{categoryList}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onCategoryTap"
+      >
+        <text class="category-btn-emoji">{{item.emoji}}</text>
+        <text class="category-btn-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="save-footer safe-bottom">
+    <button
+      class="btn btn-primary btn-block {{(!canSave || saving || uploading) ? 'btn-disabled' : ''}}"
+      bindtap="onSave"
+      disabled="{{!canSave || saving || uploading}}"
+    >
+      {{saving ? '保存中...' : '保存'}}
+    </button>
+  </view>
+</view>

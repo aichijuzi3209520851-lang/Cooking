@@ -1,0 +1,83 @@
+<!--pages/dishes/list/list.wxml-->
+<view class="container list-page {{themeClass}}">
+  <!-- 分类筛选 -->
+  <scroll-view class="category-scroll" scroll-x enable-flex>
+    <view class="category-list">
+      <view
+        class="category-chip {{selectedCategory === item.key ? 'category-chip-active' : ''}}"
+        wx:for="{{categoryList}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onCategoryTap"
+      >
+        <text class="category-chip-emoji">{{item.emoji}}</text>
+        <text class="category-chip-name">{{item.name}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 菜品列表 -->
+  <view class="dish-list" wx:if="{{dishes.length > 0}}">
+    <view
+      class="dish-item {{item.isHidden ? 'dish-item-hidden' : ''}}"
+      wx:for="{{dishes}}"
+      wx:key="_id"
+      data-id="{{item._id}}"
+      data-index="{{index}}"
+      bindtap="onDishTap"
+      bindlongpress="onDishLongPress"
+    >
+      <!-- 菜品图片/占位 -->
+      <view class="dish-thumb">
+        <image
+          wx:if="{{item.hasImage}}"
+          class="dish-thumb-img"
+          src="{{item.imageUrl}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          binderror="onImageError"
+        ></image>
+        <view wx:else class="dish-thumb-placeholder">
+          <text class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
+        </view>
+      </view>
+
+      <!-- 菜品信息 -->
+      <view class="dish-info">
+        <view class="dish-name-row">
+          <text class="dish-name">{{item.name}}</text>
+          <text class="badge dish-hidden-badge" wx:if="{{item.isHidden}}">已隐藏</text>
+        </view>
+        <view class="dish-meta">
+          <text class="dish-category">{{item.categoryEmoji}} {{item.categoryName}}</text>
+        </view>
+      </view>
+
+      <!-- 编辑按钮 -->
+      <view class="dish-edit" catchtap="onEditTap" data-id="{{item._id}}">
+        <text>编辑</text>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="list-footer" wx:if="{{loading}}">
+      <text class="caption">加载中...</text>
+    </view>
+    <view class="list-footer" wx:elif="{{!hasMore && dishes.length > 0}}">
+      <text class="caption">没有更多了</text>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <empty-state
+    wx:if="{{!loading && dishes.length === 0}}"
+    icon="🍽️"
+    title="菜品库是空的"
+    description="点击右下角添加第一道菜"
+  ></empty-state>
+
+  <!-- 悬浮添加按钮 -->
+  <view class="fab" bindtap="onAddTap">
+    <text class="fab-icon">+</text>
+  </view>
+</view>

@@ -1,0 +1,50 @@
+/* pages/family/create/create.wxss */
+.create-page {
+  padding-top: 56rpx;
+  padding-bottom: 48rpx;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.create-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 72rpx;
+}
+
+.create-emoji {
+  font-size: 96rpx;
+  line-height: 1;
+  margin-bottom: 24rpx;
+}
+
+.create-title {
+  margin-bottom: 12rpx;
+}
+
+.create-tip {
+  font-size: 26rpx;
+}
+
+.create-form {
+  width: 100%;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+.form-input {
+  margin-bottom: 16rpx;
+}
+
+.create-footer {
+  margin-top: auto;
+  padding-top: 32rpx;
+}

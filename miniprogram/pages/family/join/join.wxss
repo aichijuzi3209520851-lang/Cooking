@@ -1,0 +1,81 @@
+/* pages/family/join/join.wxss */
+.join-page {
+  padding-top: 56rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.join-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 80rpx;
+}
+
+.join-title {
+  margin-bottom: 16rpx;
+}
+
+.join-tip {
+  font-size: 28rpx;
+}
+
+/* 6位字母数字输入 */
+.code-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 64rpx;
+}
+
+.code-boxes {
+  display: flex;
+  justify-content: space-between;
+  width: 560rpx;
+}
+
+.code-box {
+  width: 76rpx;
+  height: 84rpx;
+  background: var(--color-card-inner);
+  border: 3rpx solid var(--color-border);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.code-box-focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4rpx var(--color-accent-soft);
+}
+
+.code-box-filled {
+  border-color: var(--color-accent);
+}
+
+.code-digit {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.code-hidden-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 10;
+}
+
+.join-loading {
+  margin-top: 48rpx;
+}

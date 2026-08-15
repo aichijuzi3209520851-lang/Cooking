@@ -1,0 +1,109 @@
+/* pages/history/history.wxss */
+.history-page {
+  padding-top: 24rpx;
+  padding-bottom: 48rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 日期选择器 */
+.date-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.date-arrow {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-card-inner);
+  transition: all 0.2s ease;
+}
+
+.date-arrow:active {
+  transform: scale(0.92);
+  opacity: 0.7;
+}
+
+.date-arrow-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.date-arrow-icon {
+  font-size: 48rpx;
+  color: var(--color-accent);
+  line-height: 1;
+  margin-top: -4rpx;
+}
+
+.date-display {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.date-text {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 1rpx;
+}
+
+/* 历史卡片 */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.history-card {
+  padding: 28rpx 32rpx;
+  margin-bottom: 0;
+}
+
+.history-dish-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 20rpx;
+}
+
+.voters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx 32rpx;
+}
+
+.voter-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.voter-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.voter-avatar-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.voter-name {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}

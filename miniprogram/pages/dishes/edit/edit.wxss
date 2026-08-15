@@ -1,0 +1,147 @@
+/* pages/dishes/edit/edit.wxss */
+.edit-page {
+  padding-top: 48rpx;
+  padding-bottom: 48rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 图片上传 */
+.image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 56rpx;
+}
+
+.image-uploader {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-uploader:active {
+  opacity: 0.8;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.image-placeholder-icon {
+  font-size: 64rpx;
+  line-height: 1;
+}
+
+.image-placeholder-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.image-delete {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-delete-icon {
+  color: #FFFFFF;
+  font-size: 36rpx;
+  line-height: 1;
+  margin-top: -4rpx;
+}
+
+.image-tip {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+}
+
+/* 表单 */
+.form-section {
+  margin-bottom: 40rpx;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+}
+
+.form-input {
+  margin-bottom: 0;
+}
+
+/* 分类按钮 */
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.category-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: calc((100% - 64rpx) / 5);
+  padding: 24rpx 0;
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  transition: all 0.2s ease;
+}
+
+.category-btn:active {
+  transform: scale(0.96);
+}
+
+.category-btn-active {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  box-shadow: var(--shadow-accent);
+}
+
+.category-btn-emoji {
+  font-size: 44rpx;
+  line-height: 1;
+  margin-bottom: 10rpx;
+}
+
+.category-btn-name {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.category-btn-active .category-btn-name {
+  color: #FFFFFF;
+}
+
+/* 保存按钮 */
+.save-footer {
+  margin-top: auto;
+  padding-top: 32rpx;
+}

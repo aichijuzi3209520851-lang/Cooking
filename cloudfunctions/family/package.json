@@ -1,0 +1,9 @@
+{
+  "name": "family",
+  "version": "1.0.0",
+  "description": "家庭管理：创建、加入、成员管理",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

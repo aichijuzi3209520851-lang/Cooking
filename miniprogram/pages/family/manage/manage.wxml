@@ -1,0 +1,85 @@
+<!--pages/family/manage/manage.wxml-->
+<view class="container manage-page {{themeClass}}">
+  <!-- 家庭信息卡片 -->
+  <view class="card family-card" wx:if="{{currentFamily}}">
+    <view class="family-card-header">
+      <view class="family-name">{{currentFamily.name}}</view>
+      <view class="badge {{currentRole === 'chef' ? 'badge-chef' : 'badge-eater'}}">
+        {{currentRole === 'chef' ? '🍳 掌勺的' : '🍚 等饭的'}}
+      </view>
+    </view>
+
+    <view class="family-code-section" bindtap="onCopyCode">
+      <view class="caption family-code-label">家庭加入码（点击复制）</view>
+      <view class="family-code">{{currentFamily.joinCode || '------'}}</view>
+    </view>
+
+  </view>
+
+  <!-- 切换家庭 -->
+  <view class="section" wx:if="{{families.length > 1}}">
+    <view class="section-title caption">切换家庭</view>
+    <view class="card family-list-card">
+      <view
+        class="family-list-item {{item.familyId === currentFamily.familyId ? 'family-list-item-active' : ''}}"
+        wx:for="{{families}}"
+        wx:key="familyId"
+        data-id="{{item.familyId}}"
+        bindtap="onSwitchFamily"
+      >
+        <view class="family-list-info">
+          <view class="family-list-name">{{item.name}}</view>
+          <view class="caption family-list-role">
+            {{item.role === 'chef' ? '🍳 掌勺的' : '🍚 等饭的'}}
+          </view>
+        </view>
+        <view class="family-list-check" wx:if="{{item.familyId === currentFamily.familyId}}">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 家庭成员 -->
+  <view class="section">
+    <view class="section-title caption">家庭成员（{{members.length}}）</view>
+    <view class="card member-list-card">
+      <view class="member-item" wx:for="{{members}}" wx:key="userId">
+        <view class="member-avatar" style="{{item.avatarStyle}}">
+          <text class="member-avatar-text">{{item.avatarText}}</text>
+        </view>
+        <view class="member-info">
+          <view class="member-name-row">
+            <text class="member-name">{{item.nickname || item.name || '成员'}}</text>
+            <text class="badge {{item.role === 'chef' ? 'badge-chef' : 'badge-eater'}} member-badge">
+              {{item.roleName}}
+            </text>
+            <text class="member-self-tag" wx:if="{{item.isSelf}}">（我）</text>
+          </view>
+        </view>
+        <view class="member-actions" wx:if="{{isCreator && !item.isSelf}}">
+          <view
+            class="member-action-btn member-action-toggle"
+            data-userid="{{item.userId}}"
+            data-role="{{item.role}}"
+            catchtap="onToggleRole"
+          >
+            {{item.role === 'chef' ? '设为等饭' : '设为掌勺'}}
+          </view>
+          <view
+            class="member-action-btn member-action-remove"
+            data-userid="{{item.userId}}"
+            catchtap="onRemoveMember"
+          >
+            移除
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出家庭 -->
+  <view class="exit-section safe-bottom">
+    <button class="btn btn-ghost exit-btn" bindtap="onExitFamily" disabled="{{loading}}">
+      退出家庭
+    </button>
+  </view>
+</view>

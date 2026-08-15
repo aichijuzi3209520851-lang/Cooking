@@ -1,0 +1,212 @@
+// pages/family/manage/manage.js
+const theme = require('../../../utils/theme.js');
+const { familyApi } = require('../../../utils/api.js');
+const {
+  showSuccess,
+  showError,
+  showConfirm,
+  getRoleName,
+  getAvatarColor,
+  getAvatarText
+} = require('../../../utils/util.js');
+const app = getApp();
+
+Page({
+  data: {
+    themeClass: '',
+    currentFamily: null,
+    families: [],
+    members: [],
+    currentRole: '',
+    currentUserId: '',
+    isCreator: false,
+    loading: false
+  },
+
+  onShow() {
+    theme.applyTheme(this);
+    this.loadFamilyData();
+  },
+
+  // 加载家庭数据
+  async loadFamilyData() {
+    const currentFamilyId = app.globalData.currentFamilyId;
+    const families = app.globalData.families || [];
+    const currentFamily = families.find(f => f.familyId === currentFamilyId) || null;
+    const currentRole = app.globalData.currentRole || '';
+    const currentUserId = app.globalData.openid || '';
+
+    this.setData({
+      currentFamily,
+      families,
+      currentRole,
+      currentUserId,
+      // 仅家庭创建者显示成员管理操作（与云函数权限校验保持一致）
+      isCreator: !!(currentFamily && currentFamily.creatorId && currentFamily.creatorId === currentUserId)
+    });
+
+    if (currentFamilyId) {
+      try {
+        const members = await familyApi.members(currentFamilyId);
+        // 为每个成员添加头像颜色和首字
+        const processedMembers = (members || []).map(m => {
+          const userId = m.userId || m.openid || m._id || '';
+          const colors = getAvatarColor(m.nickname || m.name || '');
+          return {
+            ...m,
+            userId: userId,
+            roleName: getRoleName(m.role),
+            avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`,
+            avatarText: getAvatarText(m.nickname || m.name || ''),
+            isSelf: userId === currentUserId
+          };
+        });
+        this.setData({ members: processedMembers });
+      } catch (err) {
+        console.error('获取成员列表失败', err);
+      }
+    }
+  },
+
+  // 切换家庭
+  async onSwitchFamily(e) {
+    const familyId = e.currentTarget.dataset.id;
+    if (!familyId || familyId === app.globalData.currentFamilyId) return;
+    if (this.data.loading) return;
+
+    this.setData({ loading: true });
+    try {
+      await familyApi.switch(familyId);
+      app.switchFamily(familyId);
+      showSuccess('已切换家庭');
+      setTimeout(() => {
+        this.loadFamilyData();
+      }, 500);
+    } catch (err) {
+      console.error('切换家庭失败', err);
+      showError('切换失败');
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  // 切换成员身份（仅创建者可操作）
+  async onToggleRole(e) {
+    const { role, userid } = e.currentTarget.dataset;
+    if (!userid || this.data.loading) return;
+    if (!this.data.isCreator) {
+      showError('仅家庭创建者可修改成员身份');
+      return;
+    }
+    if (userid === this.data.currentUserId) {
+      showError('请在「我的」页面切换自己的身份');
+      return;
+    }
+
+    const newRole = role === 'chef' ? 'eater' : 'chef';
+    const targetName = this.data.members.find(m => m.userId === userid);
+    const displayName = targetName ? (targetName.nickname || targetName.name || '该成员') : '该成员';
+
+    const confirmed = await showConfirm(
+      '切换身份',
+      `确定将「${displayName}」的身份切换为${getRoleName(newRole)}吗？`
+    );
+    if (!confirmed) return;
+
+    this.setData({ loading: true });
+    try {
+      // 修改指定成员的身份（服务端校验创建者权限）
+      await familyApi.updateMemberRole(app.globalData.currentFamilyId, userid, newRole);
+      // 更新本地成员列表中的角色
+      const members = this.data.members.map(m => {
+        if (m.userId === userid) {
+          return { ...m, role: newRole, roleName: getRoleName(newRole) };
+        }
+        return m;
+      });
+      this.setData({ members });
+      showSuccess('已切换身份');
+    } catch (err) {
+      console.error('切换身份失败', err);
+      showError('操作失败');
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  // 移除成员
+  async onRemoveMember(e) {
+    const userid = e.currentTarget.dataset.userid;
+    if (!userid || this.data.loading) return;
+
+    const target = this.data.members.find(m => m.userId === userid);
+    const displayName = target ? (target.nickname || target.name || '该成员') : '该成员';
+
+    const confirmed = await showConfirm(
+      '移除成员',
+      `确定要将「${displayName}」移出家庭吗？`
+    );
+    if (!confirmed) return;
+
+    this.setData({ loading: true });
+    try {
+      await familyApi.removeMember(app.globalData.currentFamilyId, userid);
+      showSuccess('已移除');
+      this.loadFamilyData();
+    } catch (err) {
+      console.error('移除成员失败', err);
+      showError('移除失败');
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  // 退出家庭
+  async onExitFamily() {
+    if (this.data.loading) return;
+
+    const confirmed = await showConfirm(
+      '退出家庭',
+      '退出后将不再接收该家庭的菜单信息，确定要退出吗？'
+    );
+    if (!confirmed) return;
+
+    this.setData({ loading: true });
+    try {
+      // 调用退出家庭接口
+      await familyApi.leave(app.globalData.currentFamilyId);
+
+      // 清除全局数据
+      const currentId = app.globalData.currentFamilyId;
+      app.globalData.families = (app.globalData.families || []).filter(
+        f => f.familyId !== currentId
+      );
+      app.globalData.currentFamilyId = null;
+      app.globalData.currentRole = null;
+      app.saveCache();
+
+      showSuccess('已退出家庭');
+      setTimeout(() => {
+        wx.reLaunch({
+          url: '/pages/welcome/welcome'
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('退出家庭失败', err);
+      showError('退出失败');
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  // 复制加入码
+  onCopyCode() {
+    if (!this.data.currentFamily || !this.data.currentFamily.joinCode) return;
+    wx.setClipboardData({
+      data: this.data.currentFamily.joinCode,
+      success() {
+        showSuccess('已复制家庭码');
+      }
+    });
+  }
+});
