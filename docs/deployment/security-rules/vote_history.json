@@ -1,0 +1,4 @@
+{
+  "read": "get('database.family_members.m_' + doc.familyId + '_' + auth.openid) != null",
+  "write": false
+}
