@@ -1,7 +1,11 @@
 // pages/family/join/join.js
 const theme = require('../../../utils/theme.js');
 const { familyApi } = require('../../../utils/api.js');
-const { showSuccess, showError } = require('../../../utils/util.js');
+const {
+  showSuccess,
+  showApiError,
+  normalizeJoinCode
+} = require('../../../utils/util.js');
 const app = getApp();
 
 Page({
@@ -30,8 +34,8 @@ Page({
 
   // 输入事件
   onInput(e) {
-    // 6位字母数字加入码，统一转大写并过滤非法字符
-    const value = e.detail.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6);
+    // 6位字母数字加入码，统一转大写并过滤非法字符（与服务端规则一致）
+    const value = normalizeJoinCode(e.detail.value);
     const digits = ['', '', '', '', '', ''];
     for (let i = 0; i < value.length; i++) {
       digits[i] = value[i];
@@ -49,11 +53,11 @@ Page({
   async joinByCode(code) {
     this.setData({ loading: true });
     try {
-      const data = await familyApi.joinByCode(code);
-      await this.handleJoinSuccess(data);
+      await familyApi.joinByCode(code);
+      await this.handleJoinSuccess();
     } catch (err) {
       console.error('加入家庭失败', err);
-      showError('加入失败，请检查家庭码');
+      showApiError(err, '加入失败，请检查家庭码');
       // 清空输入
       this.setData({
         digits: ['', '', '', '', '', ''],
@@ -65,30 +69,9 @@ Page({
     }
   },
 
-  // 加入成功处理
-  async handleJoinSuccess(data) {
-    const familyId = data.familyId || data._id || data.id;
-    const role = data.role || 'eater';
-
-    // 更新全局数据
-    app.globalData.currentFamilyId = familyId;
-    app.globalData.currentRole = role;
-
-    // 更新家庭列表
-    const familyInfo = {
-      familyId: familyId,
-      name: data.name || data.familyName || '我的家庭',
-      role: role,
-      joinCode: data.joinCode || ''
-    };
-
-    const exists = (app.globalData.families || []).some(
-      f => f.familyId === familyId
-    );
-    if (!exists) {
-      app.globalData.families = [familyInfo, ...(app.globalData.families || [])];
-    }
-    app.saveCache();
+  // 加入成功处理：以服务端登录结果刷新全局状态（幂等：重复加入只切换家庭）
+  async handleJoinSuccess() {
+    await app.refreshUser();
 
     showSuccess('加入成功');
     setTimeout(() => {

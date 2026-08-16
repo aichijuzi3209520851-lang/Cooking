@@ -5,10 +5,10 @@ const {
   getCategoryList,
   getCategoryName,
   getCategoryEmoji,
-  getCategoryPlaceholder,
   showSuccess,
   showError,
-  showConfirm
+  showConfirm,
+  showApiError
 } = require('../../../utils/util.js');
 const app = getApp();
 
@@ -23,7 +23,8 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
-    refreshing: false
+    refreshing: false,
+    loadError: false
   },
 
   onShow() {
@@ -58,7 +59,9 @@ Page({
 
     this.setData({ loading: true });
     try {
-      const res = await dishApi.list(familyId, category, page, PAGE_SIZE);
+      // 菜品库管理页：chef 携带 includeHidden 查看/恢复隐藏菜品（UI-001），eater 退化为普通列表
+      const isChef = app.globalData.currentRole === 'chef';
+      const res = await dishApi.list(familyId, category, page, PAGE_SIZE, isChef);
       const list = (res && res.list) || [];
       const total = (res && res.total) || 0;
 
@@ -69,24 +72,29 @@ Page({
         dishes: newDishes,
         page: page + 1,
         hasMore: newDishes.length < total,
-        loading: false
+        loading: false,
+        loadError: false
       });
     } catch (err) {
       console.error('加载菜品失败', err);
-      this.setData({ loading: false });
+      showApiError(err, '加载失败，请重试');
+      this.setData({ loading: false, loadError: true });
       if (reset) {
         this.setData({ dishes: [], hasMore: false });
       }
     }
   },
 
-  // 格式化菜品展示数据
+  onRetry() {
+    this.loadData(true);
+  },
+
+  // 格式化菜品展示数据（无本地占位图资源，无图时 WXML 回退 emoji）
   formatDish(item) {
     return {
       ...item,
       categoryName: getCategoryName(item.category),
       categoryEmoji: getCategoryEmoji(item.category),
-      placeholderUrl: getCategoryPlaceholder(item.category),
       hasImage: !!item.imageUrl
     };
   },

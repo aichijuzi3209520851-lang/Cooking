@@ -1,17 +1,18 @@
 // pages/profile/profile.js
 const theme = require('../../utils/theme.js');
-const { familyApi } = require('../../utils/api.js');
+const { familyApi, notifyApi } = require('../../utils/api.js');
 const {
   getRoleName,
   getRoleEmoji,
   getAvatarColor,
   getAvatarText,
   showSuccess,
-  showError
+  showError,
+  showApiError
 } = require('../../utils/util.js');
 const app = getApp();
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 Page({
   data: {
@@ -29,8 +30,10 @@ Page({
     hasFamily: false
   },
 
-  onShow() {
+  async onShow() {
     theme.applyTheme(this);
+    // 等待登录完成后渲染，避免展示旧缓存状态（AUTH-001）
+    await app.waitForLogin();
     this.loadUserData();
   },
 
@@ -113,6 +116,36 @@ Page({
         }
       }
     });
+  },
+
+  // 通知设置（NOTIFY-001）：请求订阅授权并持久化授权结果
+  async onNotifySettings() {
+    const config = require('../../config.js');
+    const tmplIds = (config.notifyTemplates || []).filter(id => typeof id === 'string' && id.length > 0);
+    if (tmplIds.length === 0) {
+      showError('通知功能尚未配置，请先在 config.js 填写模板 ID');
+      return;
+    }
+
+    try {
+      const res = await wx.requestSubscribeMessage({ tmplIds });
+      // 结果取值：accept / reject / ban / filter
+      const values = Object.keys(res || {})
+        .filter(k => k !== 'errMsg')
+        .map(k => res[k]);
+      const accepted = values.some(v => v === 'accept');
+      const status = accepted ? 'accepted' : (values.some(v => v === 'reject') ? 'rejected' : 'unknown');
+
+      // 持久化授权结果（服务端记录，不再用默认 true 表示）
+      await notifyApi.setStatus(status, accepted ? '' : '用户未接受订阅消息授权');
+      showSuccess(accepted ? '已开启通知' : '未开启通知');
+    } catch (err) {
+      console.error('订阅消息授权失败', err);
+      // 用户主动取消（errMsg 含 cancel）不视为错误
+      if (!(err && err.errMsg && err.errMsg.indexOf('cancel') > -1)) {
+        showApiError(err, '通知设置失败');
+      }
+    }
   },
 
   // 关于

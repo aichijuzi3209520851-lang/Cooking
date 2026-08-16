@@ -75,7 +75,7 @@
       <block wx:if="{{dishes.length > 0}}">
         <dish-card
           wx:for="{{dishes}}"
-          wx:key="_id"
+          wx:key="dishId"
           dish="{{item}}"
           voters="{{item.voters}}"
           current-user-id="{{currentUserId}}"

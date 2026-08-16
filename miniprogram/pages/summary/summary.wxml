@@ -24,7 +24,7 @@
         <view
           class="summary-card"
           wx:for="{{summaryList}}"
-          wx:key="_id"
+          wx:key="dishId"
         >
           <view class="summary-main">
             <!-- 左侧菜品图/emoji -->
@@ -75,7 +75,7 @@
           <view
             wx:if="{{isChef}}"
             class="chef-cancel-btn"
-            data-id="{{item._id}}"
+            data-id="{{item.dishId}}"
             data-name="{{item.name}}"
             bindtap="onChefCancel"
           >

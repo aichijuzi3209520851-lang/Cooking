@@ -69,8 +69,13 @@
   </view>
 
   <!-- 空状态 -->
+  <view wx:if="{{!loading && loadError && dishes.length === 0}}" class="list-error-state">
+    <text class="caption">菜品加载失败</text>
+    <button class="btn btn-secondary" bindtap="onRetry">重试</button>
+  </view>
+
   <empty-state
-    wx:if="{{!loading && dishes.length === 0}}"
+    wx:elif="{{!loading && !loadError && dishes.length === 0}}"
     icon="🍽️"
     title="菜品库是空的"
     description="点击右下角添加第一道菜"

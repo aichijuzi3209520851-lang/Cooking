@@ -166,6 +166,14 @@
   padding: 32rpx 0;
 }
 
+.list-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+  padding: 96rpx 0;
+}
+
 /* 悬浮按钮 */
 .fab {
   position: fixed;

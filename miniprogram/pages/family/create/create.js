@@ -1,7 +1,7 @@
 // pages/family/create/create.js
 const theme = require('../../../utils/theme.js');
 const { familyApi } = require('../../../utils/api.js');
-const { showSuccess, showError } = require('../../../utils/util.js');
+const { showSuccess, showApiError } = require('../../../utils/util.js');
 const app = getApp();
 
 Page({
@@ -32,22 +32,10 @@ Page({
 
     this.setData({ loading: true });
     try {
-      const data = await familyApi.create(name);
-      const familyId = data.familyId || data._id || data.id;
+      await familyApi.create(name);
 
-      // 更新全局数据
-      app.globalData.currentFamilyId = familyId;
-      app.globalData.currentRole = 'chef';
-
-      // 更新家庭列表
-      const newFamily = {
-        familyId: familyId,
-        name: name,
-        role: 'chef',
-        joinCode: data.joinCode || ''
-      };
-      app.globalData.families = [newFamily, ...(app.globalData.families || [])];
-      app.saveCache();
+      // 以服务端登录结果刷新全局状态（家庭列表/角色/当前家庭，统一 familyId DTO）
+      await app.refreshUser();
 
       showSuccess('创建成功');
       setTimeout(() => {
@@ -57,7 +45,7 @@ Page({
       }, 1000);
     } catch (err) {
       console.error('创建家庭失败', err);
-      showError('创建失败，请重试');
+      showApiError(err, '创建失败，请重试');
     } finally {
       this.setData({ loading: false });
     }

@@ -1,11 +1,30 @@
 // utils/api.js - 云函数调用封装
 
 /**
+ * 统一 API 错误类型：携带稳定 errorCode，前端据此区分权限/网络/重复/不存在等场景。
+ * 约定：本模块不做自动 toast，由页面统一通过 util.showApiError 提示，避免双重弹窗。
+ */
+class ApiError extends Error {
+  constructor(errorCode, message, raw) {
+    super(message || '请求失败');
+    this.name = 'ApiError';
+    this.errorCode = errorCode || 'INTERNAL_ERROR';
+    this.raw = raw;
+  }
+}
+
+/**
+ * 实时日志管理器（P3 错误监控）
+ * 优雅降级：getRealtimeLogManager 不存在时静默跳过
+ */
+const logger = wx.getRealtimeLogManager ? wx.getRealtimeLogManager() : null;
+
+/**
  * 调用云函数
  * @param {string} name 云函数名
  * @param {object} data 参数
  * @param {boolean} showLoading 是否显示loading
- * @returns {Promise}
+ * @returns {Promise} resolve 返回 {success:true} 的 data；reject ApiError
  */
 function call(name, data = {}, showLoading = false) {
   return new Promise((resolve, reject) => {
@@ -17,19 +36,23 @@ function call(name, data = {}, showLoading = false) {
       data,
       success(res) {
         if (showLoading) wx.hideLoading();
-        if (res.result && res.result.success) {
-          resolve(res.result.data);
+        const result = res.result || {};
+        if (result.success) {
+          resolve(result.data);
         } else {
-          const msg = (res.result && res.result.message) || '请求失败';
-          wx.showToast({ title: msg, icon: 'none' });
-          reject(new Error(msg));
+          if (logger) {
+            logger.warn(`[API] ${name} 业务错误`, result.errorCode, result.message);
+          }
+          reject(new ApiError(result.errorCode, result.message));
         }
       },
       fail(err) {
         if (showLoading) wx.hideLoading();
         console.error(`云函数 ${name} 调用失败:`, err);
-        wx.showToast({ title: '网络异常，请重试', icon: 'none' });
-        reject(err);
+        if (logger) {
+          logger.error(`[API] ${name} 网络失败`, err.errMsg || err.message || String(err));
+        }
+        reject(new ApiError('NETWORK_ERROR', '网络异常，请重试'));
       }
     });
   });
@@ -53,8 +76,8 @@ const familyApi = {
 
 // 菜品相关
 const dishApi = {
-  list: (familyId, category, page = 1, pageSize = 20) =>
-    call('dish', { action: 'list', familyId, category, page, pageSize }),
+  list: (familyId, category, page = 1, pageSize = 20, includeHidden = false) =>
+    call('dish', { action: 'list', familyId, category, page, pageSize, includeHidden }),
   add: (familyId, dish) => call('dish', { action: 'add', familyId, ...dish }, true),
   update: (familyId, dishId, updates) => call('dish', { action: 'update', familyId, dishId, ...updates }, true),
   delete: (familyId, dishId) => call('dish', { action: 'delete', familyId, dishId }, true),
@@ -74,11 +97,18 @@ const historyApi = {
   list: (familyId, date) => call('vote', { action: 'history', familyId, date })
 };
 
+// 通知相关（授权状态持久化走 login 云函数）
+const notifyApi = {
+  setStatus: (status, reason) => call('login', { action: 'setNotifyStatus', status, reason })
+};
+
 module.exports = {
+  ApiError,
   call,
   login,
   familyApi,
   dishApi,
   voteApi,
-  historyApi
+  historyApi,
+  notifyApi
 };

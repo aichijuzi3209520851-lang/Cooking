@@ -1,13 +1,14 @@
 // pages/history/history.js
 const theme = require('../../utils/theme.js');
 const { historyApi } = require('../../utils/api.js');
+const dto = require('../../utils/dto.js');
 const {
   yesterday,
   today,
   formatDate,
   getAvatarColor,
   getAvatarText,
-  showError
+  showApiError
 } = require('../../utils/util.js');
 const app = getApp();
 
@@ -87,7 +88,7 @@ Page({
     this.setData({ loading: true });
     try {
       const res = await historyApi.list(familyId, this.data.currentDate);
-      const groups = (res && res.groups) || [];
+      const { groups } = dto.normalizeTodayList(res);
 
       const processed = groups.map(group => ({
         ...group,
@@ -105,7 +106,7 @@ Page({
     } catch (err) {
       console.error('加载历史记录失败', err);
       this.setData({ historyList: [], loading: false });
-      showError('加载失败');
+      showApiError(err, '加载失败');
     }
   }
 });

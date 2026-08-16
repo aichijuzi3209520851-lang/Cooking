@@ -4,9 +4,13 @@ const { dishApi } = require('../../../utils/api.js');
 const {
   getCategoryList,
   showSuccess,
-  showError
+  showError,
+  showApiError
 } = require('../../../utils/util.js');
 const app = getApp();
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
 Page({
   data: {
@@ -46,13 +50,21 @@ Page({
     theme.applyTheme(this);
   },
 
+  onUnload() {
+    // 页面离开时若上传成功但未保存，清理孤儿文件（STORAGE-001）
+    this.cleanupUnsavedImage();
+  },
+
   // 填充表单
   fillForm(dish) {
     this.setData({
       dishName: dish.name || '',
       category: dish.category || 'meat',
-      imageUrl: dish.imageUrl || ''
+      imageUrl: dish.imageUrl || '',
+      canSave: !!(dish.name || '').trim()
     });
+    // 记录进入页面时的旧图（保存成功替换后清理）
+    this._oldImageUrl = dish.imageUrl || '';
   },
 
   // 输入菜名
@@ -71,7 +83,7 @@ Page({
     this.setData({ category: key });
   },
 
-  // 选择图片
+  // 选择图片（STORAGE-001：校验大小与扩展名，不能只相信选择器）
   async onChooseImage() {
     if (this.data.uploading) return;
     try {
@@ -83,7 +95,20 @@ Page({
       });
 
       if (!chooseRes.tempFiles || chooseRes.tempFiles.length === 0) return;
-      const tempPath = chooseRes.tempFiles[0].tempFilePath;
+      const file = chooseRes.tempFiles[0];
+      const tempPath = file.tempFilePath;
+
+      // 大小校验
+      if (file.size && file.size > MAX_IMAGE_SIZE) {
+        showError('图片不能超过 5MB');
+        return;
+      }
+      // 扩展名校验
+      const ext = this.getImageExt(tempPath);
+      if (!ext) {
+        showError('不支持的图片格式');
+        return;
+      }
 
       // 压缩图片
       let compressedPath = tempPath;
@@ -97,18 +122,27 @@ Page({
         console.warn('压缩图片失败，使用原图', err);
       }
 
-      // 上传到云存储
+      // 上传到云存储：路径包含家庭ID与openid（配合存储安全规则）
       this.setData({ uploading: true });
       wx.showLoading({ title: '上传中...', mask: true });
 
       const familyId = app.globalData.currentFamilyId;
-      const ext = this.getImageExt(compressedPath);
-      const cloudPath = `dishes/${familyId}/${Date.now()}.${ext}`;
+      const openid = app.globalData.openid || 'anonymous';
+      const cloudPath = `dishes/${familyId}/${openid}/${Date.now()}.${ext}`;
 
       const uploadRes = await wx.cloud.uploadFile({
         cloudPath,
         filePath: compressedPath
       });
+
+      const previousUnsavedImageId = this._unsavedImageId;
+      this._unsavedImageId = uploadRes.fileID;
+      if (previousUnsavedImageId && previousUnsavedImageId !== uploadRes.fileID) {
+        wx.cloud.deleteFile({
+          fileList: [previousUnsavedImageId],
+          fail: (err) => console.warn('清理上一次未保存图片失败', err)
+        });
+      }
 
       this.setData({
         imageUrl: uploadRes.fileID,
@@ -125,16 +159,16 @@ Page({
     }
   },
 
-  // 获取图片扩展名
+  // 获取图片扩展名（白名单内返回扩展名，否则返回空）
   getImageExt(path) {
     const match = /\.(\w+)$/.exec(path);
     if (match) {
       const ext = match[1].toLowerCase();
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+      if (ALLOWED_EXTS.includes(ext)) {
         return ext === 'jpeg' ? 'jpg' : ext;
       }
     }
-    return 'jpg';
+    return '';
   },
 
   // 删除图片
@@ -177,14 +211,35 @@ Page({
         await dishApi.add(familyId, payload);
         showSuccess('已添加');
       }
+      // 保存成功后：新图已入库，标记为已清理；旧图由服务端 update 逻辑删除
+      this._unsavedImageId = '';
+      this._oldImageUrl = payload.imageUrl;
       setTimeout(() => {
         wx.navigateBack();
       }, 800);
     } catch (err) {
       console.error('保存菜品失败', err);
-      showError('保存失败');
+      showApiError(err, '保存失败');
+      // 上传成功但保存失败：删除新上传文件，避免孤儿文件（STORAGE-001）
+      this.cleanupUnsavedImage();
     } finally {
       this.setData({ saving: false });
     }
+  },
+
+  // 清理"已上传但未保存成功"的新图
+  cleanupUnsavedImage() {
+    const newId = this._unsavedImageId || '';
+    if (!newId || newId.indexOf('cloud://') !== 0) return;
+    wx.cloud.deleteFile({
+      fileList: [newId],
+      success: () => {
+        this._unsavedImageId = '';
+        this.setData({ imageUrl: '' });
+      },
+      fail(err) {
+        console.warn('清理未保存图片失败', err);
+      }
+    });
   }
 });

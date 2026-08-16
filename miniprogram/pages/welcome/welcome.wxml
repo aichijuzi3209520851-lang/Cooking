@@ -7,12 +7,22 @@
   </view>
 
   <view class="welcome-actions">
-    <button class="btn btn-primary btn-block welcome-btn" bindtap="onCreateFamily">
-      创建家庭
-    </button>
-    <button class="btn btn-secondary btn-block welcome-btn" bindtap="onJoinFamily">
-      加入家庭
-    </button>
+    <!-- 登录失败：错误提示 + 重试入口（AUTH-001） -->
+    <view wx:if="{{loginFailed}}" class="welcome-login-error">
+      <view class="welcome-login-error-text">{{loginError}}</view>
+      <button class="btn btn-secondary btn-block welcome-btn" bindtap="onRetryLogin">
+        重新登录
+      </button>
+    </view>
+
+    <block wx:else>
+      <button class="btn btn-primary btn-block welcome-btn" bindtap="onCreateFamily">
+        创建家庭
+      </button>
+      <button class="btn btn-secondary btn-block welcome-btn" bindtap="onJoinFamily">
+        加入家庭
+      </button>
+    </block>
     <view class="welcome-footer">和家人一起决定今天的菜单</view>
   </view>
 </view>

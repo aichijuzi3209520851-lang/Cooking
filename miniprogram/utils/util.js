@@ -81,20 +81,6 @@ function getCategoryEmoji(category) {
 }
 
 /**
- * 获取分类占位图路径
- */
-function getCategoryPlaceholder(category) {
-  const map = {
-    meat: '/assets/images/categories/meat.png',
-    veg: '/assets/images/categories/veg.png',
-    soup: '/assets/images/categories/soup.png',
-    staple: '/assets/images/categories/staple.png',
-    cold: '/assets/images/categories/cold.png'
-  };
-  return map[category] || '/assets/images/categories/default.png';
-}
-
-/**
  * 获取分类列表
  */
 function getCategoryList() {
@@ -166,6 +152,22 @@ function showError(title) {
 }
 
 /**
+ * 统一展示 API 错误（api.js 不再自动 toast，由页面调用此函数避免双重提示）
+ * 优先展示服务端 message，网络/未知错误使用 fallback
+ */
+function showApiError(err, fallback) {
+  const msg = (err && err.message) || fallback || '请求失败';
+  wx.showToast({ title: msg, icon: 'none' });
+}
+
+/**
+ * 归一化家庭加入码：转大写、过滤非法字符、限制 6 位
+ */
+function normalizeJoinCode(code) {
+  return String(code || '').trim().toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6);
+}
+
+/**
  * 显示确认弹窗
  */
 function showConfirm(title, content) {
@@ -189,7 +191,6 @@ module.exports = {
   throttle,
   getCategoryName,
   getCategoryEmoji,
-  getCategoryPlaceholder,
   getCategoryList,
   getRoleName,
   getRoleEmoji,
@@ -197,5 +198,7 @@ module.exports = {
   getAvatarText,
   showSuccess,
   showError,
+  showApiError,
+  normalizeJoinCode,
   showConfirm
 };

@@ -64,3 +64,19 @@
   text-align: center;
   letter-spacing: 2rpx;
 }
+
+/* 登录失败提示 + 重试 */
+.welcome-login-error {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-login-error-text {
+  font-size: 28rpx;
+  color: var(--color-primary);
+  margin-bottom: 32rpx;
+  text-align: center;
+  line-height: 1.5;
+}

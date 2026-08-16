@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "点菜汇总",
+  "enablePullDownRefresh": true,
   "usingComponents": {
     "empty-state": "/components/empty-state/empty-state"
   }

@@ -1,0 +1,61 @@
+<view class="login-page {{themeClass}}">
+  <view class="login-top-space"></view>
+
+  <view class="login-brand">
+    <view class="login-mark">
+      <text class="login-mark-emoji">🍳</text>
+      <view class="login-mark-spark login-mark-spark-one"></view>
+      <view class="login-mark-spark login-mark-spark-two"></view>
+    </view>
+    <view class="login-title">今天<text class="login-title-accent">吃啥</text></view>
+    <view class="login-subtitle">一家人的今日菜单，从这一餐开始</view>
+  </view>
+
+  <view class="login-panel">
+    <view class="login-panel-kicker">WELCOME HOME</view>
+    <view class="login-panel-title">登录，开始安排今天</view>
+    <view class="login-panel-copy">使用微信登录，创建或加入你的家庭菜单</view>
+
+    <view wx:if="{{status === 'failed'}}" class="login-error">
+      <text class="login-error-icon">!</text>
+      <text class="login-error-text">{{loginError}}</text>
+    </view>
+
+    <button
+      wx:if="{{status === 'failed'}}"
+      class="login-button login-button-retry"
+      bindtap="onLoginTap"
+      loading="{{logging}}"
+      disabled="{{logging}}"
+    >
+      重新登录
+    </button>
+    <button
+      wx:elif="{{status === 'loading'}}"
+      class="login-button"
+      loading="{{true}}"
+      disabled="{{true}}"
+    >
+      登录中...
+    </button>
+    <button
+      wx:else
+      class="login-button"
+      bindtap="onLoginTap"
+      loading="{{logging}}"
+      disabled="{{logging}}"
+    >
+      <text class="login-button-icon">微信</text>
+      <text>{{logging ? '登录中...' : '微信快捷登录'}}</text>
+    </button>
+
+    <view class="login-safe-note">
+      <text class="login-safe-dot">●</text>
+      <text>登录后即可创建或加入家庭</text>
+    </view>
+  </view>
+
+  <view class="login-footer">
+    <text>今天吃什么，和家人一起决定</text>
+  </view>
+</view>

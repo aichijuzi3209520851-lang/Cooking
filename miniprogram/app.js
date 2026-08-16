@@ -1,4 +1,6 @@
 // app.js
+const config = require('./config.js');
+
 App({
   globalData: {
     userInfo: null,
@@ -8,7 +10,7 @@ App({
     families: [],
     theme: 'system',
     accentColor: 'red',
-    cloudEnv: 'lcw-d5gfcge7b41bedd02' // 云开发环境ID。已连接 CloudBase 环境 lcw
+    cloudEnv: config.cloudEnv || '' // 从 config.js 读取云开发环境ID
   },
 
   onLaunch() {
@@ -26,7 +28,10 @@ App({
     // 加载本地缓存
     this.loadLocalCache();
 
-    // 登录
+    // 登录（AUTH-001）：提供可等待的 ready 状态，页面据此做路由决策
+    this.loginReady = new Promise((resolve) => {
+      this._resolveLogin = resolve;
+    });
     this.login();
   },
 
@@ -63,7 +68,49 @@ App({
     }
   },
 
-  async login() {
+  /**
+   * 等待登录完成（首次调用即启动登录流程）。
+   * resolve 不代表登录成功，页面需检查 this.loginFailed。
+   */
+  waitForLogin() {
+    if (!this.loginReady) {
+      this.loginReady = new Promise((resolve) => {
+        this._resolveLogin = resolve;
+      });
+    }
+    return this.loginReady;
+  },
+
+  /**
+   * 登录（幂等：进行中/已完成的登录不会重复发起）
+   */
+  login() {
+    if (this._loginPromise) return this._loginPromise;
+    this._loginPromise = this._doLogin();
+    return this._loginPromise;
+  },
+
+  /**
+   * 登录失败后的重试入口（AUTH-001：用户可触发的重试）
+   */
+  retryLogin() {
+    this._loginPromise = null;
+    this.loginReady = new Promise((resolve) => {
+      this._resolveLogin = resolve;
+    });
+    return this.login();
+  },
+
+  /**
+   * 强制刷新用户数据（创建/加入家庭后调用，以服务端结果覆盖本地状态，避免 DTO 漂移）
+   */
+  refreshUser() {
+    this._loginPromise = null;
+    return this.login();
+  },
+
+  async _doLogin() {
+    this.loginFailed = false;
     try {
       const res = await wx.cloud.callFunction({
         name: 'login',
@@ -78,23 +125,33 @@ App({
         this.globalData.theme = data.user.theme || 'system';
         this.globalData.accentColor = data.user.accentColor || 'red';
 
+        // 服务端已修正失效的 currentFamilyId（AUTH-001）
         // 获取当前家庭的角色
         if (this.globalData.currentFamilyId) {
           const member = (data.members || []).find(
             m => m.familyId === this.globalData.currentFamilyId
           );
           this.globalData.currentRole = member ? member.role : null;
+        } else {
+          this.globalData.currentRole = null;
         }
 
+        // 服务端登录结果覆盖缓存
         this.saveCache();
-
-        // 通知页面登录完成
-        if (this.loginCallback) {
-          this.loginCallback();
-        }
+        this.loginFailed = false;
+      } else {
+        this.loginFailed = true;
+        this._lastLoginError = (res.result && res.result.message) || '登录失败';
       }
     } catch (err) {
       console.error('登录失败', err);
+      this.loginFailed = true;
+      this._lastLoginError = '网络异常，请重试';
+    } finally {
+      if (this._resolveLogin) {
+        this._resolveLogin();
+        this._resolveLogin = null;
+      }
     }
   },
 
