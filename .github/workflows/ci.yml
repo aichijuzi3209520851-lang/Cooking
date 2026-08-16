@@ -1,0 +1,25 @@
+# 持续集成：语法检查 + lint + 单元/契约测试（ENG-001）
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: 语法检查
+        run: npm run check:syntax
+      - name: Lint（安全与资源静态检查）
+        run: npm run lint
+      - name: 单元测试
+        run: npm run test:unit
+      - name: 接口契约检查
+        run: npm run check:contracts
