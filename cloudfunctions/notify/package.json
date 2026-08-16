@@ -4,6 +4,7 @@
   "description": "订阅消息通知：点菜通知、撤菜通知",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3"
+    "wx-server-sdk": "2.6.3",
+    "cloud-shared": "file:../shared"
   }
 }

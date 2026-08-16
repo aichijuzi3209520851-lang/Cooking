@@ -1,6 +1,11 @@
 // 云函数：dish
 // 菜品管理：列表、新增、修改、删除、隐藏切换
 const cloud = require('wx-server-sdk')
+const { ApiError } = require('cloud-shared/api-error')
+const { getOpenid, requireChef, requireMember, requireDishInFamily } = require('cloud-shared/auth')
+const { getTodayStr } = require('cloud-shared/date')
+const { safeDeleteFiles, removeTodayVotes } = require('cloud-shared/db-helpers')
+const { validateImageUrl, VALID_CATEGORIES } = require('cloud-shared/validators')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -9,78 +14,43 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
-// 合法的菜品分类
-const VALID_CATEGORIES = ['meat', 'veg', 'soup', 'staple', 'cold']
-
-// ============ 工具函数 ============
-
-function getOpenid() {
-  return cloud.getWXContext().OPENID
-}
-
-// 获取用户在某家庭的成员记录
-async function getMember(familyId, userId) {
-  const res = await db.collection('family_members')
-    .where({ familyId, userId })
-    .get()
-  return res.data && res.data.length > 0 ? res.data[0] : null
-}
-
-// 校验调用者是该家庭的 chef
-async function requireChef(familyId, userId) {
-  const member = await getMember(familyId, userId)
-  if (!member) {
-    throw new Error('您不是该家庭的成员')
-  }
-  if (member.role !== 'chef') {
-    throw new Error('需要掌勺权限')
-  }
-  return member
-}
-
-// 校验调用者是该家庭成员
-async function requireMember(familyId, userId) {
-  const member = await getMember(familyId, userId)
-  if (!member) {
-    throw new Error('您不是该家庭的成员')
-  }
-  return member
-}
-
-// 校验菜品存在且属于该家庭（防止跨家庭越权操作），返回菜品数据
-async function requireDishInFamily(familyId, dishId) {
-  const res = await db.collection('dishes').doc(dishId).get().catch(() => null)
-  if (!res || !res.data) {
-    throw new Error('菜品不存在')
-  }
-  if (res.data.familyId !== familyId) {
-    throw new Error('无权操作该家庭的菜品')
-  }
-  return res.data
-}
-
 // ============ 业务处理函数 ============
 
 // 查询菜品列表
+// includeHidden=true 时返回全部菜品（含隐藏），仅 chef 可用（UI-001）
 async function listDishes(data, openid) {
-  const { familyId, category, page = 1, pageSize = 20 } = data
+  const { familyId, includeHidden } = data
+  const page = Number(data.page || 1)
+  const pageSize = Number(data.pageSize || 20)
+  const category = data.category || ''
 
   if (!familyId) {
-    throw new Error('家庭ID不能为空')
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+  if (!Number.isInteger(page) || page < 1) {
+    throw new ApiError('INVALID_PARAM', 'page 参数无效')
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new ApiError('INVALID_PARAM', 'pageSize 参数无效（1-100）')
   }
 
   // 校验是家庭成员
-  await requireMember(familyId, openid)
+  const member = await requireMember(db, familyId, openid)
 
-  const where = {
-    familyId,
-    isHidden: false
+  const where = { familyId }
+  if (includeHidden === true) {
+    // 查看隐藏菜品是 chef 专属能力
+    if (member.role !== 'chef') {
+      throw new ApiError('PERMISSION_DENIED', '需要掌勺权限')
+    }
+  } else {
+    where.isHidden = false
   }
   if (category && VALID_CATEGORIES.includes(category)) {
     where.category = category
   }
 
-  const skip = (Math.max(1, page) - 1) * pageSize
+  const skip = (page - 1) * pageSize
 
   const [listRes, countRes] = await Promise.all([
     db.collection('dishes')
@@ -88,7 +58,7 @@ async function listDishes(data, openid) {
       .orderBy('cookCount', 'desc')
       .orderBy('createdAt', 'desc')
       .skip(skip)
-      .limit(Math.min(pageSize, 100))
+      .limit(pageSize)
       .get(),
     db.collection('dishes').where(where).count()
   ])
@@ -96,8 +66,8 @@ async function listDishes(data, openid) {
   return {
     list: listRes.data || [],
     total: countRes.total,
-    page: Math.max(1, page),
-    pageSize: Math.min(pageSize, 100)
+    page,
+    pageSize
   }
 }
 
@@ -106,23 +76,23 @@ async function addDish(data, openid) {
   const { familyId, name, category, imageUrl } = data
 
   if (!familyId) {
-    throw new Error('家庭ID不能为空')
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
   }
   if (!name || !name.trim()) {
-    throw new Error('菜品名称不能为空')
+    throw new ApiError('INVALID_PARAM', '菜品名称不能为空')
   }
   if (!category || !VALID_CATEGORIES.includes(category)) {
-    throw new Error('菜品分类无效')
+    throw new ApiError('INVALID_PARAM', '菜品分类无效')
   }
 
-  await requireChef(familyId, openid)
+  await requireChef(db, familyId, openid)
 
   const now = new Date()
   const dish = {
     familyId,
     name: name.trim(),
     category,
-    imageUrl: imageUrl || '',
+    imageUrl: validateImageUrl(imageUrl, familyId),
     isHidden: false,
     cookCount: 0,
     createdBy: openid,
@@ -133,7 +103,7 @@ async function addDish(data, openid) {
   const res = await db.collection('dishes').add({ data: dish })
 
   return {
-    _id: res._id,
+    dishId: res._id,
     ...dish
   }
 }
@@ -143,38 +113,43 @@ async function updateDish(data, openid) {
   const { familyId, dishId, name, category, imageUrl } = data
 
   if (!familyId || !dishId) {
-    throw new Error('参数不完整')
+    throw new ApiError('INVALID_PARAM', '参数不完整')
   }
 
-  await requireChef(familyId, openid)
+  await requireChef(db, familyId, openid)
 
   // 校验菜品属于该家庭
-  await requireDishInFamily(familyId, dishId)
+  const oldDish = await requireDishInFamily(db, familyId, dishId)
 
   const updateData = {
     updatedAt: new Date()
   }
   if (name !== undefined) {
     if (!name || !name.trim()) {
-      throw new Error('菜品名称不能为空')
+      throw new ApiError('INVALID_PARAM', '菜品名称不能为空')
     }
     updateData.name = name.trim()
   }
   if (category !== undefined) {
     if (!VALID_CATEGORIES.includes(category)) {
-      throw new Error('菜品分类无效')
+      throw new ApiError('INVALID_PARAM', '菜品分类无效')
     }
     updateData.category = category
   }
   if (imageUrl !== undefined) {
-    updateData.imageUrl = imageUrl
+    updateData.imageUrl = validateImageUrl(imageUrl, familyId)
   }
 
   await db.collection('dishes').doc(dishId).update({
     data: updateData
   })
 
-  return { _id: dishId, ...updateData }
+  // 替换图片：保存成功后清理旧图片，避免孤儿文件（STORAGE-001）
+  if (imageUrl !== undefined && oldDish.imageUrl && updateData.imageUrl !== oldDish.imageUrl) {
+    await safeDeleteFiles(cloud, [oldDish.imageUrl])
+  }
+
+  return { dishId, ...updateData }
 }
 
 // 删除菜品
@@ -182,26 +157,23 @@ async function deleteDish(data, openid) {
   const { familyId, dishId } = data
 
   if (!familyId || !dishId) {
-    throw new Error('参数不完整')
+    throw new ApiError('INVALID_PARAM', '参数不完整')
   }
 
-  await requireChef(familyId, openid)
+  await requireChef(db, familyId, openid)
 
   // 校验菜品属于该家庭
-  await requireDishInFamily(familyId, dishId)
+  const oldDish = await requireDishInFamily(db, familyId, dishId)
 
   await db.collection('dishes').doc(dishId).remove()
 
-  // 同时删除该菜品相关的当日投票
-  const today = getTodayStr()
-  const votesRes = await db.collection('daily_votes')
-    .where({ familyId, dishId, date: today })
-    .get()
-  for (const v of (votesRes.data || [])) {
-    await db.collection('daily_votes').doc(v._id).remove()
-  }
+  // 清理当日投票（与 toggleHidden/chefCancel 共用同一清理逻辑）
+  await removeTodayVotes(db, familyId, dishId)
 
-  return { _id: dishId }
+  // 清理关联图片（尽力而为）
+  await safeDeleteFiles(cloud, [oldDish.imageUrl])
+
+  return { dishId }
 }
 
 // 切换菜品隐藏状态
@@ -209,16 +181,16 @@ async function toggleHidden(data, openid) {
   const { familyId, dishId, isHidden } = data
 
   if (!familyId || !dishId) {
-    throw new Error('参数不完整')
+    throw new ApiError('INVALID_PARAM', '参数不完整')
   }
   if (typeof isHidden !== 'boolean') {
-    throw new Error('isHidden 参数无效')
+    throw new ApiError('INVALID_PARAM', 'isHidden 参数无效')
   }
 
-  await requireChef(familyId, openid)
+  await requireChef(db, familyId, openid)
 
   // 校验菜品属于该家庭
-  await requireDishInFamily(familyId, dishId)
+  await requireDishInFamily(db, familyId, dishId)
 
   await db.collection('dishes').doc(dishId).update({
     data: {
@@ -227,29 +199,18 @@ async function toggleHidden(data, openid) {
     }
   })
 
-  // 如果隐藏菜品，同时删除该菜品当日投票
+  // 隐藏菜品时清理当日投票（与 chefCancel/deleteDish 一致；恢复时仅更新状态，不重复创建）
   if (isHidden) {
-    const today = getTodayStr()
-    const votesRes = await db.collection('daily_votes')
-      .where({ familyId, dishId, date: today })
-      .get()
-    for (const v of (votesRes.data || [])) {
-      await db.collection('daily_votes').doc(v._id).remove()
-    }
+    await removeTodayVotes(db, familyId, dishId)
   }
 
-  return { _id: dishId, isHidden }
-}
-
-// 获取东八区今天日期 YYYY-MM-DD
-function getTodayStr() {
-  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+  return { dishId, isHidden }
 }
 
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
-  const openid = getOpenid()
+  const openid = getOpenid(cloud)
   const action = event.action
 
   try {
@@ -273,6 +234,7 @@ exports.main = async (event, context) => {
       default:
         return {
           success: false,
+          errorCode: 'ACTION_UNKNOWN',
           message: `未知操作：${action}`
         }
     }
@@ -284,6 +246,7 @@ exports.main = async (event, context) => {
   } catch (err) {
     return {
       success: false,
+      errorCode: err.errorCode || 'INTERNAL_ERROR',
       message: err.message || '操作失败'
     }
   }
