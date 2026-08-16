@@ -232,6 +232,7 @@ Page({
     try {
       await voteApi.chefCancel(app.globalData.currentFamilyId, dishId);
       showSuccess('已撤下');
+      wx.vibrateShort({ type: 'light' });
       // 本地移除，保证其他设备也能通过 watcher 刷新（隐藏零投票菜品场景）
       const summaryList = this.data.summaryList.filter(item => item.dishId !== dishId);
       this.setData({
@@ -242,6 +243,20 @@ Page({
       console.error('撤下失败', err);
       showApiError(err, '撤下失败');
     }
+  },
+
+  // 菜品图加载失败：清空 imageUrl 回退 emoji 占位（裂图兜底）
+  onImageError(e) {
+    const index = e.currentTarget.dataset.index;
+    if (index === undefined) return;
+    this.setData({ [`summaryList[${index}].imageUrl`]: '' });
+  },
+
+  // 成员头像加载失败：清空 avatarUrl 回退渐变首字
+  onVoterImageError(e) {
+    const { dish, voter } = e.currentTarget.dataset;
+    if (dish === undefined || voter === undefined) return;
+    this.setData({ [`summaryList[${dish}].voters[${voter}].avatarUrl`]: '' });
   },
 
   // 下拉刷新

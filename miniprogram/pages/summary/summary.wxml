@@ -24,6 +24,7 @@
         <view
           class="summary-card"
           wx:for="{{summaryList}}"
+          wx:for-index="dishIndex"
           wx:key="dishId"
         >
           <view class="summary-main">
@@ -34,6 +35,8 @@
                 class="dish-thumb-img"
                 src="{{item.imageUrl}}"
                 mode="aspectFill"
+                data-index="{{dishIndex}}"
+                binderror="onImageError"
               />
               <view wx:else class="dish-thumb-placeholder">
                 <text class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
@@ -56,6 +59,9 @@
                       class="voter-avatar-img"
                       src="{{voter.avatarUrl}}"
                       mode="aspectFill"
+                      data-dish="{{dishIndex}}"
+                      data-voter="{{index}}"
+                      binderror="onVoterImageError"
                     />
                     <text wx:else class="voter-avatar-text">{{voter.avatarText}}</text>
                   </view>

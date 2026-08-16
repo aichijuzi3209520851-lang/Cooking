@@ -107,22 +107,18 @@
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: #FFFFFF;
   box-shadow: var(--shadow-accent);
+  /* 投票成功弹跳：类名从 outline 切换到 filled 时新节点挂载，动画自然播放 */
+  animation: vote-pop 0.3s ease;
+}
+
+@keyframes vote-pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 .btn-pill-outline {
   background: transparent;
   color: var(--color-accent);
   border: 2rpx solid var(--color-accent);
-}
-
-.chef-cancel {
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  color: var(--color-primary-red);
-  line-height: 1.2;
-  padding: 4rpx 8rpx;
-}
-
-.chef-cancel:active {
-  opacity: 0.6;
 }

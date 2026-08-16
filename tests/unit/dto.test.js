@@ -168,3 +168,27 @@ test('emojiOf：未知分类返回默认 emoji', () => {
   assert.equal(dto.emojiOf('meat'), '🍖');
   assert.equal(dto.emojiOf('unknown'), '🍽️');
 });
+
+test('mergePreservingOrder：保持旧顺序、更新内容、移除消失项、追加新项', () => {
+  const prev = [
+    { dishId: 'a', name: 'A', voters: [{ openid: 'u1' }] },
+    { dishId: 'b', name: 'B', voters: [] },
+    { dishId: 'c', name: 'C', voters: [] }
+  ];
+  const next = [
+    { dishId: 'b', name: 'B', voters: [{ openid: 'u2' }] },
+    { dishId: 'd', name: 'D', voters: [] },
+    { dishId: 'c', name: 'C', voters: [{ openid: 'u1' }, { openid: 'u2' }] }
+  ];
+  const merged = dto.mergePreservingOrder(prev, next);
+  // a 消失移除；b/c 保持原顺序但内容更新；d 追加末尾（即使 next 中排前面）
+  assert.deepEqual(merged.map(d => d.dishId), ['b', 'c', 'd']);
+  assert.equal(merged[0].voters.length, 1);
+  assert.equal(merged[1].voters.length, 2);
+});
+
+test('mergePreservingOrder：空旧列表原样返回，非法项被忽略', () => {
+  const next = [{ dishId: 'x', name: 'X' }, { name: '无ID' }, null];
+  assert.deepEqual(dto.mergePreservingOrder([], next).map(d => d.dishId), ['x']);
+  assert.deepEqual(dto.mergePreservingOrder(undefined, next).map(d => d.dishId), ['x']);
+});

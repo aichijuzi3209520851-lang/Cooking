@@ -19,6 +19,7 @@ Page({
     themeClass: '',
     currentDate: '',
     dateDisplay: '',
+    maxDate: '',
     historyList: [],
     loading: false,
     canGoNext: false
@@ -26,7 +27,7 @@ Page({
 
   onLoad() {
     const date = yesterday();
-    this.setData({ currentDate: date });
+    this.setData({ currentDate: date, maxDate: today() });
     this.updateDateDisplay(date);
   },
 
@@ -75,6 +76,15 @@ Page({
   onNextDay() {
     if (!this.data.canGoNext) return;
     this.shiftDate(1);
+  },
+
+  // 日期选择器直接跳转（picker end 已限制不晚于今天）
+  onDatePick(e) {
+    const value = e.detail.value;
+    if (!value || value > today()) return;
+    this.setData({ currentDate: value });
+    this.updateDateDisplay(value);
+    this.loadHistory();
   },
 
   // 加载历史记录

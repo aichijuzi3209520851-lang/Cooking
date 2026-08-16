@@ -5,9 +5,16 @@
     <view class="date-arrow" bindtap="onPrevDay">
       <text class="date-arrow-icon">‹</text>
     </view>
-    <view class="date-display">
-      <text class="date-text">{{dateDisplay}}</text>
-    </view>
+    <picker
+      mode="date"
+      value="{{currentDate}}"
+      end="{{maxDate}}"
+      bindchange="onDatePick"
+    >
+      <view class="date-display">
+        <text class="date-text">{{dateDisplay}}</text>
+      </view>
+    </picker>
     <view
       class="date-arrow {{canGoNext ? '' : 'date-arrow-disabled'}}"
       bindtap="onNextDay"
@@ -36,6 +43,6 @@
     wx:if="{{!loading && historyList.length === 0}}"
     icon="📅"
     title="这一天没有点菜记录"
-    description=""
+    description="往前翻翻其他日期吧"
   ></empty-state>
 </view>

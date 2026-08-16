@@ -13,6 +13,8 @@
         src="{{item.avatarUrl}}"
         mode="aspectFill"
         style="width:{{avatarSize}}rpx;height:{{avatarSize}}rpx;"
+        data-index="{{index}}"
+        binderror="onAvatarImgError"
       />
       <view
         wx:else

@@ -74,7 +74,7 @@ Page({
     });
 
     this.setToday();
-    this.loadData(true);
+    this.loadData(true, true);
     this.setupWatcher();
     this.scheduleMidnightRefresh();
   },
@@ -111,7 +111,7 @@ Page({
     this._midnightTimer = setTimeout(() => {
       this.setToday();
       this.setupWatcher();
-      this.loadData(true);
+      this.loadData(true, true);
       this.scheduleMidnightRefresh();
     }, Math.max(delay, 1000));
   },
@@ -188,8 +188,10 @@ Page({
 
   // ============ 数据加载（API-001/API-002/PERF-001） ============
 
-  // 同一时间只允许一个加载请求；期间的变更通过 _pendingReload 合并
-  async loadData(reset) {
+  // 同一时间只允许一个加载请求；期间的变更通过 _pendingReload 合并。
+  // sort=true 仅用于页面进入/下拉刷新/跨午夜（重新排序），
+  // 投票操作与 watcher 驱动的刷新保持现有顺序，避免卡片跳位。
+  async loadData(reset, sort = false) {
     if (this._loading) {
       this._pendingReload = true;
       return;
@@ -223,8 +225,11 @@ Page({
         this.setupWatcher();
       }
 
-      const pageDishes = dto.buildMenuList(dishList, groups, category);
-      const dishes = reset ? pageDishes : this.mergePages(pageDishes);
+      // 'all' 不参与投票分组过滤，归一化后传入
+      const pageDishes = dto.buildMenuList(dishList, groups, category === 'all' ? '' : category);
+      const dishes = reset && sort
+        ? pageDishes
+        : dto.mergePreservingOrder(this.data.dishes, pageDishes);
       const stats = dto.calcVoteStats(dishes);
 
       this.setData({
@@ -248,21 +253,12 @@ Page({
     }
   },
 
-  // 追加分页时按 dishId 去重合并
-  mergePages(newDishes) {
-    const map = {};
-    this.data.dishes.concat(newDishes).forEach(d => {
-      if (!map[d.dishId]) map[d.dishId] = d;
-    });
-    return Object.values(map);
-  },
-
   // 分类切换
   onCategoryTap(e) {
     const key = e.currentTarget.dataset.key;
     if (!key || key === this.data.selectedCategory) return;
     this.setData({ selectedCategory: key });
-    this.loadData(true);
+    this.loadData(true, true);
   },
 
   // 投票
@@ -276,6 +272,7 @@ Page({
 
     try {
       await voteApi.add(familyId, dish.dishId);
+      wx.vibrateShort({ type: 'light' });
     } catch (err) {
       console.error('点菜失败', err);
       showApiError(err, '点菜失败');
@@ -293,6 +290,7 @@ Page({
 
     try {
       await voteApi.cancel(familyId, dish.dishId);
+      wx.vibrateShort({ type: 'light' });
     } catch (err) {
       console.error('取消点菜失败', err);
       showApiError(err, '取消失败');
@@ -300,7 +298,7 @@ Page({
     }
   },
 
-  // 乐观更新
+    // 乐观更新：仅原地更新 voters，不重排（投票后卡片不跳位，进入页面/下拉时才排序）
   optimisticUpdate(dishId, isAdd) {
     const userId = this.data.currentUserId;
     const userInfo = app.globalData.userInfo || {};
@@ -323,13 +321,6 @@ Page({
       return d;
     });
 
-    dishes.sort((a, b) => {
-      const va = (a.voters || []).length;
-      const vb = (b.voters || []).length;
-      if (vb !== va) return vb - va;
-      return (b.cookCount || 0) - (a.cookCount || 0);
-    });
-
     this.setData({
       dishes,
       stats: dto.calcVoteStats(dishes)
@@ -350,7 +341,8 @@ Page({
     try {
       await voteApi.chefCancel(app.globalData.currentFamilyId, dish.dishId);
       showSuccess('已撤下');
-      // 撤下后菜品变为隐藏，刷新菜单保证最终状态一致
+      wx.vibrateShort({ type: 'light' });
+      // 撤下后菜品变为隐藏，保持当前顺序刷新（该菜品自然从列表消失）
       this.loadData(true);
     } catch (err) {
       console.error('撤下失败', err);
@@ -377,6 +369,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.loadData(true);
+    this.loadData(true, true);
   }
 });

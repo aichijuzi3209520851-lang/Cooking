@@ -1,5 +1,5 @@
 <!-- components/dish-card/dish-card.wxml -->
-<view class="dish-card">
+<view class="dish-card" bindlongpress="onLongPress">
   <!-- 左侧图片 -->
   <view class="dish-thumb">
     <image
@@ -7,6 +7,7 @@
       class="dish-thumb-img"
       src="{{dish.imageUrl}}"
       mode="aspectFill"
+      binderror="onImageError"
     />
     <view wx:else class="dish-thumb-placeholder">
       <text class="dish-thumb-emoji">{{emoji}}</text>
@@ -42,13 +43,6 @@
       bindtap="onVote"
     >
       我想吃
-    </view>
-    <view
-      wx:if="{{showChefCancel}}"
-      class="chef-cancel"
-      catchtap="onChefCancel"
-    >
-      撤下
     </view>
   </view>
 </view>

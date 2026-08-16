@@ -53,6 +53,7 @@
       <text class="stats-dot">·</text>
       <text class="stats-text"><text class="stats-num">{{stats.voterCount}}</text> 人参与</text>
     </view>
+    <text wx:if="{{isChef}}" class="chef-hint">长按菜品卡片可撤下这道菜</text>
 
     <!-- 分类筛选 -->
     <scroll-view class="category-scroll" scroll-x>

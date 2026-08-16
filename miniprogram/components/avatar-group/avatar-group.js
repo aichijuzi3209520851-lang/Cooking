@@ -95,6 +95,15 @@ Component({
       const index = e.currentTarget.dataset.index;
       const member = this.data.displayList[index];
       this.triggerEvent('avatartap', { member, index });
+    },
+
+    // 头像图片加载失败：清空 avatarUrl 回退到渐变首字（裂图兜底）
+    onAvatarImgError(e) {
+      const index = e.currentTarget.dataset.index;
+      if (index === undefined || !this.data.displayList[index]) return;
+      this.setData({
+        [`displayList[${index}].avatarUrl`]: ''
+      });
     }
   }
 });

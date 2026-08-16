@@ -163,6 +163,26 @@ function sortByVotes(list) {
   });
 }
 
+/**
+ * 保持现有展示顺序合并两次加载结果（防止投票/实时刷新导致卡片跳位）：
+ * 旧列表中的项按原顺序保留（内容更新为最新），已消失的项移除，新出现的项追加在末尾。
+ */
+function mergePreservingOrder(prevList, newList) {
+  const newMap = {};
+  (newList || []).forEach(d => {
+    if (d && d.dishId) newMap[d.dishId] = d;
+  });
+  const ordered = [];
+  (prevList || []).forEach(old => {
+    if (old && old.dishId && newMap[old.dishId]) {
+      ordered.push(newMap[old.dishId]);
+      delete newMap[old.dishId];
+    }
+  });
+  Object.keys(newMap).forEach(id => ordered.push(newMap[id]));
+  return ordered;
+}
+
 module.exports = {
   emojiOf,
   normalizeTodayList,
@@ -170,5 +190,7 @@ module.exports = {
   normalizeDish,
   buildMenuList,
   buildSummaryList,
-  calcVoteStats
+  calcVoteStats,
+  sortByVotes,
+  mergePreservingOrder
 };

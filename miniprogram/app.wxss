@@ -340,3 +340,18 @@ page.accent-pink { --color-accent: #E8467C; --color-accent-deep: #C72F63; }
 .pulse {
   animation: pulse 0.3s ease;
 }
+
+/* ===== 深色模式：菜品/头像图片轻微压暗，避免高亮图刺眼 ===== */
+@media (prefers-color-scheme: dark) {
+  .dish-thumb-img,
+  .voter-avatar-img,
+  .profile-avatar-img {
+    filter: brightness(0.9);
+  }
+}
+
+page.theme-dark .dish-thumb-img,
+page.theme-dark .voter-avatar-img,
+page.theme-dark .profile-avatar-img {
+  filter: brightness(0.9);
+}
