@@ -1,16 +1,34 @@
-// utils/theme.js - 主题管理
+// utils/theme.js - 主题家族管理（跟随系统 / 温馨暖调 / 清新绿意 / 静谧夜间）
+// 架构说明见 docs/theme-system-plan.md：
+// - 主题 class 统一挂在页面根 view（theme-xxx），CSS 选择器必须用 .theme-xxx（不能写 page.theme-xxx）
+// - 强调色体系已废除，强调色由各家族的 --color-accent 提供
 
 const app = getApp();
 
-// 导航栏/tabBar/窗口底色的亮暗两套取值，与 app.wxss 中的令牌保持一致
+const FAMILY_NAMES = {
+  warm: '温馨暖调',
+  fresh: '清新绿意',
+  dark: '静谧夜间'
+};
+
+// 各家族的导航栏 / tabBar / 窗口底色（与 app.wxss 令牌保持一致）
 const CHROME = {
-  light: {
+  warm: {
     navBg: '#FAF6F0',
     navFront: '#000000',
     tabBg: '#FFFFFF',
     tabColor: '#6F6459',
     tabSelected: '#D93A2B',
-    windowBg: '#FAF6F0',
+    windowBg: '#FFFDF9',
+    bgTextStyle: 'dark'
+  },
+  fresh: {
+    navBg: '#F0F7F1',
+    navFront: '#000000',
+    tabBg: '#FFFFFF',
+    tabColor: '#5C6B5F',
+    tabSelected: '#2F9E6E',
+    windowBg: '#FBFDF9',
     bgTextStyle: 'dark'
   },
   dark: {
@@ -43,37 +61,28 @@ function getSystemTheme() {
 }
 
 /**
- * 应用主题到页面
+ * 解析实际生效的家族：跟随系统时按系统深浅色映射，非法值回退温馨
+ */
+function resolveFamily(family) {
+  if (family === 'system') {
+    return getSystemTheme() === 'dark' ? 'dark' : 'warm';
+  }
+  return CHROME[family] ? family : 'warm';
+}
+
+/**
+ * 应用主题到页面：设置 chrome（导航/tabBar/窗口）并下发 themeClass
  */
 function applyTheme(page) {
-  let theme = app.globalData.theme || 'system';
-  let accentColor = app.globalData.accentColor || 'red';
-
-  // 旧版本默认色 blue 迁移为餐饮主题默认色 red
-  if (accentColor === 'blue') {
-    accentColor = 'red';
-    app.globalData.accentColor = 'red';
-    app.saveCache();
-  }
-
-  // 设置页面class
-  let themeClass = '';
-  if (theme === 'dark') {
-    themeClass = 'theme-dark';
-  } else if (theme === 'light') {
-    themeClass = 'theme-light';
-  }
-
-  const isDark = theme === 'dark' ||
-    (theme === 'system' && getSystemTheme() === 'dark');
-  const chrome = isDark ? CHROME.dark : CHROME.light;
+  const family = app.globalData.themeFamily || 'system';
+  const resolved = resolveFamily(family);
+  const chrome = CHROME[resolved];
 
   wx.setNavigationBarColor({
     frontColor: chrome.navFront,
     backgroundColor: chrome.navBg
   });
 
-  // 深色模式下 tabBar / 窗口底色 / 下拉刷新同步适配
   // setTabBarStyle 仅在 tab 页生效，非 tab 页调用走 fail 静默
   wx.setTabBarStyle({
     backgroundColor: chrome.tabBg,
@@ -91,41 +100,36 @@ function applyTheme(page) {
     fail() {}
   });
 
+  // resolvedTheme 供 util.getConfirmColor 等读取实际生效家族
+  app.globalData.resolvedTheme = resolved;
+
   page.setData({
-    themeClass: `${themeClass} accent-${accentColor}`,
-    isDark
+    themeClass: 'theme-' + resolved,
+    resolvedFamily: resolved,
+    resolvedFamilyName: FAMILY_NAMES[resolved],
+    isDark: resolved === 'dark'
   });
 }
 
 /**
- * 切换主题
+ * 切换主题家族并持久化
  */
-function setTheme(theme) {
-  app.globalData.theme = theme;
+function setThemeFamily(family) {
+  app.globalData.themeFamily = family;
   app.saveCache();
 }
 
 /**
- * 切换强调色
+ * 当前主题家族设置值（'system' | 'warm' | 'fresh' | 'dark'）
  */
-function setAccentColor(color) {
-  app.globalData.accentColor = color;
-  app.saveCache();
-}
-
-/**
- * 获取当前主题配置
- */
-function getThemeConfig() {
-  return {
-    theme: app.globalData.theme || 'system',
-    accentColor: app.globalData.accentColor || 'red'
-  };
+function getThemeFamily() {
+  return app.globalData.themeFamily || 'system';
 }
 
 module.exports = {
   applyTheme,
-  setTheme,
-  setAccentColor,
-  getThemeConfig
+  setThemeFamily,
+  getThemeFamily,
+  resolveFamily,
+  FAMILY_NAMES
 };

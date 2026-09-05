@@ -66,7 +66,8 @@ page {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== Dark Mode 暖黑（非纯黑反色） ===== */
+/* ===== Dark Mode 暖黑（媒体查询版：仅作冷启动首帧的跟随系统兜底，
+   运行时统一由 theme.js 挂 .theme-dark class 接管，两块内容保持一致） ===== */
 @media (prefers-color-scheme: dark) {
   page {
     --color-primary: #E8564A;
@@ -107,8 +108,9 @@ page {
   }
 }
 
-/* ===== Manual Dark Mode Class ===== */
-page.theme-dark {
+/* ===== Manual Dark（保留媒体查询双份内容：class 用于运行时切换，
+   媒体查询仅作为冷启动首帧（onShow 前）的跟随系统兜底 ===== */
+.theme-dark {
   --color-primary: #E8564A;
   --color-primary-green: #3DB584;
   --color-primary-orange: #F59543;
@@ -145,10 +147,8 @@ page.theme-dark {
   --img-filter: brightness(0.9);
 }
 
-/* ===== Manual Light Mode Class =====
-   系统深色 + 手动选「浅色」时，page.theme-light 的特异度高于
-   @media 内的 page，可正确覆盖回浅色令牌（否则浅色选项失效） */
-page.theme-light {
+/* ===== 温馨暖调（默认亮色主题；用于从夜间/清新切回，及系统深色下的手动亮色） ===== */
+.theme-warm {
   --color-primary: #D93A2B;
   --color-primary-green: #2F9E6E;
   --color-primary-orange: #F0821E;
@@ -185,32 +185,46 @@ page.theme-light {
   --img-filter: none;
 }
 
-/* ===== Accent Colors ===== */
-page.accent-red { --color-accent: #D93A2B; --color-accent-deep: #B42A1D; }
-page.accent-orange { --color-accent: #F0821E; --color-accent-deep: #D06A0F; }
-/* 金色低对比兜底：金底上的文字用深棕，大数字用深金；深色下改用亮金（G5） */
-page.accent-gold {
-  --color-accent: #E6A23C;
-  --color-accent-deep: #B8790F;
-  --color-on-accent: #403000;
-  --color-num-strong: #8A5B0B;
-}
-page.accent-green { --color-accent: #2F9E6E; --color-accent-deep: #21805A; }
-/* 兼容旧缓存数据 */
-page.accent-blue { --color-accent: #D93A2B; --color-accent-deep: #B42A1D; }
-page.accent-pink { --color-accent: #E8467C; --color-accent-deep: #C72F63; }
+/* ===== 清新绿意（「清晨菜市场」：葱青绿 + 薄荷白） ===== */
+.theme-fresh {
+  --color-primary: #2F9E6E;
+  --color-primary-green: #2F9E6E;
+  --color-primary-orange: #E6A23C;
+  --color-primary-red: #E02020;
+  --color-primary-purple: #5B8C7A;
+  --color-primary-pink: #E88A6E;
 
-@media (prefers-color-scheme: dark) {
-  page.accent-gold {
-    --color-accent-deep: #D9A648;
-    --color-num-strong: #E6B856;
-  }
+  --color-text-primary: #1F2B22;
+  --color-text-secondary: #5C6B5F;
+  --color-text-tertiary: #94A69A;
+
+  --color-bg: #FBFDF9;
+  --color-bg-secondary: #F0F7F1;
+  --color-bg-tertiary: #E3EFE6;
+
+  --color-card: #FFFFFF;
+  --color-card-inner: #F2F8F3;
+  --color-border: #E2EDE4;
+  --color-separator: rgba(47, 110, 70, 0.12);
+
+  --color-accent: #2F9E6E;
+  --color-accent-soft: rgba(47, 158, 110, 0.10);
+  --color-accent-deep: #1F7D54;
+  --color-gold: #E6A23C;
+  --color-cream: #E8F5EC;
+
+  --color-on-accent: #FFFFFF;
+  --color-num-strong: #1F7D54;
+
+  --shadow-card: 0 4rpx 16rpx rgba(47, 110, 70, 0.08);
+  --shadow-float: 0 12rpx 48rpx rgba(47, 110, 70, 0.14);
+  --shadow-accent: 0 8rpx 28rpx rgba(47, 158, 110, 0.30);
+
+  --img-filter: none;
 }
 
-page.theme-dark.accent-gold {
-  --color-accent-deep: #D9A648;
-  --color-num-strong: #E6B856;
-}
+/* 强调色体系已随主题家族制废除（从未生效的死代码，详见 docs/theme-system-plan.md）：
+   强调色由各主题家族的 --color-accent 统一提供 */
 
 /* ===== Global Utility Classes ===== */
 .container {

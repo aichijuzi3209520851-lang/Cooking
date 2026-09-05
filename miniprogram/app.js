@@ -8,8 +8,8 @@ App({
     currentFamilyId: null,
     currentRole: null, // chef / eater
     families: [],
-    theme: 'system',
-    accentColor: 'red',
+    themeFamily: 'system', // system / warm / fresh / dark
+    resolvedTheme: 'warm', // 实际生效家族（applyTheme 运行时回写）
     cloudEnv: config.cloudEnv || '' // 从 config.js 读取云开发环境ID
   },
 
@@ -28,6 +28,19 @@ App({
     // 加载本地缓存
     this.loadLocalCache();
 
+    // 跟随系统时，系统切换深浅色实时刷新当前页面（无需重进）
+    if (wx.onThemeChange) {
+      wx.onThemeChange(() => {
+        if (this.globalData.themeFamily !== 'system') return;
+        const pages = getCurrentPages();
+        const current = pages[pages.length - 1];
+        if (!current) return;
+        // 惰性加载：避免 App 注册完成前 getApp() 未就绪
+        const theme = require('./utils/theme.js');
+        theme.applyTheme(current);
+      });
+    }
+
     // 登录（AUTH-001）：提供可等待的 ready 状态，页面据此做路由决策
     this.loginReady = new Promise((resolve) => {
       this._resolveLogin = resolve;
@@ -44,8 +57,9 @@ App({
         this.globalData.currentFamilyId = cache.currentFamilyId || null;
         this.globalData.currentRole = cache.currentRole || null;
         this.globalData.families = cache.families || [];
-        this.globalData.theme = cache.theme || 'system';
-        this.globalData.accentColor = cache.accentColor || 'red';
+        // 主题家族迁移：旧版 theme==='dark' 映射为夜间，其余归入跟随系统；accentColor 已废弃
+        this.globalData.themeFamily = cache.themeFamily ||
+          (cache.theme === 'dark' ? 'dark' : 'system');
       }
     } catch (e) {
       console.error('加载缓存失败', e);
@@ -60,8 +74,7 @@ App({
         currentFamilyId: this.globalData.currentFamilyId,
         currentRole: this.globalData.currentRole,
         families: this.globalData.families,
-        theme: this.globalData.theme,
-        accentColor: this.globalData.accentColor
+        themeFamily: this.globalData.themeFamily
       });
     } catch (e) {
       console.error('保存缓存失败', e);
@@ -122,8 +135,12 @@ App({
         this.globalData.userInfo = data.user;
         this.globalData.families = data.families || [];
         this.globalData.currentFamilyId = data.user.currentFamilyId || null;
-        this.globalData.theme = data.user.theme || 'system';
-        this.globalData.accentColor = data.user.accentColor || 'red';
+        // 服务端主题字段映射到家族：dark→夜间，light→温馨，其余→跟随系统
+        const serverTheme = data.user.theme;
+        this.globalData.themeFamily =
+          serverTheme === 'dark' ? 'dark' :
+          serverTheme === 'light' ? 'warm' :
+          (this.globalData.themeFamily || 'system');
 
         // 服务端已修正失效的 currentFamilyId（AUTH-001）
         // 获取当前家庭的角色

@@ -168,22 +168,20 @@ function normalizeJoinCode(code) {
 }
 
 /**
- * 获取强调色的加深档色值（用于 wx.showModal confirmColor 等原生控件文字，
- * 取 accent-deep 保证浅色底上的可读性）
+ * 原生弹窗确认色：按实际生效主题家族取对应强调色深档（保证浅色底可读）
  */
-function getAccentHex() {
+function getConfirmColor() {
   const map = {
-    red: '#B42A1D',
-    orange: '#D06A0F',
-    gold: '#B8790F',
-    green: '#21805A'
+    warm: '#B42A1D',
+    fresh: '#1F7D54',
+    dark: '#B42A1D'
   };
   try {
     const app = getApp();
-    const key = app && app.globalData && app.globalData.accentColor;
-    return map[key] || map.red;
+    const resolved = app && app.globalData && app.globalData.resolvedTheme;
+    return map[resolved] || map.warm;
   } catch (e) {
-    return map.red;
+    return map.warm;
   }
 }
 
@@ -195,7 +193,7 @@ function showConfirm(title, content) {
     wx.showModal({
       title,
       content,
-      confirmColor: getAccentHex(),
+      confirmColor: getConfirmColor(),
       success(res) {
         resolve(res.confirm);
       }
@@ -216,7 +214,7 @@ module.exports = {
   getRoleEmoji,
   getAvatarColor,
   getAvatarText,
-  getAccentHex,
+  getConfirmColor,
   showSuccess,
   showError,
   showApiError,

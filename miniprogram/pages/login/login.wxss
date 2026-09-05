@@ -31,6 +31,20 @@
   --float-opacity: 0.45;
 }
 
+/* 清新绿意主题：光晕与漂浮物转绿色调（优先级高于深色媒体查询兜底） */
+.login-page.theme-fresh {
+  --glow-a: rgba(47, 158, 110, 0.14);
+  --glow-b: rgba(47, 158, 110, 0.08);
+  --float-opacity: 0.8;
+}
+
+/* 系统深色下手动选温馨暖调：保持亮色氛围，不被媒体查询压暗 */
+.login-page.theme-warm {
+  --glow-a: rgba(230, 162, 60, 0.16);
+  --glow-b: rgba(217, 58, 43, 0.10);
+  --float-opacity: 0.8;
+}
+
 .login-top-space {
   /* 自定义导航（navigationStyle: custom）后需自行避让状态栏/刘海 */
   height: calc(env(safe-area-inset-top) + 48rpx);

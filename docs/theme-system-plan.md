@@ -200,3 +200,17 @@ const FAMILIES = {
 - [ ] 杀掉小程序重进：主题选择持久化正确；旧版本升级用户（storage 里有 theme/accentColor）迁移后不白屏不锁死
 - [ ] 登录页漂浮层光晕在清新主题下呈现绿色调（令牌联动验证）
 - [ ] 语法/lint/测试全绿；旧 `theme/accentColor` 字段相关测试同步更新
+
+---
+
+## 8. 实施记录（2026-09-05，已选型：方案一 + 暖黑夜间 + 废除强调色）
+
+已全部落地，语法 40/40、lint、测试 68/68 全绿：
+
+- **R1 修复**：app.wxss 所有主题选择器去掉 `page.` 前缀（`.theme-dark`/`.theme-warm`/`.theme-fresh`），主题 class 终于能命中根 view；媒体查询保留仅作冷启动首帧兜底（注释已说明双份一致性约束）
+- **accent 体系删除**：`page.accent-*` 全部移除；`--color-on-accent`/`--color-num-strong` 令牌保留并随家族取值
+- **theme.js 重写**：`FAMILIES`（warm/fresh/dark）三套 CHROME（导航/tabBar/窗口全量），`resolveFamily()`（system→系统深浅映射），`applyTheme()` 下发 `themeClass/resolvedFamily/resolvedFamilyName/isDark` 并回写 `app.globalData.resolvedTheme`
+- **app.js**：`themeFamily` 全局字段；旧缓存迁移（`theme:'dark'`→夜间，其余→system，accentColor 废弃）；服务端 `user.theme` 映射（dark→dark / light→warm / 其余→跟随系统）；`wx.onThemeChange` 注册——跟随系统时切系统深浅色**实时刷新当前页**（惰性 require 避开 getApp 时序）
+- **设置页重设计**：4 张主题色卡（纯 CSS mini 预览：背景块+按钮+文字线，跟随系统卡为暖/夜对半拼），选中态 accent 描边+✓，跟随系统卡实时显示「当前：xx」
+- **配套**：`util.getConfirmColor()` 家族感知弹窗确认色（替代 getAccentHex）；登录页漂浮光晕 `.theme-fresh` 转绿 / `.theme-warm` 保持暖调；清新家族下图片不压暗（`--img-filter: none`）
+- 深浅色内容区真实切换的验证点：手动选「静谧夜间」在系统浅色下内容区也应变深（R1 修复的直接证据）

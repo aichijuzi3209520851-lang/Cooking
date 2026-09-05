@@ -13,102 +13,132 @@
 .section-title {
   padding: 0 8rpx 16rpx;
   font-size: 26rpx;
-}
-
-/* iOS 分组列表 */
-.group-list {
-  padding: 0;
-  overflow: hidden;
-}
-
-.group-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 32rpx;
-  border-bottom: 1rpx solid var(--color-separator);
-  transition: background 0.2s ease;
-}
-
-.group-item:last-child {
-  border-bottom: none;
-}
-
-.group-item:active {
-  background: var(--color-bg-tertiary);
-}
-
-.group-item-left {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.group-item-icon {
-  font-size: 36rpx;
-  line-height: 1;
-}
-
-.group-item-name {
-  font-size: 32rpx;
-  color: var(--color-text-primary);
-}
-
-.group-item-check {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-/* 强调色 */
-.accent-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8rpx 0;
-}
-
-.accent-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-  flex: 1;
-}
-
-.accent-circle {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  border: 4rpx solid transparent;
-  transition: transform 0.2s ease;
-}
-
-.accent-circle:active {
-  transform: scale(0.92);
-}
-
-.accent-circle-selected {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 4rpx var(--color-bg-secondary);
-}
-
-.accent-check {
-  color: var(--color-on-accent);
-  font-size: 40rpx;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.accent-name {
-  font-size: 26rpx;
   color: var(--color-text-secondary);
 }
 
-/* 预览提示 */
+/* ===== 主题色卡选择器 ===== */
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.theme-card {
+  width: calc((100% - 20rpx) / 2);
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 20rpx;
+  box-sizing: border-box;
+  border: 3rpx solid transparent;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.theme-card:active {
+  transform: scale(0.97);
+}
+
+.theme-card-active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 6rpx var(--color-accent-soft);
+}
+
+/* mini 预览块：纯 CSS 绘制，颜色为各主题定值（不随当前主题变化才有预览意义） */
+.pv {
+  position: relative;
+  height: 160rpx;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14rpx;
+  overflow: hidden;
+}
+
+.pv-warm { background: #FAF6F0; }
+.pv-fresh { background: #F0F7F1; }
+.pv-dark { background: #201B16; }
+
+.pv-line {
+  height: 10rpx;
+  border-radius: 5rpx;
+}
+
+.pv-title { width: 65%; background: #2B2118; }
+.pv-fresh .pv-title { background: #1F2B22; }
+.pv-dark .pv-title { background: #F5EFE8; }
+
+.pv-short { width: 42%; background: #B9AB98; }
+.pv-fresh .pv-short { background: #94A69A; }
+.pv-dark .pv-short { background: #6E645A; }
+
+.pv-btn {
+  height: 34rpx;
+  width: 58%;
+  border-radius: 17rpx;
+}
+
+.pv-warm .pv-btn { background: #D93A2B; }
+.pv-fresh .pv-btn { background: #2F9E6E; }
+.pv-dark .pv-btn { background: #E8564A; }
+
+/* 跟随系统：暖调/夜间对半拼 */
+.pv-system {
+  flex-direction: row;
+  padding: 0;
+  gap: 0;
+}
+
+.pv-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv-half-warm { background: #FAF6F0; }
+.pv-half-dark { background: #201B16; }
+
+.pv-half .pv-btn {
+  width: 56rpx;
+  height: 28rpx;
+}
+
+.pv-btn-warm { background: #D93A2B; }
+.pv-btn-dark { background: #E8564A; }
+
+.theme-card-check {
+  position: absolute;
+  top: 14rpx;
+  right: 14rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-card-name {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.theme-card-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+
+/* 底部提示 */
 .preview-tip {
   display: flex;
   justify-content: center;

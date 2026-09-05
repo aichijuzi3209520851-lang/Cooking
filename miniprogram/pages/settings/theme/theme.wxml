@@ -1,49 +1,40 @@
 <!--pages/settings/theme/theme.wxml-->
 <view class="container theme-page {{themeClass}}">
-  <!-- 外观模式 -->
+  <!-- 外观主题：4 张色卡，所见即所得 -->
   <view class="section">
-    <view class="section-title caption">外观</view>
-    <view class="card group-list">
+    <view class="section-title">外观主题</view>
+    <view class="theme-grid">
       <view
-        class="group-item"
-        wx:for="{{themeOptions}}"
+        class="theme-card {{themeFamily === item.key ? 'theme-card-active' : ''}}"
+        wx:for="{{familyOptions}}"
         wx:key="key"
         data-key="{{item.key}}"
-        bindtap="onSelectTheme"
+        bindtap="onSelectFamily"
       >
-        <view class="group-item-left">
-          <text class="group-item-icon">{{item.icon}}</text>
-          <text class="group-item-name">{{item.name}}</text>
+        <view class="pv pv-{{item.key}}">
+          <!-- 跟随系统：暖调/夜间对半预览 -->
+          <block wx:if="{{item.key === 'system'}}">
+            <view class="pv-half pv-half-warm">
+              <view class="pv-btn pv-btn-warm"></view>
+            </view>
+            <view class="pv-half pv-half-dark">
+              <view class="pv-btn pv-btn-dark"></view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="pv-line pv-title"></view>
+            <view class="pv-btn"></view>
+            <view class="pv-line pv-short"></view>
+          </block>
+          <view class="theme-card-check" wx:if="{{themeFamily === item.key}}">✓</view>
         </view>
-        <text class="group-item-check" wx:if="{{theme === item.key}}">✓</text>
+        <view class="theme-card-name">{{item.name}}</view>
+        <view class="theme-card-sub" wx:if="{{item.key === 'system'}}">当前：{{resolvedFamilyName}}</view>
       </view>
     </view>
   </view>
 
-  <!-- 强调色 -->
-  <view class="section">
-    <view class="section-title caption">强调色</view>
-    <view class="accent-row">
-      <view
-        class="accent-item"
-        wx:for="{{accentOptions}}"
-        wx:key="key"
-        data-key="{{item.key}}"
-        bindtap="onSelectAccent"
-      >
-        <view
-          class="accent-circle {{accentColor === item.key ? 'accent-circle-selected' : ''}}"
-          style="background-color: {{item.color}};"
-        >
-          <text class="accent-check" wx:if="{{accentColor === item.key}}">✓</text>
-        </view>
-        <text class="accent-name">{{item.name}}</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 预览提示 -->
   <view class="preview-tip">
-    <text class="caption">设置将立即生效</text>
+    <text class="caption">设置立即生效，所有页面同步切换</text>
   </view>
 </view>
