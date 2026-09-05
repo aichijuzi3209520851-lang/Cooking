@@ -5,32 +5,36 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 48rpx calc(env(safe-area-inset-bottom) + 48rpx);
+  padding: 0 48rpx calc(env(safe-area-inset-bottom) + 44rpx);
   background:
     linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 58%, var(--color-cream) 100%);
 }
 
 .login-top-space {
   /* 自定义导航（navigationStyle: custom）后需自行避让状态栏/刘海 */
-  height: calc(env(safe-area-inset-top) + 100rpx);
+  height: calc(env(safe-area-inset-top) + 48rpx);
   flex-shrink: 0;
 }
 
+/* ===== 品牌区：占据剩余空间并垂直居中，让页面重心落在中部 ===== */
 .login-brand {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 32rpx 0;
 }
 
 .login-mark {
   position: relative;
-  width: 176rpx;
-  height: 176rpx;
+  width: 168rpx;
+  height: 168rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
-  border-radius: 56rpx;
+  margin-bottom: 40rpx;
+  border-radius: 52rpx;
   background: var(--color-cream);
   border: 2rpx solid rgba(217, 58, 43, 0.12);
   box-shadow: var(--shadow-float);
@@ -52,7 +56,7 @@
 .login-mark-emoji {
   position: relative;
   z-index: 1;
-  font-size: 96rpx;
+  font-size: 92rpx;
   line-height: 1;
   transform: rotate(4deg);
 }
@@ -81,9 +85,10 @@
 
 .login-title {
   color: var(--color-text-primary);
-  font-size: 68rpx;
+  font-size: 72rpx;
   font-weight: 800;
   line-height: 1.2;
+  letter-spacing: 2rpx;
 }
 
 .login-title-accent {
@@ -91,34 +96,36 @@
 }
 
 .login-subtitle {
-  margin-top: 18rpx;
+  margin-top: 20rpx;
   color: var(--color-text-secondary);
   font-size: 26rpx;
   line-height: 1.5;
+  letter-spacing: 1rpx;
 }
 
+/* ===== 登录卡片：内容居中，加大内边距与圆角，观感更聚拢 ===== */
 .login-panel {
   width: 100%;
   box-sizing: border-box;
-  margin-top: 76rpx;
-  padding: 40rpx 36rpx 34rpx;
-  border-radius: 32rpx;
+  padding: 48rpx 44rpx 42rpx;
+  border-radius: 40rpx;
   background: var(--color-card);
   border: 1rpx solid var(--color-border);
   box-shadow: var(--shadow-float);
+  text-align: center;
 }
 
 .login-panel-kicker {
   color: var(--color-accent);
   font-size: 22rpx;
   font-weight: 700;
-  letter-spacing: 3rpx;
+  letter-spacing: 4rpx;
 }
 
 .login-panel-title {
   margin-top: 14rpx;
   color: var(--color-text-primary);
-  font-size: 38rpx;
+  font-size: 40rpx;
   font-weight: 800;
   line-height: 1.35;
 }
@@ -136,7 +143,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 36rpx;
+  margin-top: 40rpx;
   border: none;
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
@@ -167,7 +174,7 @@
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  margin-top: 26rpx;
+  margin-top: 24rpx;
   color: var(--color-text-secondary);
   font-size: 24rpx;
 }
@@ -181,12 +188,13 @@
   display: flex;
   align-items: flex-start;
   gap: 12rpx;
-  margin-top: 28rpx;
-  padding: 18rpx 20rpx;
+  margin-top: 26rpx;
+  padding: 18rpx 22rpx;
   border-radius: var(--radius-md);
-  /* 错误提示配色固定为红系，不随强调色漂移 */
+  /* 错误提示配色固定为红系，不随强调色漂移；长文案保持左对齐易读 */
   background: rgba(224, 32, 32, 0.08);
   border: 1rpx solid rgba(224, 32, 32, 0.20);
+  text-align: left;
 }
 
 .login-error-icon {
@@ -211,9 +219,10 @@
   line-height: 1.5;
 }
 
+/* ===== 底部标语 ===== */
 .login-footer {
-  margin-top: auto;
-  padding-top: 44rpx;
+  margin-top: 44rpx;
   color: var(--color-text-tertiary);
   font-size: 24rpx;
+  letter-spacing: 2rpx;
 }
