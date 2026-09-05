@@ -27,6 +27,7 @@
 - [业务流程](#业务流程)
 - [UI 设计规范](#ui-设计规范)
 - [定时任务](#定时任务)
+- [开发与测试](#开发与测试)
 - [项目统计](#项目统计)
 - [常见问题](#常见问题)
 - [许可协议](#许可协议)
@@ -82,9 +83,17 @@
 - 历史页按日期回看每天的最终菜单与得票明细
 - 数据归档至 `vote_history` 集合，永久可追溯
 
-### 5. 主题定制
-- 内置 4 套餐饮品牌强调色：**辣椒红 / 焦糖橙 / 姜黄 / 葱青**
-- 主题偏好云端同步，多端一致
+### 5. 主题系统
+- **三大主题家族 + 跟随系统**：温馨暖调（辣椒红×米白）/ 清新绿意（葱青绿×薄荷白）/ 静谧夜间（暖黑「深夜食堂」）
+- **跟随系统实时联动**：系统切深浅色，小程序不重启即时切换（`wx.onThemeChange`）
+- **全量联动**：内容区配色、导航栏、tabBar 选中图标与文字色、下拉刷新底色、原生弹窗确认色随家族整体切换
+- 主题设置页为 4 张纯 CSS 色卡预览（所见即所得），点击立即全页生效；偏好本地持久化 + 云端同步
+
+### 6. 视觉体验
+- **登录页**：沉浸式自定义导航 + 7 个食物图标漂浮动效 + 重力感应视差（倾斜手机，漂浮层与品牌区反向位移）
+- **tabBar**：面性圆润风格图标（碗筷/清单/人形），选中态颜色随主题家族切换
+- **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史）与菜品分类占位图均为定制 SVG 插画，裂图自动回退 emoji
+- **交互细节**：投票成功弹跳动效 + 震动反馈、菜单页首屏骨架屏、下拉刷新、实时数据监听（watcher）多端同步
 
 ---
 
@@ -132,33 +141,38 @@ miniprogram-11/
 ├── miniprogram/                  # 小程序前端
 │   ├── app.js                    # 应用入口：云环境初始化、静默登录、全局状态
 │   ├── app.json                  # 页面路由、TabBar（点菜/汇总/我的）、窗口配置
-│   ├── app.wxss                  # 全局设计系统：暖色主题变量、通用组件样式
+│   ├── app.wxss                  # 全局设计系统：三主题家族变量、通用组件样式
 │   ├── sitemap.json
+│   ├── images/                   # 图片素材（生图模型产出 + 开发整合）
+│   │   ├── tabbar/               #   导航图标（PNG，4 配色 × 3 图标，随主题切换）
+│   │   ├── login/                #   登录页漂浮 SVG 图标（7 个食物造型）
+│   │   ├── empty/                #   空状态插画（无家庭/空菜谱/无人点菜/无历史）
+│   │   └── category/             #   菜品分类占位插画（荤/素/汤/主食/凉菜）
 │   ├── components/               # 自定义组件
 │   │   ├── avatar-group/         #   成员头像组（自动生成暖色渐变头像）
 │   │   ├── dish-card/            #   菜品卡片（缩略图、票数、投票按钮）
-│   │   └── empty-state/          #   空状态引导组件
+│   │   └── empty-state/          #   空状态引导组件（插画优先、emoji 兜底）
 │   ├── pages/
-│   │   ├── login/                # 登录首屏：品牌展示、微信快捷登录、失败重试
+│   │   ├── login/                # 登录首屏：沉浸式品牌页、漂浮动效、微信快捷登录
 │   │   ├── welcome/              # 新用户入口：创建或加入家庭
 │   │   ├── role/                 # 角色选择：掌勺人 / 干饭人
 │   │   ├── family/
 │   │   │   ├── create/           #   创建家庭（生成 6 位加入码）
-│   │   │   ├── join/             #   通过加入码加入家庭
+│   │   │   ├── join/             #   通过 6 位加入码加入（输满自动提交）
 │   │   │   └── manage/           #   家庭管理（成员、角色、加入码复制）
-│   │   ├── menu/                 # [Tab] 点菜首页：分类胶囊筛选 + 菜品流
+│   │   ├── menu/                 # [Tab] 点菜首页：分类胶囊筛选 + 菜品流 + 骨架屏
 │   │   ├── summary/              # [Tab] 汇总页：当日投票结果
 │   │   ├── profile/              # [Tab] 我的：家庭/角色/主题/历史入口
 │   │   ├── dishes/
 │   │   │   ├── list/             #   菜谱管理列表（掌勺人）
 │   │   │   └── edit/             #   菜品新增/编辑表单
-│   │   ├── history/              # 历史菜单回看
+│   │   ├── history/              # 历史菜单回看（日期选择器）
 │   │   └── settings/
-│   │       └── theme/            #   主题强调色设置
+│   │       └── theme/            #   主题设置：4 张色卡预览选择器
 │   └── utils/
 │       ├── api.js                #   云函数调用封装（dishApi/familyApi/voteApi…）
 │       ├── dto.js                #   DTO 转换层：云函数返回 → 页面展示数据（纯函数，可单测）
-│       ├── theme.js              #   主题应用与缓存迁移
+│       ├── theme.js              #   主题家族管理：解析、导航/tabBar 联动、旧字段迁移
 │       └── util.js               #   日期格式化、防抖节流、分类枚举、交互反馈工具
 │
 ├── cloudfunctions/               # 云函数
@@ -171,10 +185,19 @@ miniprogram-11/
 │   └── dailyReset/               # 定时任务：每日归档投票、重置菜品状态
 │
 ├── tests/                        # 测试
-│   ├── unit/                     # 单元测试（dto.test.js、date.test.js）
-│   └── contracts/                # 契约测试
+│   ├── unit/                     # 单元测试（dto / date / cloud-shared）
+│   └── contracts/                # 契约测试（云函数 API 契约 + 前端关键行为）
 │
-├── docs/deployment/              # 部署文档与安全规则
+├── docs/                         # 项目文档
+│   ├── deployment/               #   部署文档与数据库安全规则
+│   ├── theme-system-plan.md      #   主题系统方案与实施记录
+│   ├── ui-audit-plan.md          #   UI/UX 审查与优化方案
+│   ├── login-animation-plan.md   #   登录页动效方案
+│   ├── image-asset-generation-brief.md  # 插画素材生成需求单
+│   └── tabbar-icon-brief.md      #   tabBar 图标生成需求单
+├── scripts/                      # 工程脚本（语法检查 / lint）
+├── .github/workflows/            # CI：push/PR 自动跑语法 + lint + 测试
+├── SVG/                          # 素材源档（生图模型原始输出）
 ├── project.config.json           # 开发者工具项目配置（appid、编译选项）
 ├── project.private.config.json   # 个人私有配置（不入库）
 └── README.md
@@ -189,8 +212,8 @@ miniprogram-11/
 | 组件 | 目录 | 职责 | 属性 / 特性 |
 |:---|:---|:---|:---|
 | **avatar-group** | `components/avatar-group/` | 成员头像组 | 根据昵称哈希自动生成 8 种暖色渐变头像，首字母显示，支持多头像堆叠 |
-| **dish-card** | `components/dish-card/` | 菜品卡片 | 菜品缩略图 + emoji 占位、实时票数气泡、投票/取消按钮、隐藏态标记 |
-| **empty-state** | `components/empty-state/` | 空状态引导 | 无菜品/无投票/无历史等场景的友好引导，支持自定义 emoji、标题、操作按钮 |
+| **dish-card** | `components/dish-card/` | 菜品卡片 | 菜品缩略图 + 分类插画占位、实时票数气泡、投票/取消按钮（≥44px 热区）、长按撤下（chef）、隐藏态标记 |
+| **empty-state** | `components/empty-state/` | 空状态引导 | SVG 插画优先展示，裂图自动回退 emoji；支持自定义标题与描述 |
 
 ### 工具模块
 
@@ -198,8 +221,8 @@ miniprogram-11/
 |:---|:---|:---|
 | `utils/api.js` | 统一云函数调用封装 | 自定义 `ApiError` 类型（携带稳定 `errorCode`），不做自动 toast，由页面统一处理 |
 | `utils/dto.js` | DTO 转换层 | **纯函数、零依赖**，`normalizeTodayList`/`buildMenuList`/`buildSummaryList` 等，可在 Node 环境直接 `require` 测试 |
-| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、分类枚举（5 类 + emoji）、头像颜色生成、`showApiError` 统一错误展示 |
-| `utils/theme.js` | 主题管理 | 主题应用（CSS 类名切换）、缓存迁移兼容 |
+| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、分类枚举（5 类 + emoji）、头像颜色生成、家族感知弹窗确认色、`showApiError` 统一错误展示 |
+| `utils/theme.js` | 主题家族管理 | 家族解析（跟随系统→深浅映射）、导航/tabBar/窗口联动、主题 class 下发、旧字段缓存迁移 |
 
 > **DTO 层契约**：`vote.todayList` 返回 `{ date, groups[] }`，group 含 `dishId/dishName/category/imageUrl/isHidden/voters[]`；前端统一使用 `dishId` 作为业务 ID，禁止页面猜测 `_id` 格式。
 
@@ -212,7 +235,7 @@ miniprogram-11/
 | 依赖 | 要求 |
 |:---|:---|
 | 微信开发者工具 | 最新稳定版，并开启「云开发」能力 |
-| Node.js | ≥ 14（用于云函数本地调试与 CLI） |
+| Node.js | ≥ 18（本地跑测试与工程脚本，云函数运行时另有版本） |
 | 微信小程序账号 | 已完成注册，具备云开发使用权限 |
 | 云开发环境 | 已开通（个人版套餐即可） |
 
@@ -260,6 +283,13 @@ users  families  family_members  dishes  daily_votes  vote_history  notify_ledge
 
 点击开发者工具「编译」，即可在模拟器中体验完整流程：
 **登录 → 创建/加入家庭 → 添加菜品 → 每日投票 → 查看汇总**
+
+本地也可以跑工程检查与测试（详见[开发与测试](#开发与测试)）：
+
+```bash
+npm install   # 仅安装 devDependencies（无运行时依赖）
+npm test
+```
 
 ---
 
@@ -322,7 +352,7 @@ tcb fn deploy dailyReset -e <环境ID> --force
 
 | 集合 | 职责 | 关键字段 |
 |:---|:---|:---|
-| `users` | 用户档案 | `_id`(openid)、`currentFamilyId`、`theme`、`accentColor`、`notifyEnabled`、`notifyStatus` |
+| `users` | 用户档案 | `_id`(openid)、`currentFamilyId`、`theme`(system/light/dark，前端映射主题家族)、`notifyEnabled`、`notifyStatus` |
 | `families` | 家庭 | `name`、`joinCode`(唯一)、`memberCount`、`creatorId` |
 | `family_members` | 成员关系 | `_id`=`m_{familyId}_{userId}`、`familyId`、`userId`、`role`(chef/eater)、`joinedAt` |
 | `dishes` | 菜品 | `familyId`、`name`、`category`、`imageUrl`、`isHidden`、`cookCount`(累计被点次数) |
@@ -527,12 +557,14 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 `utils/dto.js` 作为纯函数转换层，将云函数返回的原始数据归一化为页面展示格式。所有字段缺失均有默认值填充，防止 `undefined` 引发渲染异常。该模块不依赖 `wx` 运行时，可直接在 Node 环境单元测试。
 
-### 5. CSS 变量驱动的主题系统
+### 5. CSS 变量驱动的主题家族系统
 
-全站使用 `var(--color-*)` 语义化 token，通过 `page` 元素的 CSS 类名切换实现：
-- 亮/暗模式：`@media (prefers-color-scheme: dark)` 自动适配 + `.theme-dark` 手动切换
-- 强调色切换：`.accent-red` / `.accent-orange` / `.accent-gold` / `.accent-green`
-- 暖色阴影体系：`rgba(160, 110, 60, 0.08)` 暖棕色调阴影，非冷灰，强化餐饮品牌感
+全站使用 `var(--color-*)` 语义化 token，主题以「家族」为单位整体切换：
+
+- 三大家族：`.theme-warm`（温馨暖调）/ `.theme-fresh`（清新绿意）/ `.theme-dark`（静谧夜间），每套含背景/卡片/文字/强调色/阴影全量令牌
+- 运行时由 `utils/theme.js` 统一决策并在页面根节点挂 class；`@media (prefers-color-scheme: dark)` 仅作冷启动首帧兜底，两套定义保持一致
+- 导航栏 / tabBar（含选中图标）/ 窗口底色 / 下拉刷新样式经 `wx.set*` API 与内容区同步切换；跟随系统时监听 `wx.onThemeChange` 实时响应
+- 暖色阴影体系：浅色 `rgba(160, 110, 60, 0.08)` 暖棕色调阴影，深色改用发丝描边保持卡片层级，强化餐饮品牌感
 
 ### 6. 定时任务安全窗口
 
@@ -587,14 +619,23 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 小程序采用**餐饮品牌视觉风格**（参考费大厨等国民餐饮品牌），强调食欲感与暖调氛围。
 
-### 色彩系统
+### 三大主题家族色板
 
-| Token | 值 | 用途 |
-|:---|:---|:---|
-| `--color-primary` | `#D93A2B` 辣椒红 | 品牌主色、主按钮、选中态 |
-| `--color-accent` | `#E6A23C` 焦糖橙 | 强调、渐变辅色 |
-| `--color-bg` | `#FFFDF9` 米白 | 页面背景 |
-| `--color-cream` | `#FAF3E8` 奶油色 | 横幅、占位底色 |
+| 家族 | 背景 | 卡片 | 主文字 | 强调色 | 气质 |
+|:---|:---|:---|:---|:---|:---|
+| 温馨暖调（默认） | `#FFFDF9` / `#FAF6F0` | `#FFFFFF` | `#2B2118` | `#D93A2B` 辣椒红 | 深夜食堂的暖 |
+| 清新绿意 | `#FBFDF9` / `#F0F7F1` | `#FFFFFF` | `#1F2B22` | `#2F9E6E` 葱青绿 | 清晨菜市场的鲜 |
+| 静谧夜间 | `#17130F` / `#201B16` | `#2A241D` | `#F5EFE8` | `#E8564A` 珊瑚红 | 暖黑不刺眼 |
+
+每套家族包含背景三级 / 卡片两级 / 文字三级 / 强调色三档 / 阴影 / 图片压暗等 **20+ 个语义令牌**，完整定义见 [miniprogram/app.wxss](miniprogram/app.wxss)。
+
+### 视觉组件体系
+
+- **tabBar**：面性圆润图标（碗筷/清单/人形，生图模型产出），暖灰普通态 + 家族色选中态，随主题切换
+- **登录页**：沉浸式自定义导航、7 个食物 SVG 漂浮动效（4 组错帧轨迹）、加速度计重力视差
+- **插画体系**：空状态与分类占位使用定制扁平绘本风 SVG，`empty-state` 组件插画优先、emoji 兜底
+- **骨架屏**：菜单页首屏加载占位，消除空状态闪现
+- **触控热区**：高频小按钮统一 `::after` 外扩至 ≥88rpx（44px）
 
 ### 设计原则
 
@@ -603,6 +644,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 - **食欲化卡片**：菜品卡片留白充足、图片圆角、按钮渐变 + 暖色阴影
 - **CSS 变量驱动**：全站使用语义 token，换肤只需覆盖变量
 - **系统字体栈**：`-apple-system, PingFang SC` 等，无外来字体依赖
+- **字阶收敛**：20/22/24/26/28/32/40/52/72rpx 九档字阶，间距遵循 4 的倍数
 
 ---
 
@@ -616,6 +658,38 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 ---
 
+## 开发与测试
+
+### 本地检查与测试
+
+```bash
+npm install            # 安装 devDependencies（无运行时依赖）
+npm run check:syntax   # 全部 JS 文件语法检查
+npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
+npm test               # 单元测试 + 契约测试（68 个用例）
+```
+
+测试体系：
+- **单元测试**（`tests/unit/`）：DTO 转换层、东八区日期工具、云函数共享模块
+- **契约测试**（`tests/contracts/`）：云函数 action 覆盖与错误码稳定性、前端关键行为（登录页独立、编辑页保存可用等）
+
+### CI
+
+GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑「语法检查 → lint → 单元测试 → 契约测试」四道关卡（Node 22）。
+
+### 设计与规划文档
+
+| 文档 | 内容 |
+|:---|:---|
+| [docs/theme-system-plan.md](docs/theme-system-plan.md) | 主题家族系统方案（根因诊断/三套配色/实施记录） |
+| [docs/ui-audit-plan.md](docs/ui-audit-plan.md) | 全页面 UI/UX 审查与优化方案（含实施记录） |
+| [docs/login-animation-plan.md](docs/login-animation-plan.md) | 登录页漂浮动效方案与实施记录 |
+| [docs/image-asset-generation-brief.md](docs/image-asset-generation-brief.md) | 插画素材生图需求单 |
+| [docs/tabbar-icon-brief.md](docs/tabbar-icon-brief.md) | tabBar 图标生图需求单 |
+| [docs/deployment/](docs/deployment/) | 部署指引与数据库安全规则 |
+
+---
+
 ## 项目统计
 
 | 指标 | 数值 |
@@ -625,11 +699,12 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | 云函数数 | **6** 个（共 **24** 个 Action） |
 | 数据库集合数 | **7** 个 |
 | 后端代码量 | ~**2,053** 行 JavaScript |
-| 全局样式 | **343** 行（CSS 变量 + 工具类） |
-| 单元测试 | **2** 个测试文件（DTO 层 + 日期工具） |
-| 文档 | README + 部署文档 + 安全规则 |
+| 全局样式 | **469** 行（三主题家族变量 + 工具类） |
+| 测试 | **5** 个测试文件 / **68** 个用例（单元 + 契约） |
+| CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
+| 插画素材 | **28** 张（空状态 4 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 12，生图模型产出） |
 | 错误码体系 | **14** 种稳定 `errorCode` |
-| 主题方案 | **4** 套强调色 + 亮/暗双模式 |
+| 主题方案 | **3** 大主题家族 + 跟随系统（导航/tabBar/弹窗全量联动） |
 
 ---
 
@@ -642,7 +717,8 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用（见部署文档） |
 | 扫码加入家庭 | 未实现 | 暂无二维码生成与 `wx.scanCode` 加入流程，加入方式仅 6 位加入码 |
 | 用户昵称/头像授权 | 未实现 | 统一使用默认昵称「微信用户」与渐变色头像，未调用受隐私限制的授权 API |
-| 分类占位图资源 | 已降级 | 无本地图片资源，无图菜品统一使用 emoji 占位（`assets/images/categories/` 不存在，已从代码中移除引用） |
+
+> 已于 2026-09 完成：分类占位插画（`images/category/`，生图 SVG 素材）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）与登录页漂浮素材（`images/login/`）。
 
 ---
 
