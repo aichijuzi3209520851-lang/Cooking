@@ -1,5 +1,10 @@
 /* pages/login/login.wxss */
 .login-page {
+  /* 氛围装饰令牌：光晕色与漂浮图标透明度（深色模式自动调暗） */
+  --glow-a: rgba(230, 162, 60, 0.16);
+  --glow-b: rgba(217, 58, 43, 0.10);
+  --float-opacity: 0.8;
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -8,6 +13,22 @@
   padding: 0 48rpx calc(env(safe-area-inset-bottom) + 44rpx);
   background:
     linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 58%, var(--color-cream) 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+  .login-page {
+    --glow-a: rgba(217, 166, 72, 0.08);
+    --glow-b: rgba(232, 86, 74, 0.10);
+    --float-opacity: 0.45;
+  }
+}
+
+.login-page.theme-dark {
+  --glow-a: rgba(217, 166, 72, 0.08);
+  --glow-b: rgba(232, 86, 74, 0.10);
+  --float-opacity: 0.45;
 }
 
 .login-top-space {
@@ -16,7 +37,86 @@
   flex-shrink: 0;
 }
 
-/* ===== 品牌区：占据剩余空间并垂直居中，让页面重心落在中部 ===== */
+/* ===== 氛围装饰：光晕（径向渐变替代 blur 滤镜，低端机零额外开销） ===== */
+.login-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.login-glow-a {
+  width: 440rpx;
+  height: 440rpx;
+  top: -140rpx;
+  left: -120rpx;
+  background: radial-gradient(circle, var(--glow-a) 0%, transparent 68%);
+}
+
+.login-glow-b {
+  width: 400rpx;
+  height: 400rpx;
+  right: -130rpx;
+  top: 32%;
+  background: radial-gradient(circle, var(--glow-b) 0%, transparent 68%);
+}
+
+/* ===== 漂浮图标层：只动 transform，随重力轻微视差 ===== */
+.float-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 0.35s ease-out;
+}
+
+.float-icon {
+  position: absolute;
+  opacity: var(--float-opacity);
+}
+
+.float-1 { width: 64rpx; height: 64rpx; top: 9%;  left: 13%; }
+.float-2 { width: 58rpx; height: 58rpx; top: 7%;  right: 30%; }
+.float-3 { width: 84rpx; height: 84rpx; top: 17%; right: 8%; }
+.float-4 { width: 58rpx; height: 58rpx; top: 31%; left: 4%; }
+.float-5 { width: 76rpx; height: 76rpx; top: 38%; right: 5%; }
+.float-6 { width: 56rpx; height: 56rpx; top: 48%; left: 6%; }
+.float-7 { width: 68rpx; height: 68rpx; top: 46%; right: 20%; }
+
+/* 4 组漂浮轨迹：时长错开 + 负延迟错帧，观感是「轻轻漂」而不是「乱飞」 */
+.drift-a { animation: driftA 9.8s ease-in-out infinite; }
+.drift-b { animation: driftB 11.5s ease-in-out infinite; }
+.drift-c { animation: driftC 10.2s ease-in-out infinite; }
+.drift-d { animation: driftD 12.4s ease-in-out infinite; }
+
+@keyframes driftA {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  30% { transform: translate3d(16rpx, -30rpx, 0) rotate(5deg); }
+  65% { transform: translate3d(-12rpx, 16rpx, 0) rotate(-4deg); }
+}
+
+@keyframes driftB {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  35% { transform: translate3d(-16rpx, -26rpx, 0) rotate(-6deg); }
+  70% { transform: translate3d(12rpx, 14rpx, 0) rotate(4deg); }
+}
+
+@keyframes driftC {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  40% { transform: translate3d(10rpx, -28rpx, 0) rotate(3deg); }
+  78% { transform: translate3d(-14rpx, 14rpx, 0) rotate(-5deg); }
+}
+
+@keyframes driftD {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(14rpx, -22rpx, 0) rotate(4deg); }
+  55% { transform: translate3d(-14rpx, 12rpx, 0) rotate(-3deg); }
+  85% { transform: translate3d(8rpx, -10rpx, 0) rotate(2deg); }
+}
+
+/* ===== 品牌区：占据剩余空间并垂直居中，与漂浮层做反向视差 ===== */
 .login-brand {
   flex: 1;
   display: flex;
@@ -24,6 +124,9 @@
   align-items: center;
   justify-content: center;
   padding: 32rpx 0;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.35s ease-out;
 }
 
 .login-mark {
@@ -113,6 +216,8 @@
   border: 1rpx solid var(--color-border);
   box-shadow: var(--shadow-float);
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .login-panel-title {

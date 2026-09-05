@@ -1,7 +1,22 @@
 <view class="login-page {{themeClass}}">
   <view class="login-top-space"></view>
 
-  <view class="login-brand">
+  <!-- 背景光晕（静态，径向渐变替代 blur，低端机友好） -->
+  <view class="login-glow login-glow-a"></view>
+  <view class="login-glow login-glow-b"></view>
+
+  <!-- 漂浮装饰层：随手机倾斜轻微视差，纯装饰不响应点击 -->
+  <view class="float-layer" style="transform: translate3d({{px * 14}}rpx, {{py * 14}}rpx, 0);">
+    <image class="float-icon float-1 drift-a" src="/images/login/chili.svg" mode="aspectFit" />
+    <image class="float-icon float-2 drift-c" src="/images/login/rice.svg" mode="aspectFit" />
+    <image class="float-icon float-3 drift-b" src="/images/login/bokchoy.svg" mode="aspectFit" />
+    <image class="float-icon float-4 drift-d" src="/images/login/mug.svg" mode="aspectFit" />
+    <image class="float-icon float-5 drift-a" src="/images/login/fish.svg" mode="aspectFit" />
+    <image class="float-icon float-6 drift-b" src="/images/login/tomato.svg" mode="aspectFit" />
+    <image class="float-icon float-7 drift-d" src="/images/login/soup.svg" mode="aspectFit" />
+  </view>
+
+  <view class="login-brand" style="transform: translate3d({{px * -8}}rpx, {{py * -8}}rpx, 0);">
     <view class="login-mark">
       <text class="login-mark-emoji">🍳</text>
       <view class="login-mark-spark login-mark-spark-one"></view>

@@ -114,3 +114,16 @@ JS：  无任何动画代码
 1. 方案选哪个：**A1（推荐）** / A2 / B / C？是否加 D 视差增强？
 2. 漂浮 emoji 用**菜品分类五件套**（🍖🥬🍲🍚🥗）还是你另有想要的图标？
 3. 数量与密度：7 个（推荐，克制）还是更多？
+
+---
+
+## 8. 实施记录（2026-09-05，已评审：A2 + D）
+
+用户选定 **A2（自绘 SVG 图片漂浮）+ D（重力视差增强）**，已落地：
+
+- **素材**：`miniprogram/images/login/` 手绘 7 个暖色扁平风 SVG（chili 辣椒 / rice 米饭 / bokchoy 青菜 / mug 茶杯 / fish 鱼 / tomato 番茄 / soup 汤碗），全部取自品牌色板（#D93A2B/#F0821E/#E6A23C/#2F9E6E/#8B5E3C 系），单个 <1KB
+- **漂浮层**：沿用参考项目骨架——4 组 `@keyframes`（9.8/11.5/10.2/12.4s）+ 负延迟错帧、只动 `transform`、`pointer-events: none`；分布避开品牌区与卡片（z-index 0，卡片与品牌区 z-index 1，图标滑到卡片后方形成层次）
+- **光晕**：2 个 `radial-gradient` 渐变圆（未用 `filter: blur`，规避低端安卓实时模糊开销）
+- **视差（D）**：`wx.onAccelerometerChange(interval:'ui')`，重力基线用 EMA 慢速跟随（持机姿态无关），节流 ~16fps、每次只 setData 两个数值，位移交给 CSS transition 0.35s 补间；漂浮层 ±14rpx、品牌区反向 ±8rpx；`onHide/onUnload` 注销监听并 `stopAccelerometer` 省电
+- **深色模式**：`--glow-a/--glow-b/--float-opacity` 三个令牌双轨（媒体查询 + `.theme-dark`），深色下光晕减淡、图标 opacity 0.8→0.45
+- 开发者工具无加速度计模拟，视差需真机验收；漂浮动画工具即可预览
