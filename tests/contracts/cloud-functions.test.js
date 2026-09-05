@@ -103,6 +103,11 @@ test('family：原子容量闸门防并发超员（DATA-001）', () => {
   assert.match(src, /FAMILY_FULL/, '缺少满员错误码');
 });
 
+test('family：joinByCode 提示覆盖家庭解散场景（DATA-001）', () => {
+  const src = readFn('family');
+  assert.match(src, /加入码无效，或该家庭已解散/, '加入失败提示未覆盖解散语义');
+});
+
 test('family：创建者退出保护与解散清理（DATA-001）', () => {
   const src = readFn('family');
   assert.match(src, /creatorId === openid/, '缺少创建者身份判断');

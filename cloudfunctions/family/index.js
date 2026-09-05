@@ -128,7 +128,8 @@ async function joinByCode(data, openid) {
 
   const famRes = await db.collection('families').where({ joinCode }).get()
   if (!famRes.data || famRes.data.length === 0) {
-    throw new ApiError('JOIN_CODE_INVALID', '加入码无效')
+    // 码不存在有两种可能：码输错，或该家庭因最后一名成员离开已解散
+    throw new ApiError('JOIN_CODE_INVALID', '加入码无效，或该家庭已解散')
   }
   const family = famRes.data[0]
 

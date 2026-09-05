@@ -4,6 +4,7 @@ const { familyApi } = require('../../../utils/api.js');
 const {
   showSuccess,
   showError,
+  showApiError,
   showConfirm,
   getRoleName,
   getRoleEmoji,
@@ -165,14 +166,25 @@ Page({
   },
 
   // 退出家庭（对外措辞：换一家去吃饭）
+  // 弹窗按场景分支：最后一名成员离开会解散家庭（加入码作废），必须明确告知；
+  // 创建者在还有成员时离开会被服务端拒绝，提前说明规则避免误操作。
   async onExitFamily() {
     if (this.data.loading) return;
 
     const familyName = this.data.currentFamily ? this.data.currentFamily.name : '';
-    const confirmed = await showConfirm(
-      '和这个家说再见？',
-      `离开「${familyName}」后，将不再收到它的菜单消息。以后想它了，随时可以换回来～`
-    );
+    const isLast = (this.data.members || []).length <= 1;
+
+    let title = '和这个家说再见？';
+    let content = `离开「${familyName}」后，将不再收到它的菜单消息。以后想它了，随时可以换回来～`;
+    if (isLast) {
+      title = '这个家就剩你一个人了';
+      content = `你是「${familyName}」目前唯一的成员。离开后这个家会解散，加入码也会失效，之后无法再用原码加入。确定要说再见吗？`;
+    } else if (this.data.isCreator) {
+      title = '先让家里热闹着';
+      content = `你是「${familyName}」的创建者，等家里其他成员都离开后，你才能最后告别～`;
+    }
+
+    const confirmed = await showConfirm(title, content);
     if (!confirmed) return;
 
     this.setData({ loading: true });
@@ -197,7 +209,7 @@ Page({
       }, 1000);
     } catch (err) {
       console.error('退出家庭失败', err);
-      showError('操作失败，请重试');
+      showApiError(err, '操作失败，请重试');
     } finally {
       this.setData({ loading: false });
     }
