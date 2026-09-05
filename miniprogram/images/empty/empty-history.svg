@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 空状态：这一天没有点菜记录 —— 翻开的小日历 + 汤勺 + 小星星 -->
+  <!-- 日历左页（奶油白） -->
+  <path d="M 100 160
+           L 248 148
+           L 248 380
+           L 100 392 Z"
+        fill="#FDF3E3"/>
+  <!-- 日历右页（稍亮奶油白） -->
+  <path d="M 264 148
+           L 412 160
+           L 412 392
+           L 264 380 Z"
+        fill="#FFF8EC"/>
+  <!-- 书脊装订线 -->
+  <rect x="248" y="148" width="16" height="232" rx="4" fill="#E8DDC8"/>
+  <!-- 左页日期格横线（无文字，仅装饰） -->
+  <line x1="120" y1="195" x2="232" y2="188" stroke="#E0D4BE" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="225" x2="232" y2="218" stroke="#E0D4BE" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="255" x2="232" y2="248" stroke="#E0D4BE" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="285" x2="232" y2="278" stroke="#E0D4BE" stroke-width="3" stroke-linecap="round"/>
+  <line x1="120" y1="315" x2="232" y2="308" stroke="#E0D4BE" stroke-width="3" stroke-linecap="round"/>
+  <!-- 右页：小汤勺 -->
+  <g transform="rotate(-12 338 270)">
+    <!-- 勺柄 -->
+    <rect x="330" y="230" width="12" height="110" rx="6" fill="#8B5E3C"/>
+    <!-- 勺头 -->
+    <ellipse cx="336" cy="218" rx="28" ry="34" fill="#A0704A"/>
+    <ellipse cx="336" cy="215" rx="20" ry="25" fill="#8B5E3C"/>
+    <!-- 勺内高光 -->
+    <ellipse cx="330" cy="208" rx="7" ry="10" fill="#C4956A" opacity="0.6"/>
+  </g>
+  <!-- 右上角小星星点缀（姜黄） -->
+  <path d="M 380 185
+           L 386 200
+           L 402 202
+           L 390 213
+           L 393 229
+           L 380 221
+           L 367 229
+           L 370 213
+           L 358 202
+           L 374 200 Z"
+        fill="#E6A23C"/>
+  <!-- 日历顶部装订环 -->
+  <rect x="140" y="136" width="14" height="22" rx="5" fill="#D93A2B"/>
+  <rect x="358" y="136" width="14" height="22" rx="5" fill="#D93A2B"/>
+</svg>

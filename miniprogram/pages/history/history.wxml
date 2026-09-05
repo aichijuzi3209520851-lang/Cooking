@@ -42,6 +42,7 @@
   <empty-state
     wx:if="{{!loading && historyList.length === 0}}"
     icon="📅"
+    image="/images/empty/empty-history.svg"
     title="这一天没有点菜记录"
     description="往前翻翻其他日期吧"
   ></empty-state>

@@ -7,6 +7,15 @@ const CATEGORY_EMOJI = {
   cold: '🥗'
 };
 
+// 无图菜品的分类占位插画（未知分类回退 emoji）
+const CATEGORY_IMAGE = {
+  meat: '/images/category/cat-meat.svg',
+  veg: '/images/category/cat-veg.svg',
+  soup: '/images/category/cat-soup.svg',
+  staple: '/images/category/cat-staple.svg',
+  cold: '/images/category/cat-cold.svg'
+};
+
 Component({
   options: {
     multipleSlots: false,
@@ -36,6 +45,7 @@ Component({
     hasVoted: false,
     showChefCancel: false,
     emoji: '🍽️',
+    categoryImage: '',
     hasImage: false
   },
 
@@ -70,12 +80,14 @@ Component({
       });
       const showChefCancel = userRole === 'chef' && v.length > 0;
       const emoji = CATEGORY_EMOJI[d.category] || '🍽️';
+      const categoryImage = CATEGORY_IMAGE[d.category] || '';
       const hasImage = !!d.imageUrl && !this._imageFailed;
 
       this.setData({
         hasVoted,
         showChefCancel,
         emoji,
+        categoryImage,
         hasImage
       });
     },

@@ -25,6 +25,7 @@
   <block wx:if="{{!hasFamily}}">
     <empty-state
       icon="🏠"
+      image="/images/empty/empty-family.svg"
       title="先加入家庭吧"
       description="创建或加入一个家庭后即可开始点菜"
     />
@@ -35,12 +36,14 @@
     <empty-state
       wx:if="{{isChef}}"
       icon="🍳"
+      image="/images/empty/empty-dishes.svg"
       title="还没有菜品"
       description="点击右下角添加菜品"
     />
     <empty-state
       wx:else
       icon="🍽️"
+      image="/images/empty/empty-dishes.svg"
       title="掌勺的还没添加菜品"
       description="耐心等待一下吧"
     />

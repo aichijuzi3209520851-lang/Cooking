@@ -38,7 +38,13 @@
           binderror="onImageError"
         ></image>
         <view wx:else class="dish-thumb-placeholder">
-          <text class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
+          <image
+            wx:if="{{item.category}}"
+            class="dish-thumb-cat"
+            src="/images/category/cat-{{item.category}}.svg"
+            mode="aspectFit"
+          />
+          <text wx:else class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
         </view>
       </view>
 
@@ -77,6 +83,7 @@
   <empty-state
     wx:elif="{{!loading && !loadError && dishes.length === 0}}"
     icon="🍽️"
+    image="/images/empty/empty-dishes.svg"
     title="菜品库是空的"
     description="点击右下角添加第一道菜"
   ></empty-state>

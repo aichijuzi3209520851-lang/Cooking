@@ -104,6 +104,11 @@
   background: var(--color-card-inner);
 }
 
+.dish-thumb-cat {
+  width: 72%;
+  height: 72%;
+}
+
 .dish-thumb-emoji {
   font-size: 48rpx;
   line-height: 1;

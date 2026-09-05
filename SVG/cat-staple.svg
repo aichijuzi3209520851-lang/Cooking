@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 分类图：主食 —— 红碗白米饭（与rice同款碗型，冒热气，主体占满85%+） -->
+  <!-- 碗身（番茄红，放大） -->
+  <path d="M 112 240
+           L 140 400
+           C 150 432, 362 432, 372 400
+           L 400 240 Z"
+        fill="#D93A2B"/>
+  <!-- 碗沿（深红） -->
+  <ellipse cx="256" cy="240" rx="146" ry="32" fill="#B42A1D"/>
+  <!-- 碗内暗部 -->
+  <ellipse cx="256" cy="240" rx="128" ry="22" fill="#8E1F15"/>
+  <!-- 米饭：三团重叠奶白色（放大） -->
+  <circle cx="198" cy="205" r="62" fill="#FFFDF7"/>
+  <circle cx="256" cy="182" r="70" fill="#FFFDF7"/>
+  <circle cx="316" cy="205" r="62" fill="#FFFDF7"/>
+  <!-- 米饭顶部柔和高光 -->
+  <ellipse cx="248" cy="165" rx="28" ry="13" fill="#FFFFFF" opacity="0.5"/>
+  <!-- 碗身浅反光 -->
+  <path d="M 150 275 C 142 335, 156 385, 185 415"
+        stroke="#E87060" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <!-- 蒸汽（三缕姜黄 S 形） -->
+  <path d="M 200 165
+           C 184 140, 220 122, 204 96
+           C 194 80, 206 66, 214 54"
+        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.75"/>
+  <path d="M 256 158
+           C 256 132, 256 112, 256 82
+           C 256 64, 256 50, 256 38"
+        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 312 165
+           C 328 140, 292 122, 308 96
+           C 318 80, 306 66, 298 54"
+        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.75"/>
+</svg>

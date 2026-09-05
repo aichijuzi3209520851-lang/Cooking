@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 分类图：汤品 —— 橙色汤锅掀盖 + 金色汤面 + 蒸汽（主体占满85%+） -->
+  <!-- 左锅把手 -->
+  <path d="M 108 250
+           C 72 250, 56 275, 56 300
+           C 56 325, 72 350, 108 350"
+        stroke="#D06A0F" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <!-- 右锅把手 -->
+  <path d="M 404 250
+           C 440 250, 456 275, 456 300
+           C 456 325, 440 350, 404 350"
+        stroke="#D06A0F" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <!-- 锅身（焦糖橙） -->
+  <path d="M 110 230
+           L 122 400
+           C 128 430, 384 430, 390 400
+           L 402 230 Z"
+        fill="#F0821E"/>
+  <!-- 锅口沿（深橙） -->
+  <ellipse cx="256" cy="230" rx="148" ry="32" fill="#D06A0F"/>
+  <!-- 金色汤面 -->
+  <ellipse cx="256" cy="230" rx="132" ry="24" fill="#E6A23C"/>
+  <!-- 汤面高光 -->
+  <ellipse cx="235" cy="225" rx="40" ry="8" fill="#F5C96A" opacity="0.6"/>
+  <!-- 汤面小圆点（食材点缀） -->
+  <circle cx="280" cy="232" r="6" fill="#D06A0F" opacity="0.6"/>
+  <circle cx="305" cy="228" r="5" fill="#2F9E6E" opacity="0.6"/>
+  <circle cx="220" cy="235" r="5" fill="#8B5E3C" opacity="0.5"/>
+  <!-- 锅身浅反光 -->
+  <path d="M 145 270 C 138 330, 150 385, 175 412"
+        stroke="#F5B060" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <!-- 掀开的锅盖（斜靠在锅右上方） -->
+  <g transform="rotate(-22 390 160)">
+    <ellipse cx="390" cy="160" rx="85" ry="22" fill="#B42A1D"/>
+    <ellipse cx="390" cy="156" rx="85" ry="20" fill="#D93A2B"/>
+    <!-- 锅盖顶钮 -->
+    <rect x="378" y="126" width="24" height="22" rx="8" fill="#8B5E3C"/>
+  </g>
+  <!-- 蒸汽（三缕姜黄 S 形） -->
+  <path d="M 200 200
+           C 184 175, 220 158, 204 132
+           C 194 116, 206 102, 214 90"
+        stroke="#E6A23C" stroke-width="11" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 256 195
+           C 256 168, 256 148, 256 118
+           C 256 100, 256 85, 256 70"
+        stroke="#E6A23C" stroke-width="11" fill="none" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 312 200
+           C 328 175, 292 158, 308 132
+           C 318 116, 306 102, 298 90"
+        stroke="#E6A23C" stroke-width="11" fill="none" stroke-linecap="round" opacity="0.8"/>
+</svg>

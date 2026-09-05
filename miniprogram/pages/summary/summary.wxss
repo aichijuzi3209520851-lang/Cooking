@@ -74,6 +74,11 @@
   background: var(--color-cream);
 }
 
+.dish-thumb-cat {
+  width: 68%;
+  height: 68%;
+}
+
 .dish-thumb-emoji {
   font-size: 48rpx;
   line-height: 1;

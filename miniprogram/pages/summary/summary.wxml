@@ -11,6 +11,7 @@
   <block wx:if="{{!hasFamily}}">
     <empty-state
       icon="🏠"
+      image="/images/empty/empty-family.svg"
       title="先加入家庭吧"
       description="创建或加入一个家庭后即可查看汇总"
     />
@@ -39,7 +40,13 @@
                 binderror="onImageError"
               />
               <view wx:else class="dish-thumb-placeholder">
-                <text class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
+                <image
+                  wx:if="{{item.category}}"
+                  class="dish-thumb-cat"
+                  src="/images/category/cat-{{item.category}}.svg"
+                  mode="aspectFit"
+                />
+                <text wx:else class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
               </view>
             </view>
 
@@ -106,6 +113,7 @@
     <block wx:else>
       <empty-state
         icon="🍽️"
+        image="/images/empty/empty-summary.svg"
         title="今天还没有人点菜"
         description="快去点几道想吃的菜吧"
       />

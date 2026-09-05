@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 空状态：菜品库是空的 —— 打开的空蒸锅 + 斜靠锅盖 + 问号形蒸汽 -->
+  <!-- 左锅耳 -->
+  <rect x="118" y="268" width="34" height="18" rx="9" fill="#8B5E3C"/>
+  <!-- 右锅耳 -->
+  <rect x="360" y="268" width="34" height="18" rx="9" fill="#8B5E3C"/>
+  <!-- 锅身（暖棕） -->
+  <path d="M 148 250
+           L 158 388
+           C 164 414, 348 414, 354 388
+           L 364 250 Z"
+        fill="#8B5E3C"/>
+  <!-- 锅口沿（深棕） -->
+  <ellipse cx="256" cy="250" rx="108" ry="22" fill="#5C3A22"/>
+  <!-- 锅内暗部 -->
+  <ellipse cx="256" cy="250" rx="94" ry="15" fill="#4A2E1A"/>
+  <!-- 锅身浅反光 -->
+  <path d="M 178 280 C 172 330, 182 372, 202 396"
+        stroke="#A0704A" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.45"/>
+  <!-- 斜靠的锅盖（在锅右侧） -->
+  <g transform="rotate(28 380 310)">
+    <ellipse cx="380" cy="310" rx="72" ry="18" fill="#B42A1D"/>
+    <ellipse cx="380" cy="306" rx="72" ry="16" fill="#D93A2B"/>
+    <!-- 锅盖顶钮 -->
+    <rect x="370" y="282" width="20" height="18" rx="6" fill="#8B5E3C"/>
+  </g>
+  <!-- 问号形蒸汽（小而不醒目，姜黄色） -->
+  <path d="M 244 228
+           C 232 210, 252 196, 264 200
+           C 276 204, 272 220, 260 224
+           C 254 226, 254 234, 256 240"
+        stroke="#E6A23C" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="256" cy="250" r="4" fill="#E6A23C" opacity="0.6"/>
+</svg>

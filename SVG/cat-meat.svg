@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 分类图：荤菜 —— 红烧肉块（主体占满85%+） -->
+  <!-- 盘子（大椭圆，奶油白） -->
+  <ellipse cx="256" cy="350" rx="210" ry="60" fill="#E8DDC8"/>
+  <ellipse cx="256" cy="344" rx="210" ry="55" fill="#FDF3E3"/>
+  <!-- 盘底酱汁（深暖棕） -->
+  <ellipse cx="256" cy="340" rx="160" ry="35" fill="#6B4528" opacity="0.5"/>
+  <!-- 肉块1（左后，最大） -->
+  <rect x="118" y="210" width="110" height="110" rx="22" fill="#8B5E3C"/>
+  <rect x="118" y="210" width="110" height="40" rx="22" fill="#A0704A"/>
+  <ellipse cx="150" cy="235" rx="18" ry="10" fill="#C4956A" opacity="0.5"/>
+  <!-- 肉块2（中间前，最高） -->
+  <rect x="200" y="170" width="115" height="140" rx="24" fill="#7A4E2E"/>
+  <rect x="200" y="170" width="115" height="48" rx="24" fill="#9B6538"/>
+  <ellipse cx="235" cy="195" rx="22" ry="12" fill="#C4956A" opacity="0.5"/>
+  <!-- 肉块3（右后） -->
+  <rect x="290" y="205" width="108" height="108" rx="22" fill="#8B5E3C"/>
+  <rect x="290" y="205" width="108" height="38" rx="22" fill="#A0704A"/>
+  <ellipse cx="322" cy="228" rx="16" ry="9" fill="#C4956A" opacity="0.5"/>
+  <!-- 肉块4（右前小） -->
+  <rect x="340" y="258" width="80" height="80" rx="18" fill="#7A4E2E"/>
+  <rect x="340" y="258" width="80" height="28" rx="18" fill="#9B6538"/>
+  <!-- 葱花点缀（绿色小碎点） -->
+  <circle cx="175" cy="218" r="6" fill="#2F9E6E"/>
+  <circle cx="256" cy="178" r="7" fill="#3CB07E"/>
+  <circle cx="330" cy="212" r="6" fill="#2F9E6E"/>
+  <circle cx="375" cy="268" r="5" fill="#3CB07E"/>
+  <circle cx="220" cy="290" r="5" fill="#2F9E6E"/>
+  <!-- 酱汁高光 -->
+  <ellipse cx="256" cy="330" rx="80" ry="12" fill="#A0704A" opacity="0.3"/>
+</svg>

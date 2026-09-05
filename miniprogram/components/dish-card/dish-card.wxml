@@ -10,7 +10,13 @@
       binderror="onImageError"
     />
     <view wx:else class="dish-thumb-placeholder">
-      <text class="dish-thumb-emoji">{{emoji}}</text>
+      <image
+        wx:if="{{categoryImage}}"
+        class="dish-thumb-cat"
+        src="{{categoryImage}}"
+        mode="aspectFit"
+      />
+      <text wx:else class="dish-thumb-emoji">{{emoji}}</text>
     </view>
   </view>
 

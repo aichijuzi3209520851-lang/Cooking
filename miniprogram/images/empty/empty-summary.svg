@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 空状态：今天还没有人点菜 —— 圆桌 + 倒扣空盘 + 筷子 + 勺子 -->
+  <!-- 圆桌桌面（暖棕木纹感） -->
+  <ellipse cx="256" cy="340" rx="175" ry="48" fill="#8B5E3C"/>
+  <!-- 桌面内侧暗线 -->
+  <ellipse cx="256" cy="338" rx="160" ry="40" fill="none" stroke="#6B4528" stroke-width="3" opacity="0.4"/>
+  <!-- 桌腿（中央） -->
+  <rect x="244" y="370" width="24" height="70" rx="6" fill="#6B4528"/>
+  <!-- 桌脚底座 -->
+  <ellipse cx="256" cy="442" rx="50" ry="12" fill="#5C3A22"/>
+  <!-- 倒扣的空盘子（奶油白，盘底朝上） -->
+  <ellipse cx="220" cy="318" rx="72" ry="20" fill="#E8DDC8"/>
+  <path d="M 148 318
+           C 148 352, 292 352, 292 318"
+        fill="#FDF3E3"/>
+  <ellipse cx="220" cy="316" rx="72" ry="18" fill="#FFF8EC"/>
+  <!-- 盘子底圈 -->
+  <ellipse cx="220" cy="316" rx="30" ry="7" fill="#E8DDC8"/>
+  <!-- 筷子（一双，斜放在右侧） -->
+  <g transform="rotate(-15 340 300)">
+    <rect x="310" y="272" width="7" height="80" rx="3.5" fill="#8B5E3C"/>
+    <rect x="324" y="272" width="7" height="80" rx="3.5" fill="#8B5E3C"/>
+    <!-- 筷子头深色 -->
+    <rect x="310" y="272" width="7" height="14" rx="3.5" fill="#6B4528"/>
+    <rect x="324" y="272" width="7" height="14" rx="3.5" fill="#6B4528"/>
+  </g>
+  <!-- 勺子（放在盘子右侧） -->
+  <g transform="rotate(20 370 330)">
+    <!-- 勺柄 -->
+    <rect x="358" y="290" width="9" height="72" rx="4.5" fill="#8B5E3C"/>
+    <!-- 勺头 -->
+    <ellipse cx="362" cy="280" rx="18" ry="22" fill="#A0704A"/>
+    <ellipse cx="362" cy="278" rx="13" ry="16" fill="#8B5E3C"/>
+  </g>
+</svg>
