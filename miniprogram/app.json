@@ -17,7 +17,7 @@
   "window": {
     "backgroundTextStyle": "dark",
     "navigationBarBackgroundColor": "#FAF6F0",
-    "navigationBarTitleText": "今天吃啥",
+    "navigationBarTitleText": "筷点",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#FAF6F0"
   },

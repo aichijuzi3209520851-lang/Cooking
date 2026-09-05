@@ -152,7 +152,7 @@ Page({
   // 关于
   onAbout() {
     wx.showModal({
-      title: '关于今天吃啥',
+      title: '关于筷点',
       content: `版本：v${APP_VERSION}\n\n一款简单的家庭点菜小程序，和家人一起决定今天吃什么。`,
       showCancel: false,
       confirmText: '好的',

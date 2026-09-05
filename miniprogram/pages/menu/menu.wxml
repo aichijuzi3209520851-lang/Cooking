@@ -4,7 +4,7 @@
   <!-- 顶部区域 -->
   <view class="header">
     <view class="header-left">
-      <view class="header-title">今天吃啥</view>
+      <view class="header-title">筷点</view>
       <view class="header-sub">
         <text>{{dateText}}</text>
         <text wx:if="{{currentFamily}}" class="header-dot">·</text>

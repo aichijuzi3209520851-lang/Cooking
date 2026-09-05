@@ -22,7 +22,7 @@
       <view class="login-mark-spark login-mark-spark-one"></view>
       <view class="login-mark-spark login-mark-spark-two"></view>
     </view>
-    <view class="login-title">今天<text class="login-title-accent">吃啥</text></view>
+    <view class="login-title">筷<text class="login-title-accent">点</text></view>
     <view class="login-subtitle">一家人的今日菜单，从这一餐开始</view>
   </view>
 
