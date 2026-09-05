@@ -208,5 +208,11 @@ Page({
         showSuccess('已复制家庭码');
       }
     });
+    // 家庭码脉冲一次，强化「已复制」确认感
+    this.setData({ codePulse: true });
+    if (this._codePulseTimer) clearTimeout(this._codePulseTimer);
+    this._codePulseTimer = setTimeout(() => {
+      this.setData({ codePulse: false });
+    }, 400);
   }
 });

@@ -72,7 +72,7 @@
 }
 
 .role-check-icon {
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   font-size: 28rpx;
   font-weight: 700;
 }

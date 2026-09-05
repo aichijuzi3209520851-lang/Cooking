@@ -43,6 +43,10 @@
 
 .header-family {
   color: var(--color-text-secondary);
+  max-width: 280rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-right {
@@ -50,20 +54,26 @@
   align-items: center;
   padding: 8rpx 20rpx;
   margin-top: 8rpx;
+  margin-left: 16rpx;
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
   flex-shrink: 0;
+  max-width: 320rpx;
 }
 
 .switch-text {
   font-size: 26rpx;
-  color: var(--color-accent);
+  color: var(--color-accent-deep);
   font-weight: 600;
+  max-width: 240rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .switch-arrow {
   font-size: 34rpx;
-  color: var(--color-accent);
+  color: var(--color-accent-deep);
   margin-left: 2rpx;
   line-height: 1;
 }
@@ -96,7 +106,7 @@
 .stats-num {
   font-size: 34rpx;
   font-weight: 800;
-  color: var(--color-accent);
+  color: var(--color-num-strong);
   padding: 0 4rpx;
 }
 
@@ -112,6 +122,8 @@
   margin: 0 -32rpx;
   padding: 0 32rpx;
   margin-bottom: 28rpx;
+  /* 两端渐隐，提示右侧还有更多分类 */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24rpx, #000 calc(100% - 24rpx), transparent 100%);
 }
 
 .category-list {
@@ -148,7 +160,7 @@
 }
 
 .category-active .category-name {
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   font-weight: 600;
 }
 
@@ -161,32 +173,51 @@
   padding-top: 8rpx;
 }
 
-/* ===== 悬浮按钮 ===== */
-.fab {
-  position: fixed;
-  right: 32rpx;
-  bottom: 160rpx;
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+/* ===== 首屏加载骨架 ===== */
+.skeleton-card {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-accent);
-  z-index: 100;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
 }
 
-.fab:active {
-  transform: scale(0.92);
-  opacity: 0.9;
+.skeleton-thumb {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 22rpx;
+  background: var(--color-bg-tertiary);
+  margin-right: 24rpx;
+  flex-shrink: 0;
 }
 
-.fab-icon {
-  font-size: 56rpx;
-  color: #FFFFFF;
-  font-weight: 300;
-  line-height: 1;
-  margin-top: -4rpx;
+.skeleton-lines {
+  flex: 1;
 }
+
+.skeleton-line {
+  height: 32rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-tertiary);
+  margin-bottom: 16rpx;
+}
+
+.skeleton-line-short {
+  width: 40%;
+  margin-bottom: 0;
+}
+
+.skeleton-shimmer {
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ===== 悬浮按钮 ===== */
+/* .fab 已提升为 app.wxss 全局类（自动避让 tabBar 与底部安全区），此处不再重复定义 */

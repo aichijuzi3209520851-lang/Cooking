@@ -11,7 +11,8 @@
 }
 
 .login-top-space {
-  height: 92rpx;
+  /* 自定义导航（navigationStyle: custom）后需自行避让状态栏/刘海 */
+  height: calc(env(safe-area-inset-top) + 100rpx);
   flex-shrink: 0;
 }
 
@@ -92,7 +93,7 @@
 .login-subtitle {
   margin-top: 18rpx;
   color: var(--color-text-secondary);
-  font-size: 27rpx;
+  font-size: 26rpx;
   line-height: 1.5;
 }
 
@@ -135,12 +136,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14rpx;
   margin-top: 36rpx;
   border: none;
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   font-size: 30rpx;
   font-weight: 700;
   box-shadow: var(--shadow-accent);
@@ -162,26 +162,14 @@
   box-shadow: var(--shadow-card);
 }
 
-.login-button-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 18rpx;
-  font-weight: 700;
-}
-
 .login-safe-note {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10rpx;
   margin-top: 26rpx;
-  color: var(--color-text-tertiary);
-  font-size: 23rpx;
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
 }
 
 .login-safe-dot {
@@ -196,7 +184,9 @@
   margin-top: 28rpx;
   padding: 18rpx 20rpx;
   border-radius: var(--radius-md);
-  background: var(--color-accent-soft);
+  /* 错误提示配色固定为红系，不随强调色漂移 */
+  background: rgba(224, 32, 32, 0.08);
+  border: 1rpx solid rgba(224, 32, 32, 0.20);
 }
 
 .login-error-icon {
@@ -207,7 +197,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--color-primary-red);
   color: #FFFFFF;
   font-size: 20rpx;
   font-weight: 700;
@@ -216,7 +206,7 @@
 .login-error-text {
   flex: 1;
   min-width: 0;
-  color: var(--color-primary);
+  color: var(--color-primary-red);
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -225,5 +215,5 @@
   margin-top: auto;
   padding-top: 44rpx;
   color: var(--color-text-tertiary);
-  font-size: 23rpx;
+  font-size: 24rpx;
 }

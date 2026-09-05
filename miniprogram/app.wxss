@@ -11,8 +11,8 @@ page {
   --color-primary-pink: #E8467C;
 
   --color-text-primary: #2B2118;
-  --color-text-secondary: #8A7E72;
-  --color-text-tertiary: #BFB3A5;
+  --color-text-secondary: #6F6459;
+  --color-text-tertiary: #A69A8B;
 
   --color-bg: #FFFDF9;
   --color-bg-secondary: #FAF6F0;
@@ -28,6 +28,13 @@ page {
   --color-accent-deep: #B42A1D;
   --color-gold: #E6A23C;
   --color-cream: #FDF3E3;
+
+  /* 压在强调色渐变上的文字/图标色；金色等浅强调色需覆盖为深色（见 accent-gold） */
+  --color-on-accent: #FFFFFF;
+  /* 大数字专用：比 accent 深一档，保证金色等浅色系下依然可读 */
+  --color-num-strong: var(--color-accent-deep);
+  /* 菜品/头像图片压暗（深色模式置为 brightness(0.9)） */
+  --img-filter: none;
 
   /* Spacing */
   --spacing-xs: 8rpx;
@@ -71,7 +78,7 @@ page {
 
     --color-text-primary: #F5EFE8;
     --color-text-secondary: #A89C8E;
-    --color-text-tertiary: #6E645A;
+    --color-text-tertiary: #8C8074;
 
     --color-bg: #17130F;
     --color-bg-secondary: #201B16;
@@ -88,9 +95,15 @@ page {
     --color-gold: #D9A648;
     --color-cream: #3A3125;
 
-    --shadow-card: none;
+    --color-on-accent: #FFFFFF;
+    --color-num-strong: var(--color-accent-deep);
+
+    /* 深色下阴影置 none 会与背景融为一体，改用发丝描边分离卡片层级 */
+    --shadow-card: 0 0 0 1rpx rgba(255, 255, 255, 0.05);
     --shadow-float: 0 12rpx 48rpx rgba(0, 0, 0, 0.5);
     --shadow-accent: 0 8rpx 28rpx rgba(232, 86, 74, 0.30);
+
+    --img-filter: brightness(0.9);
   }
 }
 
@@ -105,7 +118,7 @@ page.theme-dark {
 
   --color-text-primary: #F5EFE8;
   --color-text-secondary: #A89C8E;
-  --color-text-tertiary: #6E645A;
+  --color-text-tertiary: #8C8074;
 
   --color-bg: #17130F;
   --color-bg-secondary: #201B16;
@@ -122,19 +135,82 @@ page.theme-dark {
   --color-gold: #D9A648;
   --color-cream: #3A3125;
 
-  --shadow-card: none;
+  --color-on-accent: #FFFFFF;
+  --color-num-strong: var(--color-accent-deep);
+
+  --shadow-card: 0 0 0 1rpx rgba(255, 255, 255, 0.05);
   --shadow-float: 0 12rpx 48rpx rgba(0, 0, 0, 0.5);
   --shadow-accent: 0 8rpx 28rpx rgba(232, 86, 74, 0.30);
+
+  --img-filter: brightness(0.9);
+}
+
+/* ===== Manual Light Mode Class =====
+   系统深色 + 手动选「浅色」时，page.theme-light 的特异度高于
+   @media 内的 page，可正确覆盖回浅色令牌（否则浅色选项失效） */
+page.theme-light {
+  --color-primary: #D93A2B;
+  --color-primary-green: #2F9E6E;
+  --color-primary-orange: #F0821E;
+  --color-primary-red: #E02020;
+  --color-primary-purple: #9B59B6;
+  --color-primary-pink: #E8467C;
+
+  --color-text-primary: #2B2118;
+  --color-text-secondary: #6F6459;
+  --color-text-tertiary: #A69A8B;
+
+  --color-bg: #FFFDF9;
+  --color-bg-secondary: #FAF6F0;
+  --color-bg-tertiary: #F1E9DE;
+
+  --color-card: #FFFFFF;
+  --color-card-inner: #FAF3EA;
+  --color-border: #EDE3D5;
+  --color-separator: rgba(139, 110, 78, 0.14);
+
+  --color-accent: #D93A2B;
+  --color-accent-soft: rgba(217, 58, 43, 0.10);
+  --color-accent-deep: #B42A1D;
+  --color-gold: #E6A23C;
+  --color-cream: #FDF3E3;
+
+  --color-on-accent: #FFFFFF;
+  --color-num-strong: var(--color-accent-deep);
+
+  --shadow-card: 0 4rpx 16rpx rgba(160, 110, 60, 0.08);
+  --shadow-float: 0 12rpx 48rpx rgba(160, 110, 60, 0.18);
+  --shadow-accent: 0 8rpx 28rpx rgba(217, 58, 43, 0.32);
+
+  --img-filter: none;
 }
 
 /* ===== Accent Colors ===== */
 page.accent-red { --color-accent: #D93A2B; --color-accent-deep: #B42A1D; }
 page.accent-orange { --color-accent: #F0821E; --color-accent-deep: #D06A0F; }
-page.accent-gold { --color-accent: #E6A23C; --color-accent-deep: #C78622; }
+/* 金色低对比兜底：金底上的文字用深棕，大数字用深金；深色下改用亮金（G5） */
+page.accent-gold {
+  --color-accent: #E6A23C;
+  --color-accent-deep: #B8790F;
+  --color-on-accent: #403000;
+  --color-num-strong: #8A5B0B;
+}
 page.accent-green { --color-accent: #2F9E6E; --color-accent-deep: #21805A; }
 /* 兼容旧缓存数据 */
 page.accent-blue { --color-accent: #D93A2B; --color-accent-deep: #B42A1D; }
 page.accent-pink { --color-accent: #E8467C; --color-accent-deep: #C72F63; }
+
+@media (prefers-color-scheme: dark) {
+  page.accent-gold {
+    --color-accent-deep: #D9A648;
+    --color-num-strong: #E6B856;
+  }
+}
+
+page.theme-dark.accent-gold {
+  --color-accent-deep: #D9A648;
+  --color-num-strong: #E6B856;
+}
 
 /* ===== Global Utility Classes ===== */
 .container {
@@ -178,7 +254,7 @@ page.accent-pink { --color-accent: #E8467C; --color-accent-deep: #C72F63; }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   box-shadow: var(--shadow-accent);
 }
 
@@ -341,17 +417,39 @@ page.accent-pink { --color-accent: #E8467C; --color-accent-deep: #C72F63; }
   animation: pulse 0.3s ease;
 }
 
-/* ===== 深色模式：菜品/头像图片轻微压暗，避免高亮图刺眼 ===== */
-@media (prefers-color-scheme: dark) {
-  .dish-thumb-img,
-  .voter-avatar-img,
-  .profile-avatar-img {
-    filter: brightness(0.9);
-  }
+/* ===== 深色模式：菜品/头像图片压暗走令牌，手动浅色时可正确还原 ===== */
+.dish-thumb-img,
+.voter-avatar-img,
+.profile-avatar-img {
+  filter: var(--img-filter);
 }
 
-page.theme-dark .dish-thumb-img,
-page.theme-dark .voter-avatar-img,
-page.theme-dark .profile-avatar-img {
-  filter: brightness(0.9);
+/* ===== 悬浮添加按钮（全局统一，自动避让 tabBar 与底部安全区） ===== */
+.fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 140rpx);
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-accent);
+  z-index: 100;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fab:active {
+  transform: scale(0.92);
+  opacity: 0.9;
+}
+
+.fab-icon {
+  font-size: 56rpx;
+  color: var(--color-on-accent);
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -4rpx;
 }

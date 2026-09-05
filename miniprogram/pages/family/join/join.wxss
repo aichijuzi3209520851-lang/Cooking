@@ -79,3 +79,14 @@
 .join-loading {
   margin-top: 48rpx;
 }
+
+/* 主操作按钮区：与验证码框同宽，底部避让安全区 */
+.join-footer {
+  width: 560rpx;
+  margin-top: 8rpx;
+}
+
+.join-hint {
+  margin-top: 20rpx;
+  text-align: center;
+}

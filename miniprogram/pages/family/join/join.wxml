@@ -33,4 +33,16 @@
   <view class="join-loading" wx:if="{{loading}}">
     <view class="caption">正在加入...</view>
   </view>
+
+  <!-- 主操作按钮：未满 6 位时禁用，既是进度提示也是兜底入口 -->
+  <view class="join-footer safe-bottom">
+    <button
+      class="btn btn-primary btn-block {{codeValue.length === 6 && !loading ? '' : 'btn-disabled'}}"
+      disabled="{{codeValue.length !== 6 || loading}}"
+      bindtap="onSubmitTap"
+    >
+      {{loading ? '加入中...' : '加入家庭'}}
+    </button>
+    <view class="caption join-hint">输入 6 位家庭码，输满自动加入</view>
+  </view>
 </view>

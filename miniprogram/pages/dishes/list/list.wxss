@@ -1,7 +1,8 @@
 /* pages/dishes/list/list.wxss */
 .list-page {
   padding-top: 24rpx;
-  padding-bottom: 160rpx;
+  /* 页尾留白覆盖 FAB（112rpx）+ 底距 + 安全区，「没有更多了」不被遮挡 */
+  padding-bottom: calc(env(safe-area-inset-bottom) + 240rpx);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -26,12 +27,13 @@
   padding: 14rpx 28rpx;
   border-radius: var(--radius-pill);
   background: var(--color-card);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+  transition: opacity 0.2s ease;
   flex-shrink: 0;
 }
 
 .category-chip:active {
-  transform: scale(0.96);
+  opacity: 0.7;
 }
 
 .category-chip-active {
@@ -51,7 +53,7 @@
 }
 
 .category-chip-active .category-chip-name {
-  color: #FFFFFF;
+  color: var(--color-on-accent);
 }
 
 /* 菜品列表 */
@@ -131,8 +133,8 @@
 .dish-hidden-badge {
   background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
-  font-size: 20rpx;
-  padding: 2rpx 12rpx;
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
   flex-shrink: 0;
 }
 
@@ -148,11 +150,22 @@
 /* 编辑按钮 */
 .dish-edit {
   flex-shrink: 0;
-  padding: 12rpx 24rpx;
-  margin-left: 16rpx;
+  padding: 16rpx 28rpx;
+  margin-left: 8rpx;
   font-size: 26rpx;
-  color: var(--color-accent);
+  color: var(--color-accent-deep);
   border-radius: var(--radius-pill);
+  position: relative;
+}
+
+/* 热区外扩至 ≥88rpx（44px） */
+.dish-edit::after {
+  content: '';
+  position: absolute;
+  top: -8rpx;
+  left: -8rpx;
+  right: -8rpx;
+  bottom: -8rpx;
 }
 
 .dish-edit:active {
@@ -174,31 +187,4 @@
   padding: 96rpx 0;
 }
 
-/* 悬浮按钮 */
-.fab {
-  position: fixed;
-  right: 40rpx;
-  bottom: calc(env(safe-area-inset-bottom) + 120rpx);
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-accent);
-  z-index: 100;
-  transition: transform 0.2s ease;
-}
-
-.fab:active {
-  transform: scale(0.92);
-}
-
-.fab-icon {
-  font-size: 64rpx;
-  font-weight: 300;
-  color: #FFFFFF;
-  line-height: 1;
-  margin-top: -6rpx;
-}
+/* 悬浮按钮：.fab 已提升为 app.wxss 全局类，此处不再重复定义 */

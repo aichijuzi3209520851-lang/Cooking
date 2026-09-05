@@ -45,7 +45,6 @@
       loading="{{logging}}"
       disabled="{{logging}}"
     >
-      <text class="login-button-icon">微信</text>
       <text>{{logging ? '登录中...' : '微信快捷登录'}}</text>
     </button>
 

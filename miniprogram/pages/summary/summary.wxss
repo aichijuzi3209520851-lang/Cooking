@@ -52,6 +52,11 @@
   overflow: hidden;
   flex-shrink: 0;
   margin-right: 24rpx;
+  transition: transform 0.15s ease;
+}
+
+.dish-thumb:active {
+  transform: scale(0.94);
 }
 
 .dish-thumb-img {
@@ -143,7 +148,8 @@
 .heat-num {
   font-size: 52rpx;
   font-weight: 800;
-  color: var(--color-accent);
+  /* 用 accent-deep 而非 accent：金色等浅强调色下依然 ≥3:1（G5/S1） */
+  color: var(--color-num-strong);
   line-height: 1;
 }
 
@@ -155,8 +161,9 @@
 
 /* chef 撤下按钮 */
 .chef-cancel-btn {
-  margin-top: 24rpx;
-  padding-top: 20rpx;
+  margin-top: 20rpx;
+  padding-top: 24rpx;
+  padding-bottom: 4rpx;
   border-top: 1rpx solid var(--color-separator);
   text-align: center;
   font-size: 26rpx;

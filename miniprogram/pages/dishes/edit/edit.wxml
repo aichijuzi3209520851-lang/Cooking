@@ -2,19 +2,22 @@
 <view class="container edit-page {{themeClass}}">
   <!-- 图片上传区域 -->
   <view class="image-section">
-    <view class="image-uploader" bindtap="onChooseImage">
-      <block wx:if="{{imageUrl}}">
-        <image class="image-preview" src="{{imageUrl}}" mode="aspectFill"></image>
-        <view class="image-delete" catchtap="onDeleteImage">
-          <text class="image-delete-icon">×</text>
-        </view>
-      </block>
-      <block wx:else>
-        <view class="image-placeholder">
-          <text class="image-placeholder-icon">{{uploading ? '⏳' : '📷'}}</text>
-          <text class="image-placeholder-text">{{uploading ? '上传中...' : '添加图片'}}</text>
-        </view>
-      </block>
+    <view class="image-uploader-wrap">
+      <view class="image-uploader" bindtap="onChooseImage">
+        <block wx:if="{{imageUrl}}">
+          <image class="image-preview" src="{{imageUrl}}" mode="aspectFill"></image>
+        </block>
+        <block wx:else>
+          <view class="image-placeholder">
+            <text class="image-placeholder-icon">{{uploading ? '⏳' : '📷'}}</text>
+            <text class="image-placeholder-text">{{uploading ? '上传中...' : '添加图片'}}</text>
+          </view>
+        </block>
+      </view>
+      <!-- 删除按钮置于裁剪容器外，热区外扩不被 overflow:hidden 裁掉 -->
+      <view wx:if="{{imageUrl}}" class="image-delete" catchtap="onDeleteImage">
+        <text class="image-delete-icon">×</text>
+      </view>
     </view>
     <view class="caption image-tip">不上传将使用分类默认图</view>
   </view>

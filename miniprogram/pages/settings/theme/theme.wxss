@@ -13,8 +13,6 @@
 .section-title {
   padding: 0 8rpx 16rpx;
   font-size: 26rpx;
-  text-transform: uppercase;
-  letter-spacing: 1rpx;
 }
 
 /* iOS 分组列表 */
@@ -99,7 +97,7 @@
 }
 
 .accent-check {
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   font-size: 40rpx;
   font-weight: 700;
   line-height: 1;

@@ -12,7 +12,8 @@
   flex-shrink: 0;
   margin-left: -12rpx;
   box-sizing: border-box;
-  border: 2rpx solid #FFFFFF;
+  /* 描边跟随卡片底色：深色模式下不再出现刺眼白圈 */
+  border: 2rpx solid var(--color-card);
   background: var(--color-bg-secondary);
 }
 

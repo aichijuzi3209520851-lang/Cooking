@@ -6,6 +6,7 @@ const {
   getRoleEmoji,
   getAvatarColor,
   getAvatarText,
+  getAccentHex,
   showSuccess,
   showError,
   showApiError
@@ -155,7 +156,7 @@ Page({
       content: `版本：v${APP_VERSION}\n\n一款简单的家庭点菜小程序，和家人一起决定今天吃什么。`,
       showCancel: false,
       confirmText: '好的',
-      confirmColor: '#D93A2B'
+      confirmColor: getAccentHex()
     });
   }
 });

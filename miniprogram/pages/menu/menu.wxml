@@ -3,7 +3,7 @@
 
   <!-- 顶部区域 -->
   <view class="header">
-    <view class="header-left" bindtap="onFamilyTap">
+    <view class="header-left">
       <view class="header-title">今天吃啥</view>
       <view class="header-sub">
         <text>{{dateText}}</text>
@@ -13,10 +13,10 @@
     </view>
     <view
       class="header-right"
-      wx:if="{{familyCount > 1}}"
+      wx:if="{{currentFamily}}"
       catchtap="onFamilyTap"
     >
-      <text class="switch-text">切换</text>
+      <text class="switch-text">{{currentFamily.name}}</text>
       <text class="switch-arrow">›</text>
     </view>
   </view>
@@ -73,7 +73,17 @@
 
     <!-- 菜品列表 -->
     <view class="dish-list safe-bottom">
-      <block wx:if="{{dishes.length > 0}}">
+      <!-- 首屏加载骨架：避免加载中闪现「暂无菜品」空状态 -->
+      <block wx:if="{{loading && dishes.length === 0}}">
+        <view class="skeleton-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+          <view class="skeleton-thumb skeleton-shimmer"></view>
+          <view class="skeleton-lines">
+            <view class="skeleton-line skeleton-shimmer"></view>
+            <view class="skeleton-line skeleton-line-short skeleton-shimmer"></view>
+          </view>
+        </view>
+      </block>
+      <block wx:elif="{{dishes.length > 0}}">
         <dish-card
           wx:for="{{dishes}}"
           wx:key="dishId"

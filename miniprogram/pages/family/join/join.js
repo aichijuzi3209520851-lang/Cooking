@@ -49,6 +49,13 @@ Page({
     }
   },
 
+  // 输入满6位自动加入；主按钮兜底（onSubmitTap）
+  onSubmitTap() {
+    if (this.data.loading) return;
+    if (this.data.codeValue.length !== 6) return;
+    this.joinByCode(this.data.codeValue);
+  },
+
   // 通过邀请码加入
   async joinByCode(code) {
     this.setData({ loading: true });

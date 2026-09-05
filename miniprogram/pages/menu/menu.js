@@ -332,6 +332,8 @@ Page({
     const dish = e.detail.dish;
     if (!dish || !dish.dishId) return;
 
+    // 高危操作：确认弹窗前给一档中强度震动提示
+    wx.vibrateShort({ type: 'medium' });
     const confirmed = await showConfirm(
       '撤下菜品',
       `确定撤下「${dish.name}」吗？所有点菜记录将被清除。`

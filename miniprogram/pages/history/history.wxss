@@ -24,6 +24,17 @@
   justify-content: center;
   background: var(--color-card-inner);
   transition: all 0.2s ease;
+  position: relative;
+}
+
+/* 视觉 64rpx，热区外扩至 88rpx（44px）触控底线 */
+.date-arrow::after {
+  content: '';
+  position: absolute;
+  top: -12rpx;
+  left: -12rpx;
+  right: -12rpx;
+  bottom: -12rpx;
 }
 
 .date-arrow:active {

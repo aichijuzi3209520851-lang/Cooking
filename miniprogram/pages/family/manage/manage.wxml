@@ -11,7 +11,7 @@
 
     <view class="family-code-section" bindtap="onCopyCode">
       <view class="caption family-code-label">家庭加入码（点击复制）</view>
-      <view class="family-code">{{currentFamily.joinCode || '------'}}</view>
+      <view class="family-code {{codePulse ? 'family-code-pulse' : ''}}">{{currentFamily.joinCode || '------'}}</view>
     </view>
 
   </view>

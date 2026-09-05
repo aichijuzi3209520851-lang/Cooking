@@ -30,6 +30,11 @@
   border-radius: var(--radius-md);
   padding: 28rpx 32rpx;
   margin-bottom: 24rpx;
+  transition: opacity 0.15s ease;
+}
+
+.family-code-section:active {
+  opacity: 0.7;
 }
 
 .family-code-label {
@@ -41,7 +46,13 @@
   font-weight: 700;
   color: var(--color-accent);
   letter-spacing: 16rpx;
+  /* 补偿末字符后的字距，使视觉居中 */
+  text-indent: 16rpx;
   text-align: center;
+}
+
+.family-code-pulse {
+  animation: pulse 0.3s ease;
 }
 
 /* 区域 */
@@ -171,20 +182,31 @@
 }
 
 .member-action-btn {
-  font-size: 24rpx;
-  padding: 10rpx 20rpx;
+  font-size: 26rpx;
+  padding: 14rpx 24rpx;
   border-radius: var(--radius-pill);
   line-height: 1.4;
+  position: relative;
+}
+
+/* 高危操作（移除成员）热区外扩，避免误触邻居 */
+.member-action-btn::after {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: -8rpx;
+  right: -8rpx;
+  bottom: -10rpx;
 }
 
 .member-action-toggle {
-  color: var(--color-accent);
+  color: var(--color-accent-deep);
   background: var(--color-accent-soft);
 }
 
 .member-action-remove {
   color: var(--color-primary-red);
-  background: rgba(255, 59, 48, 0.1);
+  background: rgba(224, 32, 32, 0.10);
 }
 
 .member-action-btn:active {

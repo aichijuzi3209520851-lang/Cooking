@@ -79,8 +79,6 @@
   padding: 0 16rpx 14rpx;
   font-size: 24rpx;
   color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5rpx;
 }
 
 .group-card {

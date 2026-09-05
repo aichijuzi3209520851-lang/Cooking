@@ -22,10 +22,10 @@
     "backgroundColor": "#FAF6F0"
   },
   "tabBar": {
-    "color": "#8A7E72",
+    "color": "#6F6459",
     "selectedColor": "#D93A2B",
     "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
+    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/menu/menu",
