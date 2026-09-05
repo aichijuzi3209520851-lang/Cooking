@@ -11,10 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # 项目零 npm 依赖（检查脚本均基于 Node 标准库），且 package-lock.json 被 .gitignore 忽略，
+      # 因此 setup-node 不开启 cache: npm —— 该选项要求仓库存在锁文件，否则直接报错
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: 语法检查
         run: npm run check:syntax
       - name: Lint（安全与资源静态检查）
