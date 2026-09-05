@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "筷点",
+  "navigationBarTitleText": "筷点吃饭",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "dish-card": "/components/dish-card/dish-card",

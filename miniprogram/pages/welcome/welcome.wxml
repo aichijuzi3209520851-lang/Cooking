@@ -2,7 +2,7 @@
 <view class="welcome-page {{themeClass}}">
   <view class="welcome-content">
     <view class="welcome-emoji">🍳</view>
-    <view class="welcome-title">筷<text class="welcome-title-highlight">点</text></view>
+    <view class="welcome-title"><text class="welcome-title-highlight">筷点</text>吃饭</view>
     <view class="welcome-subtitle">告诉掌勺的你想吃什么</view>
   </view>
 

@@ -2,7 +2,7 @@
   "name": "family-dining-miniprogram",
   "version": "1.1.0",
   "private": true,
-  "description": "筷点：家庭就餐决策小程序（微信原生小程序 + CloudBase 云开发）",
+  "description": "筷点吃饭：家庭就餐决策小程序（微信原生小程序 + CloudBase 云开发）",
   "scripts": {
     "check:syntax": "node scripts/check-syntax.js",
     "lint": "node scripts/lint.js",

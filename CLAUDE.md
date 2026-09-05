@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-「筷点」家庭就餐决策小程序：原生微信小程序前端 + 微信云开发（CloudBase）后端。掌勺人（chef）维护菜谱，干饭人（eater）每日投票，自动汇总出今日菜单。
+「筷点吃饭」家庭就餐决策小程序：原生微信小程序前端 + 微信云开发（CloudBase）后端。掌勺人（chef）维护菜谱，干饭人（eater）每日投票，自动汇总出今日菜单。
 
 无构建步骤——前端编译在微信开发者工具中完成；后端为 6 个云函数 + 1 个共享模块，零第三方运行时依赖（仅 `wx-server-sdk`）。代码质量验证走根目录 npm scripts（见下）。
 
