@@ -1,6 +1,6 @@
 // pages/profile/profile.js
 const theme = require('../../utils/theme.js');
-const { familyApi, notifyApi } = require('../../utils/api.js');
+const { familyApi, notifyApi, userApi } = require('../../utils/api.js');
 const {
   getRoleName,
   getRoleEmoji,
@@ -67,6 +67,69 @@ Page({
   // 跳转家庭管理
   onFamilyManage() {
     wx.navigateTo({ url: '/pages/family/manage/manage' });
+  },
+
+  // 修改昵称（PROFILE-001）：微信原生可编辑弹窗
+  onEditNickname() {
+    const that = this;
+    wx.showModal({
+      title: '修改昵称',
+      editable: true,
+      placeholderText: '和家人怎么称呼你？（20 字以内）',
+      content: this.data.nickname === '微信用户' ? '' : this.data.nickname,
+      success(res) {
+        if (!res.confirm) return;
+        const nickname = (res.content || '').trim();
+        if (!nickname) {
+          showError('昵称不能为空');
+          return;
+        }
+        if (nickname.length > 20) {
+          showError('昵称不能超过 20 个字');
+          return;
+        }
+        userApi.updateProfile({ nickname }).then(() => {
+          app.globalData.userInfo = { ...(app.globalData.userInfo || {}), nickname };
+          app.saveCache();
+          that.loadUserData();
+          showSuccess('昵称已更新');
+        }).catch(err => {
+          showApiError(err, '昵称更新失败');
+        });
+      }
+    });
+  },
+
+  // 更换头像（PROFILE-001）：微信头像昵称填写能力，上传云存储后持久化 fileID
+  onChooseAvatar(e) {
+    const filePath = e.detail && e.detail.avatarUrl;
+    if (!filePath) return;
+    const that = this;
+    const openid = app.globalData.openid || 'user';
+    const rawExt = String(filePath).split('.').pop() || '';
+    const ext = /^[a-z0-9]{1,5}$/i.test(rawExt) ? rawExt.toLowerCase() : 'png';
+
+    wx.showLoading({ title: '上传中...', mask: true });
+    wx.cloud.uploadFile({
+      cloudPath: `avatars/${openid}/avatar-${Date.now()}.${ext}`,
+      filePath,
+      success(res) {
+        userApi.updateProfile({ avatarUrl: res.fileID }).then(() => {
+          app.globalData.userInfo = { ...(app.globalData.userInfo || {}), avatarUrl: res.fileID };
+          app.saveCache();
+          that.loadUserData();
+          wx.hideLoading();
+          showSuccess('头像已更新');
+        }).catch(err => {
+          wx.hideLoading();
+          showApiError(err, '头像更新失败');
+        });
+      },
+      fail() {
+        wx.hideLoading();
+        showError('头像上传失败，请重试');
+      }
+    });
   },
 
   // 跳转菜品库管理

@@ -16,6 +16,28 @@
   margin-bottom: 32rpx;
 }
 
+/* 头像即按钮：微信头像昵称填写能力（open-type=chooseAvatar） */
+.profile-avatar-btn {
+  width: 96rpx;
+  height: 96rpx;
+  padding: 0;
+  margin: 0 24rpx 0 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profile-avatar-btn::after {
+  border: none;
+}
+
+.profile-avatar-hover {
+  opacity: 0.8;
+  transform: scale(0.96);
+}
+
 .profile-avatar {
   width: 96rpx;
   height: 96rpx;
@@ -24,8 +46,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  margin-right: 24rpx;
+}
+
+/* 头像右下角相机角标：提示可自定义 */
+.profile-avatar-badge {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+  font-size: 18rpx;
+  line-height: 34rpx;
+  text-align: center;
+}
+
+.profile-avatar {
+  position: relative;
 }
 
 .profile-avatar-img {
@@ -49,6 +88,18 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  padding: 12rpx 0;
+  margin: -12rpx 0;
+}
+
+.profile-name-hover {
+  opacity: 0.75;
+}
+
+.profile-name-edit {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  margin-left: 8rpx;
 }
 
 .profile-name {

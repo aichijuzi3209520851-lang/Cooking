@@ -134,11 +134,18 @@
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-right: 24rpx;
+}
+
+.member-avatar-img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .member-avatar-text {
@@ -213,7 +220,7 @@
   opacity: 0.6;
 }
 
-/* 退出按钮 */
+/* 告别按钮：暖红描边胶囊，委婉不刺眼 */
 .exit-section {
   margin-top: 56rpx;
   display: flex;
@@ -221,9 +228,21 @@
 }
 
 .exit-btn {
+  min-width: 420rpx;
+  height: 88rpx;
+  line-height: 84rpx;
+  padding: 0 56rpx;
+  background: transparent;
+  border: 2rpx solid rgba(224, 32, 32, 0.30);
+  border-radius: var(--radius-pill);
   color: var(--color-primary-red) !important;
   font-size: 30rpx;
   font-weight: 500;
+}
+
+.exit-btn-hover {
+  opacity: 0.75;
+  transform: scale(0.98);
 }
 
 .exit-btn[disabled] {

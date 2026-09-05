@@ -14,7 +14,7 @@ function readFn(name) {
 }
 
 const DOCUMENTED_ACTIONS = {
-  login: ['login', 'setNotifyStatus'],
+  login: ['login', 'setNotifyStatus', 'updateProfile'],
   family: ['create', 'joinByCode', 'list', 'switch', 'members', 'removeMember', 'leave', 'updateRole', 'updateMemberRole'],
   dish: ['list', 'add', 'update', 'delete', 'toggleHidden'],
   vote: ['add', 'cancel', 'chefCancel', 'todayList', 'history'],
@@ -206,4 +206,12 @@ test('login：setNotifyStatus 记录授权结果（NOTIFY-001）', () => {
   const src = readFn('login');
   assert.match(src, /setNotifyStatus/, '缺少通知状态持久化操作');
   assert.match(src, /notifyStatus/, '缺少授权状态字段');
+});
+
+test('login：updateProfile 校验昵称与头像地址（PROFILE-001）', () => {
+  const src = readFn('login');
+  assert.match(src, /updateProfile/, '缺少用户资料更新操作');
+  assert.match(src, /昵称不能超过 20 个字/, '缺少昵称长度校验');
+  assert.match(src, /validateAvatarUrl/, '头像地址未走校验器');
+  assert.match(src, /deleteFile/, '旧云存储头像未清理');
 });

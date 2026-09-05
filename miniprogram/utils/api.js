@@ -102,6 +102,11 @@ const notifyApi = {
   setStatus: (status, reason) => call('login', { action: 'setNotifyStatus', status, reason })
 };
 
+// 用户资料（头像/昵称编辑，走 login 云函数）
+const userApi = {
+  updateProfile: (fields) => call('login', { action: 'updateProfile', ...fields }, true)
+};
+
 module.exports = {
   ApiError,
   call,
@@ -110,5 +115,6 @@ module.exports = {
   dishApi,
   voteApi,
   historyApi,
-  notifyApi
+  notifyApi,
+  userApi
 };

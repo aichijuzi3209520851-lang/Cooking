@@ -31,5 +31,27 @@ const VALID_CATEGORIES = ['meat', 'veg', 'soup', 'staple', 'cold']
 
 module.exports = {
   validateImageUrl,
+  validateAvatarUrl,
   VALID_CATEGORIES
+}
+
+/**
+ * 校验头像地址（PROFILE-001）：
+ * 只接受 云存储 fileID（cloud://，路径包含 /avatars/）或 https 图片；空串表示清除头像
+ */
+function validateAvatarUrl(avatarUrl) {
+  if (!avatarUrl) return ''
+  if (typeof avatarUrl !== 'string' || avatarUrl.length > 200) {
+    throw new ApiError('INVALID_PARAM', '头像地址无效')
+  }
+  if (avatarUrl.indexOf('cloud://') === 0) {
+    if (avatarUrl.indexOf('/avatars/') === -1) {
+      throw new ApiError('INVALID_PARAM', '头像路径无效')
+    }
+    return avatarUrl
+  }
+  if (/^https:\/\/.+/.test(avatarUrl)) {
+    return avatarUrl
+  }
+  throw new ApiError('INVALID_PARAM', '头像地址无效')
 }

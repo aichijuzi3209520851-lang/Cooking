@@ -6,6 +6,7 @@ const {
   showError,
   showConfirm,
   getRoleName,
+  getRoleEmoji,
   getAvatarColor,
   getAvatarText
 } = require('../../../utils/util.js');
@@ -40,6 +41,7 @@ Page({
       currentFamily,
       families,
       currentRole,
+      currentRoleEmoji: getRoleEmoji(currentRole),
       currentUserId,
       // 仅家庭创建者显示成员管理操作（与云函数权限校验保持一致）
       isCreator: !!(currentFamily && currentFamily.creatorId && currentFamily.creatorId === currentUserId)
@@ -56,6 +58,7 @@ Page({
             ...m,
             userId: userId,
             roleName: getRoleName(m.role),
+            roleEmoji: getRoleEmoji(m.role),
             avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`,
             avatarText: getAvatarText(m.nickname || m.name || ''),
             isSelf: userId === currentUserId
@@ -161,13 +164,14 @@ Page({
     }
   },
 
-  // 退出家庭
+  // 退出家庭（对外措辞：告别这个家）
   async onExitFamily() {
     if (this.data.loading) return;
 
+    const familyName = this.data.currentFamily ? this.data.currentFamily.name : '';
     const confirmed = await showConfirm(
-      '退出家庭',
-      '退出后将不再接收该家庭的菜单信息，确定要退出吗？'
+      '和这个家说再见？',
+      `离开「${familyName}」后，将不再收到它的菜单消息。以后想回来了，随时可以用加入码再加入～`
     );
     if (!confirmed) return;
 
@@ -185,7 +189,7 @@ Page({
       app.globalData.currentRole = null;
       app.saveCache();
 
-      showSuccess('已退出家庭');
+      showSuccess('后会有期，饭桌见');
       setTimeout(() => {
         wx.reLaunch({
           url: '/pages/welcome/welcome'
@@ -193,7 +197,7 @@ Page({
       }, 1000);
     } catch (err) {
       console.error('退出家庭失败', err);
-      showError('退出失败');
+      showError('操作失败，请重试');
     } finally {
       this.setData({ loading: false });
     }

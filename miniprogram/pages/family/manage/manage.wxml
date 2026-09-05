@@ -5,7 +5,7 @@
     <view class="family-card-header">
       <view class="family-name">{{currentFamily.name}}</view>
       <view class="badge {{currentRole === 'chef' ? 'badge-chef' : 'badge-eater'}}">
-        {{currentRole === 'chef' ? '🍳 掌勺的' : '🍚 等饭的'}}
+        {{currentRoleEmoji}} {{currentRole === 'chef' ? '掌勺的' : '等饭的'}}
       </view>
     </view>
 
@@ -30,7 +30,7 @@
         <view class="family-list-info">
           <view class="family-list-name">{{item.name}}</view>
           <view class="caption family-list-role">
-            {{item.role === 'chef' ? '🍳 掌勺的' : '🍚 等饭的'}}
+            {{item.roleEmoji}} {{item.role === 'chef' ? '掌勺的' : '等饭的'}}
           </view>
         </view>
         <view class="family-list-check" wx:if="{{item.familyId === currentFamily.familyId}}">✓</view>
@@ -43,8 +43,14 @@
     <view class="section-title caption">家庭成员（{{members.length}}）</view>
     <view class="card member-list-card">
       <view class="member-item" wx:for="{{members}}" wx:key="userId">
-        <view class="member-avatar" style="{{item.avatarStyle}}">
-          <text class="member-avatar-text">{{item.avatarText}}</text>
+        <view class="member-avatar" style="{{item.avatarUrl ? '' : item.avatarStyle}}">
+          <image
+            wx:if="{{item.avatarUrl}}"
+            class="member-avatar-img"
+            src="{{item.avatarUrl}}"
+            mode="aspectFill"
+          />
+          <text wx:else class="member-avatar-text">{{item.avatarText}}</text>
         </view>
         <view class="member-info">
           <view class="member-name-row">
@@ -76,10 +82,10 @@
     </view>
   </view>
 
-  <!-- 退出家庭 -->
+  <!-- 告别家庭 -->
   <view class="exit-section safe-bottom">
-    <button class="btn btn-ghost exit-btn" bindtap="onExitFamily" disabled="{{loading}}">
-      退出家庭
+    <button class="exit-btn" bindtap="onExitFamily" disabled="{{loading}}" hover-class="exit-btn-hover">
+      告别这个家
     </button>
   </view>
 </view>

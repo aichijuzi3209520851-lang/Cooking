@@ -2,6 +2,7 @@
 // 登录并初始化用户信息，返回用户加入的家庭列表；同时承载用户资料类小操作（setNotifyStatus）
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
+const { validateAvatarUrl } = require('./shared/validators')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -27,7 +28,6 @@ async function findOrCreateUser(openid) {
     avatarUrl: '',
     currentFamilyId: '',
     theme: 'system',
-    accentColor: 'red',
     notifyEnabled: false,
     notifyStatus: 'unknown',
     notifyReason: '',
@@ -129,6 +129,48 @@ async function setNotifyStatus(data, openid) {
   }
 }
 
+// 持久化用户资料修改（PROFILE-001）：昵称 / 自定义头像
+async function updateProfile(data, openid) {
+  const { nickname, avatarUrl } = data
+  if (nickname === undefined && avatarUrl === undefined) {
+    throw new ApiError('INVALID_PARAM', '没有需要更新的内容')
+  }
+
+  const userRes = await db.collection('users').doc(openid).get().catch(() => null)
+  if (!userRes || !userRes.data) {
+    throw new ApiError('NOT_FOUND', '用户不存在')
+  }
+  const oldUser = userRes.data
+
+  const updateData = { updatedAt: new Date() }
+  if (nickname !== undefined) {
+    const n = String(nickname || '').trim()
+    if (!n) {
+      throw new ApiError('INVALID_PARAM', '昵称不能为空')
+    }
+    if (n.length > 20) {
+      throw new ApiError('INVALID_PARAM', '昵称不能超过 20 个字')
+    }
+    updateData.nickname = n
+  }
+  if (avatarUrl !== undefined) {
+    updateData.avatarUrl = validateAvatarUrl(avatarUrl)
+    // 旧头像为云存储文件时尽力清理，避免孤儿文件
+    if (oldUser.avatarUrl &&
+        oldUser.avatarUrl.indexOf('cloud://') === 0 &&
+        oldUser.avatarUrl !== updateData.avatarUrl) {
+      cloud.deleteFile({ fileList: [oldUser.avatarUrl] }).catch(() => null)
+    }
+  }
+
+  await db.collection('users').doc(openid).update({ data: updateData })
+
+  return {
+    nickname: updateData.nickname !== undefined ? updateData.nickname : oldUser.nickname,
+    avatarUrl: updateData.avatarUrl !== undefined ? updateData.avatarUrl : (oldUser.avatarUrl || '')
+  }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -144,6 +186,9 @@ exports.main = async (event, context) => {
         break
       case 'setNotifyStatus':
         data = await setNotifyStatus(event, openid)
+        break
+      case 'updateProfile':
+        data = await updateProfile(event, openid)
         break
       default:
         return {

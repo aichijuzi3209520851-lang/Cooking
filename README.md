@@ -724,9 +724,8 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 |:---|:---|:---|
 | 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用（见部署文档） |
 | 扫码加入家庭 | 未实现 | 暂无二维码生成与 `wx.scanCode` 加入流程，加入方式仅 6 位加入码 |
-| 用户昵称/头像授权 | 未实现 | 统一使用默认昵称「微信用户」与渐变色头像，未调用受隐私限制的授权 API |
 
-> 已于 2026-09 完成：分类占位插画（`images/category/`，生图 SVG 素材）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）与登录页漂浮素材（`images/login/`）。
+> 已于 2026-09 完成：分类占位插画（`images/category/`）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）、登录页漂浮素材（`images/login/`），以及**用户自定义昵称与头像**（微信头像昵称填写能力 + 云存储 `avatars/{openid}/` 路径；需在控制台存储规则中放行该前缀的本人写入）。
 
 ---
 
