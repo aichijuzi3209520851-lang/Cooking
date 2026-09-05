@@ -310,6 +310,8 @@ npm test
 
 共 6 个函数：`login`、`family`、`dish`、`vote`、`notify`、`dailyReset`
 
+> **共享模块说明**：6 个云函数共同引用 `cloudfunctions/shared/` 公共模块。每个函数目录内的 `cloud-shared/` 是它的拷贝（各函数 `package.json` 以 `"cloud-shared": "file:./cloud-shared"` 声明，云端安装依赖时自动装进 `node_modules`）。**修改 `cloudfunctions/shared/` 后，需重新拷贝到 6 个函数目录再部署**，否则云端报 `Cannot find module 'cloud-shared/...'`。
+
 ### 方式二：CloudBase CLI
 
 ```bash

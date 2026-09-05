@@ -9,6 +9,14 @@ ENV_ID="${ENV_ID:?请先设置环境变量 ENV_ID，例如：ENV_ID=lcw-xxxxxxxx
 
 FUNCTIONS=(login family dish vote notify dailyReset)
 
+# 同步共享模块：每个函数目录内的 cloud-shared/ 是 cloudfunctions/shared/ 的拷贝，
+# 云端 npm install 依赖 package.json 中的 "cloud-shared": "file:./cloud-shared" 解析。
+# 修改 cloudfunctions/shared/ 后必须重新同步（DevTools 右键部署同理）。
+for fn in "${FUNCTIONS[@]}"; do
+  rm -rf "cloudfunctions/${fn}/cloud-shared"
+  cp -r "cloudfunctions/shared" "cloudfunctions/${fn}/cloud-shared"
+done
+
 for fn in "${FUNCTIONS[@]}"; do
   echo "==> 部署 ${fn} 到环境 ${ENV_ID}"
   tcb fn deploy "${fn}" -e "${ENV_ID}" --force
