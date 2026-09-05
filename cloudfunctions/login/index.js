@@ -1,7 +1,7 @@
 // 云函数：login
 // 登录并初始化用户信息，返回用户加入的家庭列表；同时承载用户资料类小操作（setNotifyStatus）
 const cloud = require('wx-server-sdk')
-const { ApiError } = require('cloud-shared/api-error')
+const { ApiError } = require('./shared/api-error')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV

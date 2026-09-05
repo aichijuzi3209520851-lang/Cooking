@@ -69,7 +69,6 @@
           bindtap="onCategoryTap"
         >
           <text class="category-name">{{item.name}}</text>
-          <view wx:if="{{selectedCategory === item.key}}" class="category-underline"></view>
         </view>
       </view>
     </scroll-view>

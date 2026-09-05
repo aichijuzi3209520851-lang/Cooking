@@ -2,8 +2,8 @@
 // 每日定时归档：昨日投票写入 vote_history（幂等），清理 daily_votes，重置菜品隐藏状态
 // 由定时触发器每日 0 点调用；支持失败重试与手动测试入口（仅开发环境）
 const cloud = require('wx-server-sdk')
-const { getYesterdayStr } = require('cloud-shared/date')
-const { removeWhere, removeByIds, getUserMap, getDishMap } = require('cloud-shared/db-helpers')
+const { getYesterdayStr } = require('./shared/date')
+const { removeWhere, removeByIds, getUserMap, getDishMap } = require('./shared/db-helpers')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV

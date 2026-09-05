@@ -4,7 +4,6 @@
   "description": "点菜投票：点菜、取消、撤菜、当日列表、历史",
   "main": "index.js",
   "dependencies": {
-    "cloud-shared": "file:./cloud-shared",
     "wx-server-sdk": "2.6.3"
   }
 }

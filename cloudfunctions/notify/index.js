@@ -6,7 +6,7 @@
 //   - 发送前校验家庭、菜品、成员关系，不能凭内部密钥向任意用户发送；
 //   - 日志不输出密钥、完整 event 或完整用户列表。
 const cloud = require('wx-server-sdk')
-const { ApiError } = require('cloud-shared/api-error')
+const { ApiError } = require('./shared/api-error')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -26,6 +26,13 @@ function getTemplateIds() {
     vote: process.env.NOTIFY_VOTE_TEMPLATE_ID || '',
     cancel: process.env.NOTIFY_CANCEL_TEMPLATE_ID || ''
   }
+}
+
+// 订阅消息跳转版本：正式版 formal / 体验版 trial / 开发版 develop
+// 默认 formal；体验版联调时把 notify 的环境变量 NOTIFY_MP_STATE 设为 trial，否则收不到消息
+function getMiniprogramState() {
+  const state = process.env.NOTIFY_MP_STATE || 'formal'
+  return ['formal', 'trial', 'develop'].includes(state) ? state : 'formal'
 }
 
 // 过滤出开启了通知的用户（openid 列表）
@@ -48,7 +55,7 @@ async function sendToOne(touser, templateId, title, thing1, thing2) {
       touser,
       templateId,
       page: JUMP_PAGE,
-      miniprogramState: 'formal',
+      miniprogramState: getMiniprogramState(),
       lang: 'zh_CN',
       data: {
         thing1: { value: thing1 },

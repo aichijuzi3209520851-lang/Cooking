@@ -1,10 +1,10 @@
 // 云函数：vote
 // 点菜投票：点菜、取消、掌勺撤菜、当日列表、历史记录
 const cloud = require('wx-server-sdk')
-const { ApiError } = require('cloud-shared/api-error')
-const { getOpenid, requireMember, requireChef, requireDishInFamily } = require('cloud-shared/auth')
-const { getTodayStr } = require('cloud-shared/date')
-const { getUserMap, getDishMap } = require('cloud-shared/db-helpers')
+const { ApiError } = require('./shared/api-error')
+const { getOpenid, requireMember, requireChef, requireDishInFamily } = require('./shared/auth')
+const { getTodayStr } = require('./shared/date')
+const { getUserMap, getDishMap } = require('./shared/db-helpers')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -195,9 +195,11 @@ async function chefCancel(data, openid) {
   const votes = votesRes.data || []
   const affectedUserIds = [...new Set(votes.map(v => v.userId))]
 
-  // 删除所有当天投票（cookCount 为累计语义，不扣减）
-  for (const v of votes) {
-    await db.collection('daily_votes').doc(v._id).remove()
+  // 批量删除当天投票（避免逐条串行删除在大家庭场景下触发云函数超时）
+  if (votes.length > 0) {
+    await db.collection('daily_votes')
+      .where({ _id: _.in(votes.map(v => v._id)) })
+      .remove()
   }
 
   // 设置菜品为隐藏
@@ -208,9 +210,9 @@ async function chefCancel(data, openid) {
     }
   })
 
-  // 通知受影响用户
+  // 通知受影响用户（await 确保函数返回前通知已发出，失败不影响主流程结果）
   if (affectedUserIds.length > 0) {
-    safeCallNotify({
+    await safeCallNotify({
       action: 'sendCancelNotify',
       familyId,
       dishId,

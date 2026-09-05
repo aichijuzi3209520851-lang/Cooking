@@ -164,10 +164,6 @@
   font-weight: 600;
 }
 
-.category-underline {
-  display: none;
-}
-
 /* ===== 菜品列表 ===== */
 .dish-list {
   padding-top: 8rpx;

@@ -35,7 +35,6 @@ Page({
     isChef: false,
     hasFamily: false,
     libraryEmpty: false,
-    familyCount: 0,
     todayDate: '',
     dateText: '',
     loading: false,
@@ -69,8 +68,7 @@ Page({
       currentFamily,
       currentRole,
       currentUserId,
-      isChef: currentRole === 'chef',
-      familyCount: families.length
+      isChef: currentRole === 'chef'
     });
 
     this.setToday();

@@ -241,13 +241,6 @@ page {
   box-shadow: var(--shadow-card);
 }
 
-.card-white {
-  background: var(--color-card);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-card);
-}
-
 /* Buttons */
 .btn {
   display: flex;
@@ -339,11 +332,6 @@ page {
   color: var(--color-text-secondary);
 }
 
-.tertiary-text {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
-}
-
 /* Input */
 .input {
   width: 100%;
@@ -359,13 +347,6 @@ page {
 
 .input-placeholder {
   color: var(--color-text-tertiary);
-}
-
-/* Divider */
-.divider {
-  height: 1rpx;
-  background: var(--color-separator);
-  margin: var(--spacing-md) 0;
 }
 
 /* Safe area */

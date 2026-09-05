@@ -2,10 +2,10 @@
 // 家庭管理：创建、加入、列表、切换、成员管理、退出/解散
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
-const { ApiError } = require('cloud-shared/api-error')
-const { getOpenid, getMember, requireMember } = require('cloud-shared/auth')
-const { getTodayStr } = require('cloud-shared/date')
-const { safeDeleteFiles, removeWhere, removeByIds, removeUserTodayVotes } = require('cloud-shared/db-helpers')
+const { ApiError } = require('./shared/api-error')
+const { getOpenid, getMember, requireMember } = require('./shared/auth')
+const { getTodayStr } = require('./shared/date')
+const { safeDeleteFiles, removeWhere, removeByIds, removeUserTodayVotes } = require('./shared/db-helpers')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -15,6 +15,11 @@ const db = cloud.database()
 const _ = db.command
 
 const MEMBER_LIMIT = 10
+
+// 家庭名称长度上限
+const NAME_MAX_LENGTH = 20
+// 每个账号可创建的家庭数量上限（防滥用）
+const FAMILY_LIMIT_PER_USER = 10
 
 // ============ 工具函数 ============
 
@@ -42,6 +47,15 @@ async function createFamily(data, openid) {
   const { name } = data
   if (!name || !name.trim()) {
     throw new ApiError('INVALID_PARAM', '家庭名称不能为空')
+  }
+  if (name.trim().length > NAME_MAX_LENGTH) {
+    throw new ApiError('INVALID_PARAM', `家庭名称不能超过 ${NAME_MAX_LENGTH} 个字`)
+  }
+
+  // 每账号创建数量上限（防滥用刷库）
+  const ownedRes = await db.collection('families').where({ creatorId: openid }).count()
+  if (ownedRes.total >= FAMILY_LIMIT_PER_USER) {
+    throw new ApiError('FAMILY_LIMIT', `每个账号最多创建 ${FAMILY_LIMIT_PER_USER} 个家庭`)
   }
 
   const joinCode = await generateUniqueJoinCode()

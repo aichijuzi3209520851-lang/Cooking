@@ -21,7 +21,6 @@ Page({
     stats: { dishCount: 0, voterCount: 0 },
     currentRole: '',
     isChef: false,
-    currentFamily: null,
     hasFamily: false,
     todayDate: '',
     dateText: '',
@@ -45,12 +44,10 @@ Page({
     }
 
     const families = app.globalData.families || [];
-    const currentFamily = families.find(f => f.familyId === familyId) || null;
     const currentRole = app.globalData.currentRole || '';
 
     this.setData({
       hasFamily: true,
-      currentFamily,
       currentRole,
       isChef: currentRole === 'chef'
     });

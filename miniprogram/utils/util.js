@@ -28,31 +28,6 @@ function yesterday() {
 }
 
 /**
- * 防抖
- */
-function debounce(fn, delay = 300) {
-  let timer = null;
-  return function (...args) {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
-
-/**
- * 节流
- */
-function throttle(fn, delay = 300) {
-  let last = 0;
-  return function (...args) {
-    const now = Date.now();
-    if (now - last >= delay) {
-      last = now;
-      fn.apply(this, args);
-    }
-  };
-}
-
-/**
  * 获取分类名称
  */
 function getCategoryName(category) {
@@ -205,8 +180,6 @@ module.exports = {
   formatDate,
   today,
   yesterday,
-  debounce,
-  throttle,
   getCategoryName,
   getCategoryEmoji,
   getCategoryList,

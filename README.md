@@ -451,6 +451,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `FAMILY_NOT_FOUND` / `JOIN_CODE_INVALID` | 家庭不存在 / 加入码无效 |
 | `DISH_NOT_FOUND` / `DISH_HIDDEN` | 菜品不存在 / 已隐藏 |
 | `VOTE_ALREADY_EXISTS` / `VOTE_NOT_FOUND` | 重复点菜 / 未找到点菜记录 |
+| `DISH_LIMIT` / `FAMILY_LIMIT` | 菜品数量达上限（200 道/家庭）/ 创建家庭数达上限（10 个/账号） |
 | `NOTIFY_FORBIDDEN` / `NOTIFY_TEMPLATE_MISSING` | 通知无权限 / 模板未配置 |
 | `ACTION_UNKNOWN` / `INTERNAL_ERROR` | 未知操作 / 服务异常 |
 | `NETWORK_ERROR`（前端） | 网络请求失败 |

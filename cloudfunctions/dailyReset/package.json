@@ -4,7 +4,6 @@
   "description": "每日定时重置：归档投票、清理当日数据、重置菜品状态",
   "main": "index.js",
   "dependencies": {
-    "cloud-shared": "file:./cloud-shared",
     "wx-server-sdk": "2.6.3"
   }
 }

@@ -4,7 +4,6 @@
   "description": "家庭管理：创建、加入、成员管理",
   "main": "index.js",
   "dependencies": {
-    "cloud-shared": "file:./cloud-shared",
     "wx-server-sdk": "2.6.3"
   }
 }

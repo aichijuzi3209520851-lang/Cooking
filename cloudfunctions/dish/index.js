@@ -1,11 +1,11 @@
 // 云函数：dish
 // 菜品管理：列表、新增、修改、删除、隐藏切换
 const cloud = require('wx-server-sdk')
-const { ApiError } = require('cloud-shared/api-error')
-const { getOpenid, requireChef, requireMember, requireDishInFamily } = require('cloud-shared/auth')
-const { getTodayStr } = require('cloud-shared/date')
-const { safeDeleteFiles, removeTodayVotes } = require('cloud-shared/db-helpers')
-const { validateImageUrl, VALID_CATEGORIES } = require('cloud-shared/validators')
+const { ApiError } = require('./shared/api-error')
+const { getOpenid, requireChef, requireMember, requireDishInFamily } = require('./shared/auth')
+const { getTodayStr } = require('./shared/date')
+const { safeDeleteFiles, removeTodayVotes } = require('./shared/db-helpers')
+const { validateImageUrl, VALID_CATEGORIES } = require('./shared/validators')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -15,6 +15,11 @@ const db = cloud.database()
 const _ = db.command
 
 // ============ 业务处理函数 ============
+
+// 菜品名称长度上限（服务端兜底；前端输入框已有 maxlength=20）
+const NAME_MAX_LENGTH = 30
+// 每个家庭的菜品数量上限（防滥用刷库）
+const DISH_LIMIT_PER_FAMILY = 200
 
 // 查询菜品列表
 // includeHidden=true 时返回全部菜品（含隐藏），仅 chef 可用（UI-001）
@@ -81,11 +86,20 @@ async function addDish(data, openid) {
   if (!name || !name.trim()) {
     throw new ApiError('INVALID_PARAM', '菜品名称不能为空')
   }
+  if (name.trim().length > NAME_MAX_LENGTH) {
+    throw new ApiError('INVALID_PARAM', `菜品名称不能超过 ${NAME_MAX_LENGTH} 个字`)
+  }
   if (!category || !VALID_CATEGORIES.includes(category)) {
     throw new ApiError('INVALID_PARAM', '菜品分类无效')
   }
 
   await requireChef(db, familyId, openid)
+
+  // 每家庭菜品数量上限（防止刷库导致集合膨胀）
+  const countRes = await db.collection('dishes').where({ familyId }).count()
+  if (countRes.total >= DISH_LIMIT_PER_FAMILY) {
+    throw new ApiError('DISH_LIMIT', `菜品数量已达上限（${DISH_LIMIT_PER_FAMILY} 道）`)
+  }
 
   const now = new Date()
   const dish = {
@@ -127,6 +141,9 @@ async function updateDish(data, openid) {
   if (name !== undefined) {
     if (!name || !name.trim()) {
       throw new ApiError('INVALID_PARAM', '菜品名称不能为空')
+    }
+    if (name.trim().length > NAME_MAX_LENGTH) {
+      throw new ApiError('INVALID_PARAM', `菜品名称不能超过 ${NAME_MAX_LENGTH} 个字`)
     }
     updateData.name = name.trim()
   }

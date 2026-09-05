@@ -1,6 +1,0 @@
-{
-  "name": "cloud-shared",
-  "version": "1.0.0",
-  "description": "云函数公共模块：ApiError、鉴权、日期、数据库工具、校验器",
-  "main": "index.js"
-}
