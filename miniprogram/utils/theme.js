@@ -42,6 +42,14 @@ const CHROME = {
   }
 };
 
+// tabBar 选中态图标随家族切换（图标颜色烤在 PNG 里，需逐项替换；
+// 未选中态三个家族共用同一套暖灰图）
+const TAB_SELECTED_ICONS = {
+  warm: ['order-active-warm', 'summary-active-warm', 'profile-active-warm'],
+  fresh: ['order-active-fresh', 'summary-active-fresh', 'profile-active-fresh'],
+  dark: ['order-active-dark', 'summary-active-dark', 'profile-active-dark']
+};
+
 /**
  * 读取系统外观主题（wx.getSystemInfoSync 已废弃，优先 getAppBaseInfo）
  */
@@ -98,6 +106,16 @@ function applyTheme(page) {
   wx.setBackgroundTextStyle({
     textStyle: chrome.bgTextStyle,
     fail() {}
+  });
+
+  // tabBar 选中态图标随主题家族切换（非 tab 页调用走 fail 静默）
+  const tabIcons = TAB_SELECTED_ICONS[resolved];
+  tabIcons.forEach((name, index) => {
+    wx.setTabBarItem({
+      index,
+      selectedIconPath: 'images/tabbar/' + name + '.png',
+      fail() {}
+    });
   });
 
   // resolvedTheme 供 util.getConfirmColor 等读取实际生效家族

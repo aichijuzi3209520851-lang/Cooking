@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 点菜：圆碗 + 斜搭筷子（面性） -->
+  <!-- 碗外轮廓 + 碗口内椭圆（evenodd 挖空） -->
+  <path fill-rule="evenodd" d="
+           M 130 252
+           A 126 28 0 0 1 382 252
+           L 354 356
+           C 344 386, 168 386, 158 356
+           Z
+           M 150 252
+           A 106 19 0 1 0 362 252
+           A 106 19 0 1 0 150 252
+           Z"
+        fill="#D93A2B"/>
+  <!-- 筷子：一双，斜搭在碗沿上 -->
+  <g transform="rotate(-20 256 232)">
+    <rect x="148" y="210" width="216" height="16" rx="8" fill="#D93A2B"/>
+    <rect x="148" y="236" width="216" height="16" rx="8" fill="#D93A2B"/>
+  </g>
+  <!-- 碗身浅色弧线高光 -->
+  <path d="M 178 296 C 170 336, 182 362, 204 380"
+        stroke="#FFFFFF" stroke-width="9" fill="none" stroke-linecap="round" opacity="0.28"/>
+</svg>

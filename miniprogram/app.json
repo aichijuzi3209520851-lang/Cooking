@@ -29,15 +29,21 @@
     "list": [
       {
         "pagePath": "pages/menu/menu",
-        "text": "点菜"
+        "text": "点菜",
+        "iconPath": "images/tabbar/order.png",
+        "selectedIconPath": "images/tabbar/order-active-warm.png"
       },
       {
         "pagePath": "pages/summary/summary",
-        "text": "汇总"
+        "text": "汇总",
+        "iconPath": "images/tabbar/summary.png",
+        "selectedIconPath": "images/tabbar/summary-active-warm.png"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "images/tabbar/profile.png",
+        "selectedIconPath": "images/tabbar/profile-active-warm.png"
       }
     ]
   },
