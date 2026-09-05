@@ -20,8 +20,9 @@ const cloud = {
     const result = await fn(data)
     return { result }
   },
-  async deleteFile() {
-    return { fileList: [] }
+  async deleteFile({ fileList }) {
+    env.deletedFiles.push(...(fileList || []))
+    return { fileList: (fileList || []).map((f) => ({ fileID: f, status: 0 })) }
   },
   openapi: {
     subscribeMessage: {

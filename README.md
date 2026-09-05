@@ -674,12 +674,15 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元测试 + 契约测试（68 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（115 个用例）
+npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 ```
 
 测试体系：
 - **单元测试**（`tests/unit/`）：DTO 转换层、东八区日期工具、云函数共享模块
 - **契约测试**（`tests/contracts/`）：云函数 action 覆盖与错误码稳定性、前端关键行为（登录页独立、编辑页保存可用等）
+- **冒烟测试**（`tests/smoke/`）：内存数据库真实运行云函数核心链路（建家/加入/离开/解散/点菜/通知）
+- **白盒测试**（`tests/whitebox/`）：边界值 + 判定覆盖 + 幂等重跑，设计与结果见 [docs/whitebox-test-plan.md](docs/whitebox-test-plan.md)
 
 ### CI
 

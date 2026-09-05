@@ -25,8 +25,9 @@ const DISH_LIMIT_PER_FAMILY = 200
 // includeHidden=true 时返回全部菜品（含隐藏），仅 chef 可用（UI-001）
 async function listDishes(data, openid) {
   const { familyId, includeHidden } = data
-  const page = Number(data.page || 1)
-  const pageSize = Number(data.pageSize || 20)
+  // 参数解析：显式区分「未传」与「传了非法值」（避免 page=0 被 || 静默吞掉）
+  const page = data.page === undefined || data.page === '' ? 1 : Number(data.page)
+  const pageSize = data.pageSize === undefined || data.pageSize === '' ? 20 : Number(data.pageSize)
   const category = data.category || ''
 
   if (!familyId) {
