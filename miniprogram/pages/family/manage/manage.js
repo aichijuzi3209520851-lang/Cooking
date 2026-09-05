@@ -164,14 +164,14 @@ Page({
     }
   },
 
-  // 退出家庭（对外措辞：告别这个家）
+  // 退出家庭（对外措辞：换一家去吃饭）
   async onExitFamily() {
     if (this.data.loading) return;
 
     const familyName = this.data.currentFamily ? this.data.currentFamily.name : '';
     const confirmed = await showConfirm(
       '和这个家说再见？',
-      `离开「${familyName}」后，将不再收到它的菜单消息。以后想回来了，随时可以用加入码再加入～`
+      `离开「${familyName}」后，将不再收到它的菜单消息。以后想它了，随时可以换回来～`
     );
     if (!confirmed) return;
 

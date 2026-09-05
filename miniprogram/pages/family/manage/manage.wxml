@@ -82,10 +82,10 @@
     </view>
   </view>
 
-  <!-- 告别家庭 -->
+  <!-- 换一家去吃饭 -->
   <view class="exit-section safe-bottom">
     <button class="exit-btn" bindtap="onExitFamily" disabled="{{loading}}" hover-class="exit-btn-hover">
-      告别这个家
+      换一家去吃饭
     </button>
   </view>
 </view>
