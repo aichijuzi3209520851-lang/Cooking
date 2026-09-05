@@ -103,11 +103,11 @@
   letter-spacing: 1rpx;
 }
 
-/* ===== 登录卡片：内容居中，加大内边距与圆角，观感更聚拢 ===== */
+/* ===== 登录卡片：内容居中，层级只有 标题 → 按钮 → 一行说明 ===== */
 .login-panel {
   width: 100%;
   box-sizing: border-box;
-  padding: 48rpx 44rpx 42rpx;
+  padding: 44rpx 44rpx 40rpx;
   border-radius: 40rpx;
   background: var(--color-card);
   border: 1rpx solid var(--color-border);
@@ -115,26 +115,11 @@
   text-align: center;
 }
 
-.login-panel-kicker {
-  color: var(--color-accent);
-  font-size: 22rpx;
-  font-weight: 700;
-  letter-spacing: 4rpx;
-}
-
 .login-panel-title {
-  margin-top: 14rpx;
   color: var(--color-text-primary);
   font-size: 40rpx;
   font-weight: 800;
   line-height: 1.35;
-}
-
-.login-panel-copy {
-  margin-top: 12rpx;
-  color: var(--color-text-secondary);
-  font-size: 26rpx;
-  line-height: 1.5;
 }
 
 .login-button {
@@ -169,19 +154,11 @@
   box-shadow: var(--shadow-card);
 }
 
+/* 唯一保留的微文案：告知登录后发生什么 */
 .login-safe-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
   margin-top: 24rpx;
   color: var(--color-text-secondary);
   font-size: 24rpx;
-}
-
-.login-safe-dot {
-  color: var(--color-primary-green);
-  font-size: 18rpx;
 }
 
 .login-error {
@@ -217,12 +194,4 @@
   color: var(--color-primary-red);
   font-size: 24rpx;
   line-height: 1.5;
-}
-
-/* ===== 底部标语 ===== */
-.login-footer {
-  margin-top: 44rpx;
-  color: var(--color-text-tertiary);
-  font-size: 24rpx;
-  letter-spacing: 2rpx;
 }
