@@ -3,6 +3,7 @@ const theme = require('../../../utils/theme.js');
 const { familyApi } = require('../../../utils/api.js');
 const {
   showSuccess,
+  showError,
   showApiError,
   normalizeJoinCode
 } = require('../../../utils/util.js');
@@ -32,21 +33,48 @@ Page({
     this.setData({ inputFocus: false });
   },
 
-  // 输入事件
+  // 输入事件：大小写不敏感（统一转大写），非法字符过滤
   onInput(e) {
-    // 6位字母数字加入码，统一转大写并过滤非法字符（与服务端规则一致）
-    const value = normalizeJoinCode(e.detail.value);
-    const digits = ['', '', '', '', '', ''];
-    for (let i = 0; i < value.length; i++) {
-      digits[i] = value[i];
-    }
-    const focusIndex = Math.min(value.length, 5);
-    this.setData({ digits, focusIndex, codeValue: value });
+    this.applyCode(e.detail.value);
+  },
 
-    // 输入满6位自动加入
-    if (value.length === 6 && !this.data.loading) {
-      this.joinByCode(value);
+  // 长按一键粘贴：从剪贴板读取加入码并填充（J-PASTE-001）
+  onPasteFromClipboard() {
+    if (this.data.loading) return;
+    wx.getClipboardData({
+      success: (res) => {
+        const code = normalizeJoinCode(res.data);
+        if (!code) {
+          showError('剪贴板中没有有效的加入码');
+          return;
+        }
+        this.applyCode(code);
+        if (code.length === 6) {
+          showSuccess('已粘贴加入码');
+        } else {
+          showError(`已填入 ${code.length} 位，还需 ${6 - code.length} 位`);
+        }
+      },
+      fail() {
+        showError('读取剪贴板失败');
+      }
+    });
+  },
+
+  // 填充加入码（输入与粘贴共用）：满 6 位自动加入
+  applyCode(value) {
+    const code = normalizeJoinCode(value);
+    const digits = ['', '', '', '', '', ''];
+    for (let i = 0; i < code.length; i++) {
+      digits[i] = code[i];
     }
+    const focusIndex = Math.min(code.length, 5);
+    this.setData({ digits, focusIndex, codeValue: code });
+
+    if (code.length === 6 && !this.data.loading) {
+      this.joinByCode(code);
+    }
+    return code;
   },
 
   // 输入满6位自动加入；主按钮兜底（onSubmitTap）
