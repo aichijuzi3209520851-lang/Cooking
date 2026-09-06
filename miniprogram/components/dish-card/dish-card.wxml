@@ -1,7 +1,7 @@
 <!-- components/dish-card/dish-card.wxml -->
 <view class="dish-card" bindlongpress="onLongPress">
-  <!-- 左侧图片 -->
-  <view class="dish-thumb">
+  <!-- 左侧图片（有图可点开全屏预览） -->
+  <view class="dish-thumb {{hasImage ? 'dish-thumb-tappable' : ''}}" bindtap="onPreviewImage">
     <image
       wx:if="{{hasImage}}"
       class="dish-thumb-img"

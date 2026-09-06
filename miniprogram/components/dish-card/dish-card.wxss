@@ -21,6 +21,12 @@
   margin-right: 24rpx;
 }
 
+/* 可预览的缩略图按压反馈 */
+.dish-thumb-tappable:active {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
 .dish-thumb-img {
   width: 100%;
   height: 100%;

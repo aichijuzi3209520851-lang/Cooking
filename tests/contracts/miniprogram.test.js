@@ -20,3 +20,17 @@ test('家庭管理：告别弹窗区分最后一名成员（解散需明确告�
   assert.match(src, /加入码也会失效/, '缺少加入码失效提示');
   assert.match(src, /isCreator/, '缺少创建者场景的分支说明');
 });
+
+test('dish-card：有图缩略图支持全屏预览（IMG-PREVIEW-001）', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'miniprogram/components/dish-card/dish-card.js'), 'utf8');
+  const wxml = fs.readFileSync(path.join(ROOT, 'miniprogram/components/dish-card/dish-card.wxml'), 'utf8');
+  assert.match(js, /onPreviewImage/, '缺少预览处理函数');
+  assert.match(js, /hasImage/, '预览应仅对真实图片生效');
+  assert.match(wxml, /bindtap="onPreviewImage"/, '缩略图未绑定预览事件');
+});
+
+test('util：previewImage 对 cloud:// 先换临时链接（IMG-PREVIEW-001）', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/util.js'), 'utf8');
+  assert.match(src, /getTempFileURL/, 'cloud fileID 应换取临时链接');
+  assert.match(src, /previewImage\(/, '应调用全屏预览');
+});

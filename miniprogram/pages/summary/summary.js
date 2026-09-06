@@ -6,6 +6,7 @@ const {
   today,
   getAvatarColor,
   getAvatarText,
+  previewImage,
   showApiError,
   showSuccess,
   showConfirm
@@ -263,10 +264,8 @@ Page({
     });
   },
 
-  // 预览菜品图
+  // 预览菜品图（cloud:// 由公共方法换临时链接）
   onPreviewImage(e) {
-    const url = e.currentTarget.dataset.url;
-    if (!url) return;
-    wx.previewImage({ urls: [url] });
+    previewImage(e.currentTarget.dataset.url);
   }
 });

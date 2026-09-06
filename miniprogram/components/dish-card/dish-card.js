@@ -1,4 +1,6 @@
 // components/dish-card/dish-card.js
+const { previewImage } = require('../../utils/util.js')
+
 const CATEGORY_EMOJI = {
   meat: '🍖',
   veg: '🥬',
@@ -106,6 +108,12 @@ Component({
     onImageError() {
       this._imageFailed = true;
       this.setData({ hasImage: false });
+    },
+
+    // 图片全屏预览（仅真实图片可点，占位图不响应）
+    onPreviewImage() {
+      if (!this.data.hasImage) return;
+      previewImage(this.data.dish.imageUrl);
     },
 
     // 长按撤下（chef 且有人投票时触发，替代易误触的小文字按钮）

@@ -161,6 +161,33 @@ function getConfirmColor() {
 }
 
 /**
+ * 图片全屏预览（IMG-PREVIEW-001）
+ * cloud:// fileID 先换取临时链接再预览（wx.previewImage 对 fileID 支持不稳定）
+ */
+function previewImage(url, urls) {
+  if (!url || typeof url !== 'string') return;
+  const list = (Array.isArray(urls) && urls.length ? urls : [url]).filter(u => typeof u === 'string');
+  if (url.indexOf('cloud://') === 0) {
+    wx.cloud.getTempFileURL({
+      fileList: [url],
+      success(res) {
+        const file = res && res.fileList && res.fileList[0];
+        if (file && file.tempFileURL) {
+          wx.previewImage({ current: file.tempFileURL, urls: [file.tempFileURL] });
+        } else {
+          showError('图片加载失败');
+        }
+      },
+      fail() {
+        showError('图片加载失败');
+      }
+    });
+  } else {
+    wx.previewImage({ current: url, urls: list });
+  }
+}
+
+/**
  * 显示确认弹窗
  */
 function showConfirm(title, content) {
@@ -188,6 +215,7 @@ module.exports = {
   getAvatarColor,
   getAvatarText,
   getConfirmColor,
+  previewImage,
   showSuccess,
   showError,
   showApiError,
