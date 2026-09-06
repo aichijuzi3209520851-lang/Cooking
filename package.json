@@ -10,9 +10,13 @@
     "test:unit": "node --test \"tests/unit/*.test.js\"",
     "check:contracts": "node --test \"tests/contracts/*.test.js\"",
     "predeploy": "npm run check:syntax && npm run lint && npm test",
-    "test:coverage": "node --test --experimental-test-coverage \"tests/unit/*.test.js\" \"tests/contracts/*.test.js\" \"tests/smoke/*.test.js\" \"tests/whitebox/*.test.js\""
+    "test:coverage": "node --test --experimental-test-coverage \"tests/unit/*.test.js\" \"tests/contracts/*.test.js\" \"tests/smoke/*.test.js\" \"tests/whitebox/*.test.js\"",
+    "test:e2e": "node scripts/e2e-smoke.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1"
   }
 }

@@ -677,8 +677,9 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（115 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（151 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
+npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
 
 测试体系：
@@ -686,6 +687,18 @@ npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 - **契约测试**（`tests/contracts/`）：云函数 action 覆盖与错误码稳定性、前端关键行为（登录页独立、编辑页保存可用等）
 - **冒烟测试**（`tests/smoke/`）：内存数据库真实运行云函数核心链路（建家/加入/离开/解散/点菜/通知）
 - **白盒测试**（`tests/whitebox/`）：边界值 + 判定覆盖 + 幂等重跑，设计与结果见 [docs/whitebox-test-plan.md](docs/whitebox-test-plan.md)
+- **E2E 黑盒冒烟**（`scripts/e2e-smoke.js`）：见下节
+
+### E2E 黑盒冒烟测试
+
+`npm run test:e2e` 通过 [miniprogram-automator](https://developers.weixin.qq.com/miniprogram/dev/devtools/auto/) 驱动微信开发者工具，以真实账号走完完整用户旅程（17 项断言）：
+
+冷启动登录 → 创建测试家庭 → 错误加入码拒绝 → 小写加入码加入 → 选择掌勺身份 → 新增菜品 → 菜单页出现 → 点菜 → 汇总页显示投票人 → 掌勺拍板 → 掌勺撤下（今日不做语义：汇总移除、菜品不隐藏） → 主题切换夜间家族 → 历史页可达 → 解散测试家庭级联清理。
+
+前提与行为说明：
+- 开发者工具需开启「设置 → 安全 → 服务端口」，且 6 个云函数已部署最新代码
+- 脚本会自动关闭现存开发者工具实例并以自动化模式冷启动（`cli auto`）
+- 测试数据全部挂在「【测试】筷点E2E」家庭，结束自动解散级联清理并切回原家庭；对本机 storage 做一次清空
 
 ### CI
 

@@ -238,7 +238,7 @@ Page({
     }
   },
 
-  // 掌勺撤下（API-002：传入真实 dishId）
+  // 掌勺撤下（弹窗薄壳）：确认后执行撤菜逻辑
   async onChefCancel(e) {
     const dishId = e.currentTarget.dataset.id;
     const dishName = e.currentTarget.dataset.name;
@@ -249,7 +249,11 @@ Page({
       `确定撤下「${dishName}」吗？点过这道菜的家人会收到通知。`
     );
     if (!confirmed) return;
+    return this.doChefCancel(dishId, dishName);
+  },
 
+  // 撤菜执行（与弹窗分离，便于自动化测试直接调用）
+  async doChefCancel(dishId, dishName) {
     try {
       await voteApi.chefCancel(app.globalData.currentFamilyId, dishId);
       showSuccess('已撤下');
