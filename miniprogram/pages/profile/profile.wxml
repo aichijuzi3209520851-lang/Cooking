@@ -3,13 +3,8 @@
 
   <!-- 用户信息卡片：轻触头像换头像，轻触昵称改昵称 -->
   <view class="profile-card">
-    <button
-      class="profile-avatar-btn"
-      open-type="chooseAvatar"
-      bindchooseavatar="onChooseAvatar"
-      hover-class="profile-avatar-hover"
-    >
-      <view class="profile-avatar" style="{{avatarStyle}}">
+    <view class="profile-avatar-wrap">
+      <view class="profile-avatar" style="{{avatarUrl ? '' : avatarStyle}}">
         <image
           wx:if="{{avatarUrl}}"
           class="profile-avatar-img"
@@ -17,9 +12,16 @@
           mode="aspectFill"
         />
         <text wx:else class="profile-avatar-text">{{avatarText}}</text>
-        <view class="profile-avatar-badge">📷</view>
       </view>
-    </button>
+      <!-- 隐形按钮覆盖在头像上，只负责接收 chooseAvatar 点击 -->
+      <button
+        class="profile-avatar-overlay"
+        open-type="chooseAvatar"
+        bindchooseavatar="onChooseAvatar"
+        aria-label="更换头像"
+      ></button>
+      <view class="profile-avatar-badge">📷</view>
+    </view>
     <view class="profile-info">
       <view class="profile-name-row" bindtap="onEditNickname" hover-class="profile-name-hover">
         <text class="profile-name">{{nickname}}</text>

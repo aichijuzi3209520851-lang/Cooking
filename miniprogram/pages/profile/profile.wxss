@@ -16,40 +16,45 @@
   margin-bottom: 32rpx;
 }
 
-/* 头像即按钮：微信头像昵称填写能力（open-type=chooseAvatar） */
-.profile-avatar-btn {
-  display: block;
+/* 头像区：可见头像用固定尺寸 image（保证正圆），chooseAvatar 按钮做隐形覆盖层 */
+.profile-avatar-wrap {
+  position: relative;
   width: 112rpx;
   height: 112rpx;
-  padding: 0;
   margin: 0 24rpx 0 0;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  overflow: hidden;
-  line-height: 1;
   flex-shrink: 0;
 }
 
-.profile-avatar-btn::after {
-  border: none;
-}
-
-.profile-avatar-hover {
-  opacity: 0.8;
-  transform: scale(0.96);
-}
-
-/* 圆形裁切三重保险：容器 / 内视图 / 图片各自带圆角（部分真机 image 不受容器裁切） */
 .profile-avatar {
-  width: 100%;
-  height: 100%;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+}
+
+.profile-avatar-img {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  display: block;
+}
+
+/* 隐形覆盖按钮：铺满头像接收点击，本身零视觉（不受微信 button 默认样式干扰） */
+.profile-avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 2;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
 }
 
 /* 头像右下角相机角标：提示可自定义 */
@@ -65,6 +70,7 @@
   font-size: 19rpx;
   line-height: 36rpx;
   text-align: center;
+  z-index: 3;
 }
 
 .profile-avatar-img {
@@ -76,13 +82,6 @@
 
 .profile-avatar-text {
   font-size: 44rpx;
-  font-weight: 600;
-  color: #FFFFFF;
-  line-height: 1;
-}
-
-.profile-avatar-text {
-  font-size: 40rpx;
   font-weight: 600;
   color: #FFFFFF;
   line-height: 1;
