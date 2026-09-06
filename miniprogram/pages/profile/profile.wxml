@@ -24,15 +24,13 @@
       <view class="profile-name-row" bindtap="onEditNickname" hover-class="profile-name-hover">
         <text class="profile-name">{{nickname}}</text>
         <text class="profile-name-edit">✎</text>
-        <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}} profile-badge">
+      </view>
+      <view class="profile-meta-row">
+        <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">
           {{roleEmoji}} {{roleName}}
         </view>
-      </view>
-      <view class="profile-family" wx:if="{{currentFamily}}">
-        {{currentFamily.name}}
-      </view>
-      <view class="profile-family" wx:else>
-        暂未加入家庭
+        <text class="profile-family" wx:if="{{currentFamily}}">{{currentFamily.name}}</text>
+        <text class="profile-family" wx:else>暂未加入家庭</text>
       </view>
     </view>
   </view>
