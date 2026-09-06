@@ -20,12 +20,10 @@
         bindchooseavatar="onChooseAvatar"
         aria-label="更换头像"
       ></button>
-      <view class="profile-avatar-badge">📷</view>
     </view>
     <view class="profile-info">
       <view class="profile-name-row" bindtap="onEditNickname" hover-class="profile-name-hover">
         <text class="profile-name">{{nickname}}</text>
-        <text class="profile-name-edit">✎</text>
       </view>
       <view class="profile-meta-row">
         <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">

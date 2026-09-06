@@ -57,22 +57,6 @@
   border-radius: 50%;
 }
 
-/* 头像右下角相机角标：提示可自定义 */
-.profile-avatar-badge {
-  position: absolute;
-  right: -2rpx;
-  bottom: -2rpx;
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  background: var(--color-card);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
-  font-size: 19rpx;
-  line-height: 36rpx;
-  text-align: center;
-  z-index: 3;
-}
-
 .profile-avatar-img {
   width: 100%;
   height: 100%;
@@ -103,12 +87,6 @@
 
 .profile-name-hover {
   opacity: 0.75;
-}
-
-.profile-name-edit {
-  font-size: 26rpx;
-  color: var(--color-text-tertiary);
-  margin-left: 10rpx;
 }
 
 .profile-name {
