@@ -6,7 +6,8 @@ const {
   today,
   showApiError,
   showSuccess,
-  showConfirm
+  showConfirm,
+  refreshSummaryBadge
 } = require('../../utils/util.js');
 const app = getApp();
 
@@ -199,6 +200,7 @@ Page({
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) {
       this._loading = false;
+      refreshSummaryBadge(0);
       return;
     }
 
@@ -237,6 +239,9 @@ Page({
         hasMore: page * PAGE_SIZE < total,
         libraryEmpty: category === 'all' && dishList.length === 0 && groups.length === 0
       });
+
+      // 汇总 tab 徽标：今天已点菜数（看过汇总后清除，BADGE-001）
+      refreshSummaryBadge(stats.dishCount);
     } catch (err) {
       console.error('加载点菜数据失败', err);
       showApiError(err, '加载失败，请下拉刷新');
@@ -319,10 +324,12 @@ Page({
       return d;
     });
 
+    const stats = dto.calcVoteStats(dishes);
     this.setData({
       dishes,
-      stats: dto.calcVoteStats(dishes)
+      stats
     });
+    refreshSummaryBadge(stats.dishCount);
   },
 
   // 掌勺撤下

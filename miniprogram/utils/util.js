@@ -207,6 +207,53 @@ function guardChefPage() {
 }
 
 /**
+ * 汇总 tab 徽标（BADGE-001）：今天已点菜数，看过汇总后清除
+ * 未读语义：当日未看过汇总、或看过之后票数又增长（或切换了家庭）→ 显示；否则移除
+ */
+function refreshSummaryBadge(dishCount) {
+  const count = Number(dishCount) || 0
+  if (!count) {
+    wx.removeTabBarBadge({ index: 1, fail() {} })
+    return
+  }
+  let seen = null
+  try {
+    seen = wx.getStorageSync('summarySeen') || null
+  } catch (e) {
+    // ignore
+  }
+  const today = formatDate(new Date())
+  const stale = !seen || seen.date !== today ||
+    (seen.familyId !== (getApp().globalData.currentFamilyId || '')) ||
+    count > (seen.count || 0)
+  if (stale) {
+    wx.setTabBarBadge({
+      index: 1,
+      text: count > 99 ? '99+' : String(count),
+      fail() {}
+    })
+  } else {
+    wx.removeTabBarBadge({ index: 1, fail() {} })
+  }
+}
+
+/**
+ * 标记「汇总已看到」（进入汇总页/下拉刷新时调用），并清除 tab 徽标
+ */
+function markSummarySeen(dishCount) {
+  try {
+    wx.setStorageSync('summarySeen', {
+      date: formatDate(new Date()),
+      familyId: (getApp().globalData.currentFamilyId || ''),
+      count: Number(dishCount) || 0
+    })
+  } catch (e) {
+    // ignore
+  }
+  wx.removeTabBarBadge({ index: 1, fail() {} })
+}
+
+/**
  * 显示确认弹窗
  */
 function showConfirm(title, content) {
@@ -236,6 +283,8 @@ module.exports = {
   getConfirmColor,
   previewImage,
   guardChefPage,
+  refreshSummaryBadge,
+  markSummarySeen,
   showSuccess,
   showError,
   showApiError,

@@ -177,6 +177,23 @@
   color: var(--color-text-secondary);
 }
 
+/* 行内右侧组合（徽标 + 箭头） */
+.list-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+/* 行内引导徽标：中性灰，待办语义（BADGE-002） */
+.row-badge {
+  padding: 4rpx 14rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
 .list-item-arrow {
   font-size: 36rpx;
   color: var(--color-text-tertiary);

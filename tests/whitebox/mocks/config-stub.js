@@ -1,0 +1,1 @@
+module.exports = { notifyTemplates: ["tmpl-vote", "tmpl-cancel"] };

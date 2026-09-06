@@ -1,5 +1,6 @@
 // pages/profile/profile.js
 const theme = require('../../utils/theme.js');
+const config = require('../../config.js');
 const { familyApi, notifyApi, userApi } = require('../../utils/api.js');
 const {
   getRoleName,
@@ -13,6 +14,11 @@ const {
 const app = getApp();
 
 const APP_VERSION = '1.3.0';
+
+// 通知模板是否已配置（BADGE-002）：未配置时通知入口为死路，不显示引导徽标
+function notifyConfigured() {
+  return (config.notifyTemplates || []).some(id => typeof id === 'string' && id.length > 0);
+}
 
 Page({
   data: {
@@ -56,9 +62,11 @@ Page({
       currentFamily,
       currentRole,
       roleName: getRoleName(currentRole),
-      isChef: currentRole === 'chef',
-      hasFamily: !!familyId
-    });
+    isChef: currentRole === 'chef',
+    hasFamily: !!familyId,
+    // 通知引导徽标（BADGE-002）：模板已配置且用户未授权时显示
+    notifyOff: notifyConfigured() && (userInfo.notifyStatus || 'unknown') !== 'accepted'
+  });
   },
 
   // 跳转家庭管理

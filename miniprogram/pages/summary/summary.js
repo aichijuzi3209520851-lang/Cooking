@@ -7,6 +7,7 @@ const {
   getAvatarColor,
   getAvatarText,
   previewImage,
+  markSummarySeen,
   showApiError,
   showSuccess,
   showConfirm
@@ -198,10 +199,14 @@ Page({
         })
       }));
 
+      const stats = dto.calcVoteStats(summaryList);
       this.setData({
         summaryList,
-        stats: dto.calcVoteStats(summaryList)
+        stats
       });
+
+      // 标记汇总已看到（清除 tab 徽标，BADGE-001）
+      markSummarySeen(stats.dishCount);
     } catch (err) {
       console.error('加载汇总失败', err);
       showApiError(err, '加载失败');
@@ -251,10 +256,14 @@ Page({
       wx.vibrateShort({ type: 'light' });
       // 本地移除，保证其他设备也能通过 watcher 刷新（隐藏零投票菜品场景）
       const summaryList = this.data.summaryList.filter(item => item.dishId !== dishId);
+      const stats = dto.calcVoteStats(summaryList);
       this.setData({
         summaryList,
-        stats: dto.calcVoteStats(summaryList)
+        stats
       });
+
+      // 标记汇总已看到（清除 tab 徽标，BADGE-001）
+      markSummarySeen(stats.dishCount);
     } catch (err) {
       console.error('撤下失败', err);
       showApiError(err, '撤下失败');
