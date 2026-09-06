@@ -365,7 +365,7 @@ page {
 .gap-md { gap: var(--spacing-md); }
 .gap-lg { gap: var(--spacing-lg); }
 
-/* Badge */
+/* Badge：小尺寸纯文字徽章（emoji 仅用于大尺寸场景，小尺寸下渲染浑浊） */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -373,16 +373,19 @@ page {
   border-radius: var(--radius-pill);
   font-size: 22rpx;
   font-weight: 500;
+  line-height: 1.4;
 }
 
+/* 掌勺的：品牌强调色（家庭里的活跃角色） */
 .badge-chef {
-  background: rgba(240, 130, 30, 0.14);
-  color: var(--color-primary-orange);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
 }
 
+/* 等饭的：中性安静样式，与掌勺形成层级 */
 .badge-eater {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 /* Loading */

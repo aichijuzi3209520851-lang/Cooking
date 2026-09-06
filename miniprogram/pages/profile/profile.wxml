@@ -27,7 +27,7 @@
       </view>
       <view class="profile-meta-row">
         <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">
-          {{roleEmoji}} {{roleName}}
+          {{roleName}}
         </view>
         <text class="profile-family" wx:if="{{currentFamily}}">{{currentFamily.name}}</text>
         <text class="profile-family" wx:else>暂未加入家庭</text>
@@ -68,7 +68,7 @@
       <view class="list-item" bindtap="onSwitchRole">
         <text class="list-item-label">切换身份</text>
         <view class="list-item-right">
-          <text class="list-item-value">{{roleEmoji}} {{roleName}}</text>
+          <text class="list-item-value">{{roleName}}</text>
           <text class="list-item-arrow">›</text>
         </view>
       </view>

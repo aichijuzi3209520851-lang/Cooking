@@ -3,7 +3,6 @@ const theme = require('../../utils/theme.js');
 const { familyApi, notifyApi, userApi } = require('../../utils/api.js');
 const {
   getRoleName,
-  getRoleEmoji,
   getAvatarColor,
   getAvatarText,
   getConfirmColor,
@@ -26,7 +25,6 @@ Page({
     currentFamily: null,
     currentRole: '',
     roleName: '',
-    roleEmoji: '',
     isChef: false,
     hasFamily: false
   },
@@ -58,7 +56,6 @@ Page({
       currentFamily,
       currentRole,
       roleName: getRoleName(currentRole),
-      roleEmoji: getRoleEmoji(currentRole),
       isChef: currentRole === 'chef',
       hasFamily: !!familyId
     });

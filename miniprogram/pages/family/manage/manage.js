@@ -7,7 +7,6 @@ const {
   showApiError,
   showConfirm,
   getRoleName,
-  getRoleEmoji,
   getAvatarColor,
   getAvatarText,
   getConfirmColor
@@ -43,7 +42,6 @@ Page({
       currentFamily,
       families,
       currentRole,
-      currentRoleEmoji: getRoleEmoji(currentRole),
       currentUserId,
       // 仅家庭创建者显示成员管理操作（与云函数权限校验保持一致）
       isCreator: !!(currentFamily && currentFamily.creatorId && currentFamily.creatorId === currentUserId)
@@ -60,7 +58,6 @@ Page({
             ...m,
             userId: userId,
             roleName: getRoleName(m.role),
-            roleEmoji: getRoleEmoji(m.role),
             avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`,
             avatarText: getAvatarText(m.nickname || m.name || ''),
             isSelf: userId === currentUserId
