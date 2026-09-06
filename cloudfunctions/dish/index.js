@@ -14,6 +14,29 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
+// 调用 notify 云函数（失败不影响主流程）；密钥来自环境变量，未配置时跳过（与 vote 一致）
+async function safeCallNotify(payload) {
+  const INTERNAL_KEY = process.env.NOTIFY_INTERNAL_KEY
+  if (!INTERNAL_KEY) {
+    console.warn('[dish] 未配置 NOTIFY_INTERNAL_KEY，跳过通知')
+    return false
+  }
+  try {
+    const res = await cloud.callFunction({
+      name: 'notify',
+      data: { ...payload, internalKey: INTERNAL_KEY }
+    })
+    if (res.result && !res.result.success) {
+      console.warn('[dish] notify 返回失败：', res.result.errorCode, res.result.message)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('调用 notify 失败：', e)
+    return false
+  }
+}
+
 // ============ 业务处理函数 ============
 
 // 菜品名称长度上限（服务端兜底；前端输入框已有 maxlength=20）
@@ -183,6 +206,12 @@ async function deleteDish(data, openid) {
   // 校验菜品属于该家庭
   const oldDish = await requireDishInFamily(db, familyId, dishId)
 
+  // 收集被影响成员：删除菜品与撤菜/隐藏同语义，需通知（PRODUCT-001）
+  const votesRes = await db.collection('daily_votes')
+    .where({ familyId, dishId, date: getTodayStr() })
+    .get()
+  const affectedUserIds = [...new Set((votesRes.data || []).map(v => v.userId))]
+
   await db.collection('dishes').doc(dishId).remove()
 
   // 清理当日投票（与 toggleHidden/chefCancel 共用同一清理逻辑）
@@ -190,6 +219,16 @@ async function deleteDish(data, openid) {
 
   // 清理关联图片（尽力而为）
   await safeDeleteFiles(cloud, [oldDish.imageUrl])
+
+  if (affectedUserIds.length > 0) {
+    await safeCallNotify({
+      action: 'sendCancelNotify',
+      familyId,
+      dishId,
+      dishName: oldDish.name,
+      affectedUserIds
+    })
+  }
 
   return { dishId }
 }
@@ -208,7 +247,7 @@ async function toggleHidden(data, openid) {
   await requireChef(db, familyId, openid)
 
   // 校验菜品属于该家庭
-  await requireDishInFamily(db, familyId, dishId)
+  const dishDoc = await requireDishInFamily(db, familyId, dishId)
 
   await db.collection('dishes').doc(dishId).update({
     data: {
@@ -217,9 +256,24 @@ async function toggleHidden(data, openid) {
     }
   })
 
-  // 隐藏菜品时清理当日投票（与 chefCancel/deleteDish 一致；恢复时仅更新状态，不重复创建）
+  // 隐藏菜品时清理当日投票，并通知被影响的成员（与撤菜/删除通知语义统一，PRODUCT-001）
   if (isHidden) {
-    await removeTodayVotes(db, familyId, dishId)
+    const votesRes = await db.collection('daily_votes')
+      .where({ familyId, dishId, date: getTodayStr() })
+      .get()
+    const affectedUserIds = [...new Set((votesRes.data || []).map(v => v.userId))]
+    if (affectedUserIds.length > 0) {
+      await db.collection('daily_votes')
+        .where({ familyId, dishId, date: getTodayStr() })
+        .remove()
+      await safeCallNotify({
+        action: 'sendCancelNotify',
+        familyId,
+        dishId,
+        dishName: dishDoc.name,
+        affectedUserIds
+      })
+    }
   }
 
   return { dishId, isHidden }

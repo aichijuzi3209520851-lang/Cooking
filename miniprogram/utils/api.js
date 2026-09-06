@@ -84,12 +84,18 @@ const dishApi = {
   toggleHidden: (familyId, dishId, isHidden) => call('dish', { action: 'toggleHidden', familyId, dishId, isHidden })
 };
 
+// 家庭创建者转让
+familyApi.transferCreator = (familyId, userId) =>
+  call('family', { action: 'transferCreator', familyId, userId }, true);
+
 // 点菜相关
 const voteApi = {
   add: (familyId, dishId) => call('vote', { action: 'add', familyId, dishId }),
   cancel: (familyId, dishId) => call('vote', { action: 'cancel', familyId, dishId }),
   chefCancel: (familyId, dishId) => call('vote', { action: 'chefCancel', familyId, dishId }),
-  todayList: (familyId) => call('vote', { action: 'todayList', familyId })
+  todayList: (familyId) => call('vote', { action: 'todayList', familyId }),
+  decideMenu: (familyId, dishId, decided) =>
+    call('vote', { action: 'decideMenu', familyId, dishId, decided }, true)
 };
 
 // 历史记录

@@ -52,7 +52,10 @@
 
             <!-- 中间信息 -->
             <view class="dish-info">
-              <view class="dish-name">{{item.name}}</view>
+              <view class="dish-name-row">
+                <view class="dish-name">{{item.name}}</view>
+                <view class="decided-chip" wx:if="{{item.decided}}">今晚吃</view>
+              </view>
               <view class="voter-list">
                 <view
                   class="voter-item"
@@ -84,15 +87,25 @@
             </view>
           </view>
 
-          <!-- chef 撤下按钮 -->
-          <view
-            wx:if="{{isChef}}"
-            class="chef-cancel-btn"
-            data-id="{{item.dishId}}"
-            data-name="{{item.name}}"
-            bindtap="onChefCancel"
-          >
-            撤下这道菜
+          <!-- 掌勺操作：拍板今晚菜单 + 撤下 -->
+          <view class="chef-actions" wx:if="{{isChef}}">
+            <view
+              class="decide-btn {{item.decided ? 'decide-btn-on' : ''}}"
+              data-id="{{item.dishId}}"
+              data-decided="{{item.decided}}"
+              catchtap="onDecideMenu"
+              hover-class="decide-btn-hover"
+            >
+              {{item.decided ? '移出今晚菜单' : '定为今晚菜单'}}
+            </view>
+            <view
+              class="chef-cancel-btn"
+              data-id="{{item.dishId}}"
+              data-name="{{item.name}}"
+              catchtap="onChefCancel"
+            >
+              撤下这道菜
+            </view>
           </view>
         </view>
       </view>

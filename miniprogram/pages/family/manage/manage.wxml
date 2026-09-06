@@ -63,6 +63,13 @@
         </view>
         <view class="member-actions" wx:if="{{isCreator && !item.isSelf}}">
           <view
+            class="member-action-btn member-action-transfer"
+            data-userid="{{item.userId}}"
+            catchtap="onTransferCreator"
+          >
+            转让
+          </view>
+          <view
             class="member-action-btn member-action-toggle"
             data-userid="{{item.userId}}"
             data-role="{{item.role}}"

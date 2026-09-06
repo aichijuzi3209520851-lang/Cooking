@@ -13,7 +13,7 @@ const {
 } = require('../../utils/util.js');
 const app = getApp();
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 Page({
   data: {

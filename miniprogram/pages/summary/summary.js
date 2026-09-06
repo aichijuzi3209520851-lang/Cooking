@@ -215,6 +215,24 @@ Page({
     }
   },
 
+  // 拍板/移出今晚菜单（PRODUCT-002，仅掌勺）
+  async onDecideMenu(e) {
+    const dishId = e.currentTarget.dataset.id;
+    const decided = e.currentTarget.dataset.decided === 1 || e.currentTarget.dataset.decided === '1';
+    if (!this.data.isChef || this.data.loading) return;
+
+    try {
+      const res = await voteApi.decideMenu(app.globalData.currentFamilyId, dishId, decided);
+      const summaryList = this.data.summaryList.map(item =>
+        item.dishId === dishId ? { ...item, decided: res.decided } : item
+      );
+      this.setData({ summaryList });
+      showSuccess(res.decided ? '已定为今晚菜单' : '已移出今晚菜单');
+    } catch (err) {
+      showApiError(err, '操作失败');
+    }
+  },
+
   // 掌勺撤下（API-002：传入真实 dishId）
   async onChefCancel(e) {
     const dishId = e.currentTarget.dataset.id;
@@ -223,7 +241,7 @@ Page({
 
     const confirmed = await showConfirm(
       '撤下菜品',
-      `确定撤下「${dishName}」吗？所有点菜记录将被清除。`
+      `确定撤下「${dishName}」吗？点过这道菜的家人会收到通知。`
     );
     if (!confirmed) return;
 

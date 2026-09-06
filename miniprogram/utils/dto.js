@@ -38,6 +38,7 @@ function normalizeGroup(group) {
     category: typeof g.category === 'string' ? g.category : '',
     imageUrl: typeof g.imageUrl === 'string' ? g.imageUrl : '',
     isHidden: !!g.isHidden,
+    decided: !!g.decided,
     voters: Array.isArray(g.voters)
       ? g.voters.filter(v => v && typeof v.openid === 'string')
       : []
@@ -120,6 +121,7 @@ function buildSummaryList(groups) {
       imageUrl: norm.imageUrl,
       categoryEmoji: emojiOf(norm.category),
       isHidden: norm.isHidden,
+      decided: norm.decided,
       voters: norm.voters.map(v => ({
         openid: v.openid,
         nickname: (typeof v.nickname === 'string' && v.nickname) ? v.nickname : '微信用户',

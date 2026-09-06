@@ -145,11 +145,20 @@
 
 .dish-meta {
   margin-top: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
 .dish-category {
   font-size: 24rpx;
   color: var(--color-text-secondary);
+}
+
+/* 累计被点次数：情感化展示 */
+.dish-cookcount {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
 }
 
 /* 编辑按钮 */

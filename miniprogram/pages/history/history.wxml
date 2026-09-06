@@ -26,7 +26,10 @@
   <!-- 历史列表 -->
   <view class="history-list" wx:if="{{historyList.length > 0}}">
     <view class="history-card card" wx:for="{{historyList}}" wx:key="dishId">
-      <view class="history-dish-name">{{item.dishName}}</view>
+      <view class="history-dish-name-row">
+        <text class="history-dish-name">{{item.dishName}}</text>
+        <text class="history-decided-chip" wx:if="{{item.decided}}">今晚做了</text>
+      </view>
       <view class="voters-row">
         <view class="voter-item" wx:for="{{item.voters}}" wx:for-item="voter" wx:key="openid">
           <view class="voter-avatar" style="{{voter.avatarStyle}}">

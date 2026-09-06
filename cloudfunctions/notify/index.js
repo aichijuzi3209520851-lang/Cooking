@@ -24,7 +24,8 @@ const JUMP_PAGE = 'pages/menu/menu'
 function getTemplateIds() {
   return {
     vote: process.env.NOTIFY_VOTE_TEMPLATE_ID || '',
-    cancel: process.env.NOTIFY_CANCEL_TEMPLATE_ID || ''
+    cancel: process.env.NOTIFY_CANCEL_TEMPLATE_ID || '',
+    menu: process.env.NOTIFY_MENU_TEMPLATE_ID || ''
   }
 }
 
@@ -156,6 +157,44 @@ async function sendCancelNotify(data) {
   }
 }
 
+// 拍板通知：今日菜单定案，通知家庭所有开启通知的成员
+async function sendMenuDecidedNotify(data) {
+  const { familyId, dishId, dishName, decided } = data
+
+  if (!familyId || !dishId) {
+    throw new ApiError('INVALID_PARAM', '参数不完整')
+  }
+  const templateId = getTemplateIds().menu
+  if (!templateId) {
+    throw new ApiError('NOTIFY_TEMPLATE_MISSING', '未配置菜单拍板模板（NOTIFY_MENU_TEMPLATE_ID）')
+  }
+
+  const dishRes = await db.collection('dishes').doc(dishId).get().catch(() => null)
+  if (!dishRes || !dishRes.data || dishRes.data.familyId !== familyId) {
+    throw new ApiError('DISH_NOT_FOUND', '菜品不存在或不属于该家庭')
+  }
+
+  const membersRes = await db.collection('family_members')
+    .where({ familyId })
+    .get()
+  const memberIds = [...new Set((membersRes.data || []).map(m => m.userId))]
+  if (memberIds.length === 0) {
+    return { notified: 0, total: 0 }
+  }
+
+  const notifyUsers = await filterNotifyEnabled(memberIds)
+  const thing2 = decided ? '已加入今晚菜单' : '已移出今晚菜单'
+  const results = []
+  for (const openid of notifyUsers) {
+    results.push(await sendToOne(openid, templateId, '今晚菜单定了', dishName, thing2))
+  }
+
+  return {
+    notified: results.filter(r => r.success).length,
+    total: notifyUsers.length
+  }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -179,6 +218,9 @@ exports.main = async (event, context) => {
         break
       case 'sendCancelNotify':
         data = await sendCancelNotify(event)
+        break
+      case 'sendMenuDecidedNotify':
+        data = await sendMenuDecidedNotify(event)
         break
       default:
         return {

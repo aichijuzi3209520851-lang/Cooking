@@ -79,11 +79,27 @@
   margin-bottom: 0;
 }
 
+.history-dish-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
 .history-dish-name {
   font-size: 32rpx;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 20rpx;
+}
+
+/* 拍板标识：今晚实际做了这道菜 */
+.history-decided-chip {
+  padding: 4rpx 16rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
+  font-size: 22rpx;
+  font-weight: 600;
 }
 
 .voters-row {

@@ -337,6 +337,9 @@ tcb fn deploy dailyReset -e <环境ID> --force
 | `notify` | `NOTIFY_VOTE_TEMPLATE_ID` | 点菜通知订阅消息模板 ID |
 | `notify` | `NOTIFY_CANCEL_TEMPLATE_ID` | 撤菜通知订阅消息模板 ID |
 | `vote` | `NOTIFY_INTERNAL_KEY` | 与 notify 一致；缺失时跳过通知（不阻塞投票） |
+| `dish` | `NOTIFY_INTERNAL_KEY` | 与 notify 一致；隐藏/删除菜品清票时通知被影响成员，缺失时跳过 |
+| `notify` | `NOTIFY_MENU_TEMPLATE_ID` | 拍板菜单通知模板 ID（可选，未配置时拍板通知跳过） |
+| `notify` | `NOTIFY_MP_STATE` | 订阅消息版本：formal（默认）/ trial（体验版联调）/ develop |
 | `dailyReset` | `ALLOW_MANUAL_RUN` | 仅开发环境设为 `true`，开启手动归档入口 |
 
 ### 配置定时触发器（dailyReset）

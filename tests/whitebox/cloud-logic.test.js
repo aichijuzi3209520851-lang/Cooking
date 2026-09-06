@@ -511,3 +511,103 @@ test('W-C-R2 dailyReset：归档 + 幂等重跑 + 隐藏重置（白盒循环/�
     delete process.env.ALLOW_MANUAL_RUN
   }
 })
+
+test('W-C-F6 transferCreator：越权 / 自转 / 目标不存在 / 成功后原创建者可离开', async () => {
+  env.resetDb()
+  as('creator'); await seedUser('creator')
+  const fam = await run(familyFn, { action: 'create', name: '转让测试' })
+  as('member'); await seedUser('member')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+
+  as('member')
+  const denied = await run(familyFn, { action: 'transferCreator', familyId: fam.data.familyId, userId: 'creator' })
+  assert.equal(denied.errorCode, 'PERMISSION_DENIED')
+
+  as('creator')
+  const self = await run(familyFn, { action: 'transferCreator', familyId: fam.data.familyId, userId: 'creator' })
+  assert.equal(self.errorCode, 'INVALID_PARAM')
+
+  const ghost = await run(familyFn, { action: 'transferCreator', familyId: fam.data.familyId, userId: 'ghost' })
+  assert.equal(ghost.errorCode, 'NOT_FOUND')
+
+  const ok = await run(familyFn, { action: 'transferCreator', familyId: fam.data.familyId, userId: 'member' })
+  assert.equal(ok.success, true)
+  const famDoc = await env.db.collection('families').doc(fam.data.familyId).get()
+  assert.equal(famDoc.data.creatorId, 'member', '创建者应变更')
+
+  // 转让后原创建者不再受创建者保护，可正常离开
+  const left = await run(familyFn, { action: 'leave', familyId: fam.data.familyId })
+  assert.equal(left.success, true)
+  assert.equal(left.data.disbanded, false)
+})
+
+test('W-C-V3 decideMenu：非 chef 拒绝 / 类型校验 / 拍板生效并透传 todayList', async () => {
+  env.resetDb()
+  as('chef'); await seedUser('chef')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const dish = await run(dishFn, { action: 'add', familyId: fam.data.familyId, name: '锅包肉', category: 'meat' })
+  as('eater'); await seedUser('eater')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  await run(voteFn, { action: 'add', familyId: fam.data.familyId, dishId: dish.data.dishId })
+
+  as('eater')
+  const denied = await run(voteFn, { action: 'decideMenu', familyId: fam.data.familyId, dishId: dish.data.dishId, decided: true })
+  assert.equal(denied.errorCode, 'PERMISSION_DENIED')
+
+  as('chef')
+  const badType = await run(voteFn, { action: 'decideMenu', familyId: fam.data.familyId, dishId: dish.data.dishId, decided: 'yes' })
+  assert.equal(badType.errorCode, 'INVALID_PARAM')
+
+  const ok = await run(voteFn, { action: 'decideMenu', familyId: fam.data.familyId, dishId: dish.data.dishId, decided: true })
+  assert.equal(ok.data.decided, true)
+  const today = await run(voteFn, { action: 'todayList', familyId: fam.data.familyId })
+  assert.equal(today.data.groups[0].decided, true)
+
+  const off = await run(voteFn, { action: 'decideMenu', familyId: fam.data.familyId, dishId: dish.data.dishId, decided: false })
+  assert.equal(off.data.decided, false)
+  const today2 = await run(voteFn, { action: 'todayList', familyId: fam.data.familyId })
+  assert.equal(today2.data.groups[0].decided, false)
+})
+
+test('W-C-V4 chefCancel 语义修正：撤菜不再隐藏菜品 + 通知受影响成员', async () => {
+  env.resetDb()
+  as('chef'); await seedUser('chef')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const dish = await run(dishFn, { action: 'add', familyId: fam.data.familyId, name: '糖醋排骨', category: 'meat' })
+  as('eater'); await seedUser('eater')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  await run(loginFn, { action: 'setNotifyStatus', status: 'accepted' })
+  await run(voteFn, { action: 'add', familyId: fam.data.familyId, dishId: dish.data.dishId })
+
+  as('chef')
+  const cancel = await run(voteFn, { action: 'chefCancel', familyId: fam.data.familyId, dishId: dish.data.dishId })
+  assert.equal(cancel.success, true)
+  assert.equal(cancel.data.affectedCount, 1)
+
+  const dishDoc = await env.db.collection('dishes').doc(dish.data.dishId).get()
+  assert.equal(dishDoc.data.isHidden, false, '撤菜不应隐藏菜品（语义修正）')
+  const votesLeft = await env.db.collection('daily_votes')
+    .where({ familyId: fam.data.familyId, dishId: dish.data.dishId }).get()
+  assert.equal(votesLeft.data.length, 0, '当日票应被清理')
+  assert.ok(env.sent.some(m => m.data.thing1.value === '糖醋排骨'), '受影响成员应收到撤菜通知')
+})
+
+test('W-C-D6 隐藏/删除菜品 → 受影响成员收到通知（语义统一）', async () => {
+  env.resetDb()
+  as('chef'); await seedUser('chef')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const d1 = await run(dishFn, { action: 'add', familyId: fam.data.familyId, name: '菜A', category: 'veg' })
+  const d2 = await run(dishFn, { action: 'add', familyId: fam.data.familyId, name: '菜B', category: 'veg' })
+  as('eater'); await seedUser('eater')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  await run(loginFn, { action: 'setNotifyStatus', status: 'accepted' })
+  await run(voteFn, { action: 'add', familyId: fam.data.familyId, dishId: d1.data.dishId })
+  await run(voteFn, { action: 'add', familyId: fam.data.familyId, dishId: d2.data.dishId })
+  env.sent.length = 0
+
+  as('chef')
+  assert.equal((await run(dishFn, { action: 'toggleHidden', familyId: fam.data.familyId, dishId: d1.data.dishId, isHidden: true })).success, true)
+  assert.ok(env.sent.some(m => m.data.thing1.value === '菜A'), '隐藏应通知被清票成员')
+  assert.equal((await run(dishFn, { action: 'delete', familyId: fam.data.familyId, dishId: d2.data.dishId })).success, true)
+  assert.ok(env.sent.some(m => m.data.thing1.value === '菜B'), '删除应通知被清票成员')
+})

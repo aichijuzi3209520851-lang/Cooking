@@ -206,6 +206,11 @@
   bottom: -10rpx;
 }
 
+.member-action-transfer {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+}
+
 .member-action-toggle {
   color: var(--color-accent-deep);
   background: var(--color-accent-soft);

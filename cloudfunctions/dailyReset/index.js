@@ -98,6 +98,7 @@ exports.main = async (event) => {
           userId: v.userId,
           userName: user.nickname || '微信用户',
           date: v.date,
+          decided: !!v.decided,
           createdAt: v.createdAt,
           archivedAt: startAt
         }

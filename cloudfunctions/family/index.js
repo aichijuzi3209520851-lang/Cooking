@@ -492,6 +492,36 @@ async function updateMemberRole(data, openid) {
   return { familyId, userId, role }
 }
 
+// 转让创建者（仅创建者可操作）：转让后原创建者可正常离开家庭
+async function transferCreator(data, openid) {
+  const { familyId, userId } = data
+  if (!familyId || !userId) {
+    throw new ApiError('INVALID_PARAM', '参数不完整')
+  }
+
+  const familyRes = await db.collection('families').doc(familyId).get().catch(() => null)
+  if (!familyRes || !familyRes.data) {
+    throw new ApiError('FAMILY_NOT_FOUND', '家庭不存在')
+  }
+  if (familyRes.data.creatorId !== openid) {
+    throw new ApiError('PERMISSION_DENIED', '仅家庭创建者可以转让创建者身份')
+  }
+  if (userId === openid) {
+    throw new ApiError('INVALID_PARAM', '不能转让给自己')
+  }
+
+  const target = await getMember(db, familyId, userId)
+  if (!target) {
+    throw new ApiError('NOT_FOUND', '该成员不存在')
+  }
+
+  await db.collection('families').doc(familyId).update({
+    data: { creatorId: userId, updatedAt: new Date() }
+  })
+
+  return { familyId, creatorId: userId }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -527,6 +557,9 @@ exports.main = async (event, context) => {
         break
       case 'updateMemberRole':
         data = await updateMemberRole(event, openid)
+        break
+      case 'transferCreator':
+        data = await transferCreator(event, openid)
         break
       default:
         return {

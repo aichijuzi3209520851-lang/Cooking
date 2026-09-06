@@ -195,20 +195,12 @@ async function chefCancel(data, openid) {
   const votes = votesRes.data || []
   const affectedUserIds = [...new Set(votes.map(v => v.userId))]
 
-  // 批量删除当天投票（避免逐条串行删除在大家庭场景下触发云函数超时）
+  // 撤菜语义（PRODUCT-001）：仅清当日投票（「今日不做」），菜品保留、家人可再次点选
   if (votes.length > 0) {
     await db.collection('daily_votes')
       .where({ _id: _.in(votes.map(v => v._id)) })
       .remove()
   }
-
-  // 设置菜品为隐藏
-  await db.collection('dishes').doc(dishId).update({
-    data: {
-      isHidden: true,
-      updatedAt: new Date()
-    }
-  })
 
   // 通知受影响用户（await 确保函数返回前通知已发出，失败不影响主流程结果）
   if (affectedUserIds.length > 0) {
@@ -259,7 +251,7 @@ async function todayList(data, openid) {
     getUserMap(db, _, userIds)
   ])
 
-  // 按菜品分组
+  // 按菜品分组（decided：掌勺是否拍板加入今晚菜单）
   const groupMap = {}
   for (const v of votes) {
     if (!groupMap[v.dishId]) {
@@ -270,8 +262,12 @@ async function todayList(data, openid) {
         category: dish.category || '',
         imageUrl: dish.imageUrl || '',
         isHidden: !!dish.isHidden,
+        decided: false,
         voters: []
       }
+    }
+    if (v.decided) {
+      groupMap[v.dishId].decided = true
     }
     const user = userMap[v.userId] || {}
     groupMap[v.dishId].voters.push({
@@ -286,6 +282,44 @@ async function todayList(data, openid) {
   const groups = Object.values(groupMap).sort((a, b) => b.voters.length - a.voters.length)
 
   return { date: today, groups }
+}
+
+// 拍板今日菜单（仅 chef）：将菜品标记为「今晚吃」，通知全家（PRODUCT-002）
+async function decideMenu(data, openid) {
+  const { familyId, dishId, decided } = data
+  if (!familyId || !dishId) {
+    throw new ApiError('INVALID_PARAM', '参数不完整')
+  }
+  if (typeof decided !== 'boolean') {
+    throw new ApiError('INVALID_PARAM', 'decided 参数无效')
+  }
+
+  await requireChef(db, familyId, openid)
+  const dishData = await requireDishInFamily(db, familyId, dishId)
+
+  const today = getTodayStr()
+  const votesRes = await db.collection('daily_votes')
+    .where({ familyId, dishId, date: today })
+    .get()
+
+  if (!votesRes.data || votesRes.data.length === 0) {
+    throw new ApiError('VOTE_NOT_FOUND', '该菜品今日还没有人点，无法拍板')
+  }
+
+  await db.collection('daily_votes')
+    .where({ familyId, dishId, date: today })
+    .update({ data: { decided: decided === true } })
+
+  if (decided) {
+    await safeCallNotify({
+      action: 'sendMenuDecidedNotify',
+      familyId,
+      dishId,
+      dishName: dishData.name
+    })
+  }
+
+  return { familyId, dishId, decided: decided === true }
 }
 
 // 历史记录（按菜品分组）
@@ -319,8 +353,12 @@ async function history(data, openid) {
       groupMap[r.dishId] = {
         dishId: r.dishId,
         dishName: r.dishName || '已删除菜品',
+        decided: false,
         voters: []
       }
+    }
+    if (r.decided) {
+      groupMap[r.dishId].decided = true
     }
     groupMap[r.dishId].voters.push({
       openid: r.userId,
@@ -351,6 +389,9 @@ exports.main = async (event, context) => {
         break
       case 'chefCancel':
         data = await chefCancel(event, openid)
+        break
+      case 'decideMenu':
+        data = await decideMenu(event, openid)
         break
       case 'todayList':
         data = await todayList(event, openid)

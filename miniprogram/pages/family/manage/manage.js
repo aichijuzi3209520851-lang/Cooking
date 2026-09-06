@@ -9,7 +9,8 @@ const {
   getRoleName,
   getRoleEmoji,
   getAvatarColor,
-  getAvatarText
+  getAvatarText,
+  getConfirmColor
 } = require('../../../utils/util.js');
 const app = getApp();
 
@@ -181,7 +182,7 @@ Page({
       content = `你是「${familyName}」目前唯一的成员。离开后这个家会解散，加入码也会失效，之后无法再用原码加入。确定要说再见吗？`;
     } else if (this.data.isCreator) {
       title = '先让家里热闹着';
-      content = `你是「${familyName}」的创建者，等家里其他成员都离开后，你才能最后告别～`;
+      content = `你是「${familyName}」的创建者。可在成员列表「转让」创建者身份后再离开；若其他成员都先后离开，你最后一个告别时家庭会自动解散～`;
     }
 
     const confirmed = await showConfirm(title, content);
@@ -194,18 +195,33 @@ Page({
 
       // 清除全局数据
       const currentId = app.globalData.currentFamilyId;
-      app.globalData.families = (app.globalData.families || []).filter(
+      const remaining = (app.globalData.families || []).filter(
         f => f.familyId !== currentId
       );
+      app.globalData.families = remaining;
       app.globalData.currentFamilyId = null;
       app.globalData.currentRole = null;
       app.saveCache();
 
+      // 多家庭用户：自动切换到剩余的第一个家庭，直进菜单页（不再回欢迎页）
+      if (remaining.length > 0) {
+        const next = remaining[0];
+        try {
+          await familyApi.switch(next.familyId);
+        } catch (e) {
+          console.error('自动切换家庭失败', e);
+        }
+        app.switchFamily(next.familyId);
+        showSuccess('已切换到「' + next.name + '」');
+        setTimeout(() => {
+          wx.reLaunch({ url: '/pages/menu/menu' });
+        }, 1000);
+        return;
+      }
+
       showSuccess('后会有期，饭桌见');
       setTimeout(() => {
-        wx.reLaunch({
-          url: '/pages/welcome/welcome'
-        });
+        wx.reLaunch({ url: '/pages/welcome/welcome' });
       }, 1000);
     } catch (err) {
       console.error('退出家庭失败', err);
@@ -213,6 +229,44 @@ Page({
     } finally {
       this.setData({ loading: false });
     }
+  },
+
+  // 转让创建者（仅创建者可操作）：转让后可正常离开家庭
+  onTransferCreator(e) {
+    const userId = e.currentTarget.dataset.userid;
+    if (!userId || this.data.loading) return;
+    if (!this.data.isCreator) {
+      showError('仅家庭创建者可以转让');
+      return;
+    }
+
+    const target = this.data.members.find(m => m.userId === userId);
+    const displayName = target ? (target.nickname || target.name || '该成员') : '该成员';
+    const that = this;
+
+    wx.showModal({
+      title: '转让创建者',
+      content: `确定把「${this.data.currentFamily.name}」转让给「${displayName}」吗？转让后 TA 负责这个家，你可以正常离开或继续留下。`,
+      confirmText: '转让',
+      confirmColor: getConfirmColor(),
+      success(res) {
+        if (!res.confirm) return;
+        that.setData({ loading: true });
+        familyApi.transferCreator(that.data.currentFamily.familyId, userId).then(() => {
+          // 本地同步创建者标识
+          app.globalData.families = (app.globalData.families || []).map(f => (
+            f.familyId === that.data.currentFamily.familyId ? { ...f, creatorId: userId } : f
+          ));
+          app.saveCache();
+          showSuccess('已转让创建者');
+          that.loadFamilyData();
+        }).catch(err => {
+          showApiError(err, '转让失败');
+        }).finally(() => {
+          that.setData({ loading: false });
+        });
+      }
+    });
   },
 
   // 复制加入码
