@@ -332,6 +332,9 @@ async function removeMember(data, openid) {
   // 清理该用户当日投票（cookCount 为累计语义，不扣减）
   await removeUserTodayVotes(db, familyId, userId)
 
+  // 清理该用户的饭量上报（含历史日期，离开后不再计入聚合）
+  await removeWhere(db, 'rice_reports', { familyId, userId }, 'family')
+
   // 成员数 -1
   await db.collection('families').doc(familyId).update({
     data: { memberCount: _.inc(-1), updatedAt: new Date() }
@@ -391,6 +394,9 @@ async function leaveFamily(data, openid) {
   // 清理自己的当日投票（不扣减累计 cookCount）
   await removeUserTodayVotes(db, familyId, openid)
 
+  // 清理自己的饭量上报（含历史日期）
+  await removeWhere(db, 'rice_reports', { familyId, userId: openid }, 'family')
+
   // 成员数 -1
   await db.collection('families').doc(familyId).update({
     data: { memberCount: _.inc(-1), updatedAt: now }
@@ -415,6 +421,7 @@ async function disbandFamily(familyId, members, now) {
   await removeWhere(db, 'dishes', { familyId }, 'family')
   await removeWhere(db, 'daily_votes', { familyId }, 'family')
   await removeWhere(db, 'vote_history', { familyId }, 'family')
+  await removeWhere(db, 'rice_reports', { familyId }, 'family')
   await removeWhere(db, 'notify_ledger', { familyId }, 'family')
 
   // 删除家庭记录

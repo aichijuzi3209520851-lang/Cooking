@@ -5,6 +5,7 @@
   <view class="header">
     <view class="header-title">点菜汇总</view>
     <view class="header-sub">{{dateText}}</view>
+    <view class="rice-line" wx:if="{{riceLine}}">{{riceLine}}</view>
   </view>
 
   <!-- 无家庭 -->

@@ -1,6 +1,6 @@
 // pages/summary/summary.js
 const theme = require('../../utils/theme.js');
-const { voteApi } = require('../../utils/api.js');
+const { voteApi, riceApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
 const {
   today,
@@ -26,7 +26,9 @@ Page({
     hasFamily: false,
     todayDate: '',
     dateText: '',
-    loading: false
+    loading: false,
+    // 今日米饭聚合行（RICE-001），空串表示不展示
+    riceLine: ''
   },
 
   onLoad() {
@@ -207,6 +209,9 @@ Page({
 
       // 标记汇总已看到（清除 tab 徽标，BADGE-001）
       markSummarySeen(stats.dishCount);
+
+      // 今日米饭聚合（RICE-001）：独立加载，失败不影响汇总主流程
+      this.loadRice();
     } catch (err) {
       console.error('加载汇总失败', err);
       showApiError(err, '加载失败');
@@ -217,6 +222,27 @@ Page({
         this._pendingReload = false;
         this.loadData();
       }
+    }
+  },
+
+  // 今日米饭聚合（RICE-001）：做饭前看总碗数
+  async loadRice() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+    try {
+      const res = await riceApi.get(familyId);
+      const list = (res && res.reports) || [];
+      const unreported = Math.max(0, ((res && res.memberCount) || 0) - list.length);
+      let line = '';
+      if (list.length > 0) {
+        line = `今晚米饭共 ${(res && res.total) || 0} 碗`;
+        if (unreported > 0) {
+          line += `，${unreported} 人没报`;
+        }
+      }
+      this.setData({ riceLine: line });
+    } catch (err) {
+      console.warn('加载米饭数据失败', err);
     }
   },
 

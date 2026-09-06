@@ -13,7 +13,7 @@ const {
 } = require('../../utils/util.js');
 const app = getApp();
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 // 通知模板是否已配置（BADGE-002）：未配置时通知入口为死路，不显示引导徽标
 function notifyConfigured() {

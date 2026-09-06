@@ -148,3 +148,70 @@ test('冒烟：创建者在还有成员时无法离开（受保护规则）', as
   const members = await familyFn.main({ action: 'members', familyId: fam.data.familyId })
   assert.equal(members.data.length, 2)
 })
+
+test('冒烟：今日米饭饭量上报 + 聚合 + 幂等改值 + 离开/解散清理（RICE-001）', async () => {
+  env.resetDb()
+
+  as('owner')
+  await loginFn.main({ action: 'login' })
+  const created = await familyFn.main({ action: 'create', name: '测试米饭' })
+  const { familyId, joinCode } = created.data
+
+  as('member')
+  await loginFn.main({ action: 'login' })
+  await familyFn.main({ action: 'joinByCode', joinCode })
+
+  // 未报饭量：mine 为 null
+  as('owner')
+  let rice = await voteFn.main({ action: 'getRice', familyId })
+  assert.equal(rice.success, true, 'getRice 应成功')
+  assert.equal(rice.data.mine, null, '未报时 mine 应为 null')
+  assert.equal(rice.data.total, 0, '未报时 total 应为 0')
+  assert.equal(rice.data.memberCount, 2)
+
+  // 掌勺报 2 碗
+  as('owner')
+  const s1 = await voteFn.main({ action: 'setRice', familyId, bowls: 2 })
+  assert.equal(s1.success, true, 'setRice 应成功')
+  assert.equal(s1.data.bowls, 2)
+
+  // 家人报 1.5 碗
+  as('member')
+  const s2 = await voteFn.main({ action: 'setRice', familyId, bowls: 1.5 })
+  assert.equal(s2.success, true)
+  assert.equal(s2.data.bowls, 1.5)
+
+  // 聚合：全家共 3.5 碗
+  as('owner')
+  rice = await voteFn.main({ action: 'getRice', familyId })
+  assert.equal(rice.data.total, 3.5, '全家共 3.5 碗')
+  assert.equal(rice.data.mine, 2, '掌勺自己 2 碗')
+  assert.equal(rice.data.reports.length, 2)
+
+  // 幂等改值：掌勺改为 3 碗（覆盖更新）
+  as('owner')
+  const s3 = await voteFn.main({ action: 'setRice', familyId, bowls: 3 })
+  assert.equal(s3.success, true)
+  rice = await voteFn.main({ action: 'getRice', familyId })
+  assert.equal(rice.data.total, 4.5, '改值后全家共 4.5 碗')
+  assert.equal(rice.data.mine, 3)
+
+  // 半碗步进校验：非法值拒绝
+  as('owner')
+  const bad = await voteFn.main({ action: 'setRice', familyId, bowls: 0.3 })
+  assert.equal(bad.success, false, '非 0.5 步进应被拒绝')
+  assert.equal(bad.errorCode, 'INVALID_PARAM')
+
+  // 碗数上限校验：6 碗拒绝
+  const over = await voteFn.main({ action: 'setRice', familyId, bowls: 6 })
+  assert.equal(over.success, false, '超过上限应被拒绝')
+  assert.equal(over.errorCode, 'INVALID_PARAM')
+
+  // 家人离开 → 自己的饭量被清理
+  as('member')
+  await familyFn.main({ action: 'leave', familyId })
+  as('owner')
+  rice = await voteFn.main({ action: 'getRice', familyId })
+  assert.equal(rice.data.reports.length, 1, '离开后只剩掌勺的饭量')
+  assert.equal(rice.data.reports[0].bowls, 3)
+})

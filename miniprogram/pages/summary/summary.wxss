@@ -25,6 +25,18 @@
   color: var(--color-text-secondary);
 }
 
+/* 今日米饭聚合（RICE-001） */
+.rice-line {
+  margin-top: 14rpx;
+  display: inline-block;
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
+  border: 1rpx solid rgba(230, 162, 60, 0.18);
+  font-size: 24rpx;
+  color: var(--color-num-strong);
+}
+
 /* ===== 汇总卡片 ===== */
 .summary-list {
   padding-top: 8rpx;

@@ -140,6 +140,9 @@ exports.main = async (event) => {
     // ===== 3. 清理过期通知台账（已归档日期不再需要） =====
     await removeWhere(db, 'notify_ledger', { date: _.lte(bizDate) }, 'dailyReset')
 
+    // ===== 4. 清理昨日饭量上报（RICE-001：无需归档，仅保留当日热数据） =====
+    await removeWhere(db, 'rice_reports', { date: bizDate }, 'dailyReset')
+
     summary.endTime = new Date().toISOString()
     console.log(`[dailyReset] 完成 jobId=${jobId} date=${bizDate}`, JSON.stringify(summary))
 

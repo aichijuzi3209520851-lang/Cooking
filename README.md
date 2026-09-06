@@ -275,10 +275,10 @@ globalData: {
 在云开发控制台 → 数据库中创建以下集合（无需手动建表结构，文档型数据库自动生成字段）：
 
 ```
-users  families  family_members  dishes  daily_votes  vote_history  notify_ledger
+users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports
 ```
 
-> `notify_ledger` 用于第一票通知的去重（防止并发点菜产生重复通知）。数据库安全规则与索引清单见 [docs/deployment/database.md](docs/deployment/database.md)（需控制台人工配置）。
+> `notify_ledger` 用于第一票通知的去重（防止并发点菜产生重复通知）。`rice_reports` 用于今日米饭饭量上报（每日聚合，由 dailyReset 清理昨日数据）。数据库安全规则与索引清单见 [docs/deployment/database.md](docs/deployment/database.md)（需控制台人工配置）。
 
 **5. 上传云函数**
 
@@ -369,6 +369,7 @@ tcb fn deploy dailyReset -e <环境ID> --force
 | `daily_votes` | 当日投票（热数据） | `_id`=`v_{date}_{familyId}_{dishId}_{userId}`、`familyId`、`dishId`、`userId`、`date` |
 | `vote_history` | 历史归档（冷数据） | `_id`=`h_{voteId}`（幂等）、`familyId`、`date`、`dishName`、`userName` |
 | `notify_ledger` | 第一票通知台账 | `_id`=`n_{date}_{familyId}_{dishId}` |
+| `rice_reports` | 今日米饭饭量上报（热数据，由 dailyReset 清理昨日） | `_id`=`r_{date}_{familyId}_{userId}`、`familyId`、`userId`、`bowls`(0-5，0.5 步进)、`date` |
 
 ### 关系模型
 
@@ -677,7 +678,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（151 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（153 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -691,9 +692,9 @@ npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见�
 
 ### E2E 黑盒冒烟测试
 
-`npm run test:e2e` 通过 [miniprogram-automator](https://developers.weixin.qq.com/miniprogram/dev/devtools/auto/) 驱动微信开发者工具，以真实账号走完完整用户旅程（17 项断言）：
+`npm run test:e2e` 通过 [miniprogram-automator](https://developers.weixin.qq.com/miniprogram/dev/devtools/auto/) 驱动微信开发者工具，以真实账号走完完整用户旅程（19 项断言）：
 
-冷启动登录 → 创建测试家庭 → 错误加入码拒绝 → 小写加入码加入 → 选择掌勺身份 → 新增菜品 → 菜单页出现 → 点菜 → 汇总页显示投票人 → 掌勺拍板 → 掌勺撤下（今日不做语义：汇总移除、菜品不隐藏） → 主题切换夜间家族 → 历史页可达 → 解散测试家庭级联清理。
+冷启动登录 → 创建测试家庭 → 错误加入码拒绝 → 小写加入码加入 → 选择掌勺身份 → 新增菜品 → 菜单页出现 → 点菜 → 汇总页显示投票人 → 掌勺拍板 → 掌勺撤下（今日不做语义：汇总移除、菜品不隐藏） → **米饭步进：未报→1 碗→减半碗→0.5 碗** → 主题切换夜间家族 → 历史页可达 → 解散测试家庭级联清理。
 
 前提与行为说明：
 - 开发者工具需开启「设置 → 安全 → 服务端口」，且 6 个云函数已部署最新代码

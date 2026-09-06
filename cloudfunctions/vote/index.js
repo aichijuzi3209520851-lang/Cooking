@@ -15,6 +15,19 @@ const _ = db.command
 
 // ============ 工具函数 ============
 
+// 今日米饭碗数上限（RICE-001：0-5 碗，0.5 步进）
+const RICE_BOWLS_MAX = 5
+
+function validateBowls(bowls) {
+  return (
+    typeof bowls === 'number' &&
+    isFinite(bowls) &&
+    bowls >= 0 &&
+    bowls <= RICE_BOWLS_MAX &&
+    (bowls * 2) % 1 === 0
+  )
+}
+
 // 调用 notify 云函数（失败不影响主流程，但记录日志便于排查）
 // 密钥必须来自环境变量，未配置时跳过通知并记录日志（fail closed）
 async function safeCallNotify(payload) {
@@ -322,6 +335,84 @@ async function decideMenu(data, openid) {
   return { familyId, dishId, decided: decided === true }
 }
 
+// 今日米饭：本人饭量上报（每人每天一条，可反复修改；掌勺与等饭的均可报）
+async function setRice(data, openid) {
+  const { familyId, bowls } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+  if (!validateBowls(bowls)) {
+    throw new ApiError('INVALID_PARAM', '碗数无效（0-5 碗，支持半碗）')
+  }
+
+  await requireMember(db, familyId, openid)
+
+  const today = getTodayStr()
+  const now = new Date()
+
+  // 确定性 _id（家庭+用户+日期）：当天重复上报走覆盖更新，天然幂等
+  const reportId = `r_${today}_${familyId}_${openid}`
+  try {
+    await db.collection('rice_reports').add({
+      data: {
+        _id: reportId,
+        familyId,
+        userId: openid,
+        date: today,
+        bowls,
+        updatedAt: now
+      }
+    })
+  } catch (e) {
+    const dup = await db.collection('rice_reports').doc(reportId).get().catch(() => null)
+    if (dup && dup.data) {
+      await db.collection('rice_reports').doc(reportId).update({
+        data: { bowls, updatedAt: now }
+      })
+    } else {
+      throw e
+    }
+  }
+
+  return { familyId, date: today, bowls }
+}
+
+// 今日米饭聚合：全员饭量 + 家庭总人数（前端据差值展示「N 人没报」）
+async function getRice(data, openid) {
+  const { familyId } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+
+  await requireMember(db, familyId, openid)
+
+  const today = getTodayStr()
+
+  const [reportsRes, memberCountRes] = await Promise.all([
+    db.collection('rice_reports').where({ familyId, date: today }).get(),
+    db.collection('family_members').where({ familyId }).count()
+  ])
+
+  const reports = reportsRes.data || []
+  const userMap = await getUserMap(db, _, reports.map(r => r.userId))
+
+  const list = reports.map(r => ({
+    userId: r.userId,
+    nickname: (userMap[r.userId] && userMap[r.userId].nickname) || '微信用户',
+    bowls: typeof r.bowls === 'number' ? r.bowls : 0
+  }))
+  const total = list.reduce((sum, r) => sum + r.bowls, 0)
+  const mine = list.find(r => r.userId === openid)
+
+  return {
+    date: today,
+    reports: list,
+    total,
+    memberCount: (memberCountRes && memberCountRes.total) || 0,
+    mine: mine ? mine.bowls : null
+  }
+}
+
 // 历史记录（按菜品分组）
 async function history(data, openid) {
   const { familyId, date } = data
@@ -395,6 +486,12 @@ exports.main = async (event, context) => {
         break
       case 'todayList':
         data = await todayList(event, openid)
+        break
+      case 'setRice':
+        data = await setRice(event, openid)
+        break
+      case 'getRice':
+        data = await getRice(event, openid)
         break
       case 'history':
         data = await history(event, openid)

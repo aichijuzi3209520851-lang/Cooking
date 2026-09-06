@@ -21,6 +21,24 @@
     </view>
   </view>
 
+  <!-- 今日米饭（RICE-001）：全员饭量上报，掌勺一眼看总碗数 -->
+  <view class="rice-card" wx:if="{{hasFamily}}">
+    <view class="rice-head">
+      <text class="rice-title">今日米饭</text>
+      <text class="rice-total {{rice.hasReport ? '' : 'rice-total-empty'}}">{{rice.totalText}}</text>
+    </view>
+    <view class="rice-mine">
+      <text class="rice-mine-label">我的</text>
+      <view class="rice-stepper">
+        <view class="rice-step-btn" hover-class="rice-step-press" data-delta="-0.5" bindtap="onRiceStep">－</view>
+        <text class="rice-mine-num">{{rice.mineText}}</text>
+        <view class="rice-step-btn" hover-class="rice-step-press" data-delta="0.5" bindtap="onRiceStep">＋</view>
+      </view>
+    </view>
+    <view class="rice-others" wx:if="{{rice.othersText}}">{{rice.othersText}}</view>
+    <view class="rice-unreported" wx:if="{{rice.unreportedCount > 0}}">还有 {{rice.unreportedCount}} 人没报</view>
+  </view>
+
   <!-- 无家庭 -->
   <block wx:if="{{!hasFamily}}">
     <empty-state

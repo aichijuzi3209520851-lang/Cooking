@@ -1,6 +1,6 @@
 // pages/menu/menu.js
 const theme = require('../../utils/theme.js');
-const { dishApi, voteApi } = require('../../utils/api.js');
+const { dishApi, voteApi, riceApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
 const {
   today,
@@ -22,6 +22,7 @@ const CATEGORIES = [
 
 const PAGE_SIZE = 50;
 const WATCH_RETRY_LIMIT = 3;
+const RICE_BOWLS_MAX = 5;
 
 Page({
   data: {
@@ -39,7 +40,17 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
-    hasMore: true
+    hasMore: true,
+    // 今日米饭（RICE-001）：mine 为 null 表示未报
+    rice: {
+      mine: null,
+      mineText: '未报',
+      total: 0,
+      hasReport: false,
+      totalText: '还没有人报',
+      othersText: '',
+      unreportedCount: 0
+    },
   },
 
   onLoad() {
@@ -207,6 +218,7 @@ Page({
     const category = this.data.selectedCategory;
     const page = reset ? 1 : this.data.page;
     this.setData({ loading: true });
+    this.loadRice();
 
     try {
       const [voteData, dishResult] = await Promise.all([
@@ -253,6 +265,81 @@ Page({
         this._pendingReload = false;
         this.loadData(true);
       }
+    }
+  },
+
+  // 今日米饭（RICE-001）：独立加载，失败不影响菜品主流程
+  async loadRice() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+    try {
+      const res = await riceApi.get(familyId);
+      this._riceRaw = res;
+      this.setData({ rice: this.deriveRiceView(res) });
+    } catch (err) {
+      console.warn('加载米饭数据失败', err);
+    }
+  },
+
+  // 由服务端聚合数据推导卡片展示字段
+  deriveRiceView(raw) {
+    const list = (raw && raw.reports) || [];
+    const memberCount = (raw && raw.memberCount) || 0;
+    const mine = raw && raw.mine !== null && raw.mine !== undefined ? raw.mine : null;
+    const others = list.filter(r => r.userId !== this.data.currentUserId);
+    const total = (raw && raw.total) || 0;
+    return {
+      mine,
+      mineText: mine === null ? '未报' : `${mine} 碗`,
+      total,
+      hasReport: list.length > 0,
+      totalText: list.length === 0 ? '还没有人报' : `全家共 ${total} 碗`,
+      othersText: others.map(r => `${r.nickname} ${r.bowls}`).join(' · '),
+      unreportedCount: Math.max(0, memberCount - list.length)
+    };
+  },
+
+  // 乐观更新自己的饭量：本地重算聚合，服务端失败再回落
+  optimisticRiceMine(next) {
+    const raw = this._riceRaw || { reports: [], memberCount: 0, mine: null };
+    const myId = this.data.currentUserId;
+    const reports = (raw.reports || []).filter(r => r.userId !== myId);
+    if (next !== null) {
+      reports.push({ userId: myId, bowls: next });
+    }
+    const merged = {
+      ...raw,
+      reports,
+      total: reports.reduce((sum, r) => sum + r.bowls, 0),
+      mine: next
+    };
+    this._riceRaw = merged;
+    this.setData({ rice: this.deriveRiceView(merged) });
+  },
+
+  // 饭量步进（±0.5 碗；未报时 + 直接报 1 碗、- 报 0 碗）
+  async onRiceStep(e) {
+    const delta = Number(e.currentTarget.dataset.delta);
+    if (this._riceSaving) return;
+    const current = this.data.rice.mine;
+    let next;
+    if (current === null) {
+      next = delta > 0 ? 1 : 0;
+    } else {
+      next = Math.min(RICE_BOWLS_MAX, Math.max(0, Math.round((current + delta) * 2) / 2));
+    }
+    if (next === current) return;
+
+    this._riceSaving = true;
+    this.optimisticRiceMine(next);
+    try {
+      await riceApi.set(app.globalData.currentFamilyId, next);
+      wx.vibrateShort({ type: 'light' });
+    } catch (err) {
+      showApiError(err, '饭量上报失败');
+      this.loadRice();
+    } finally {
+      this._riceSaving = false;
     }
   },
 

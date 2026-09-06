@@ -345,6 +345,37 @@ async function t06_veto_semantics() {
   record('S6-2 撤菜后菜品未被隐藏（可再次点选）', true)
 }
 
+async function t06b_rice_step() {
+  await reLaunch('/pages/menu/menu')
+  await sleep(1500)
+  // 今日米饭卡片在 stats-bar 上方，通过页面方法直接调用（与按钮 tap 同源）
+  const before = await mini.evaluate(() => {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    return page.data.rice
+  })
+  assert(!before || before.mine === null, '米饭初始应为未报（或未加载完）')
+  // 点 +1 碗（onRiceStep data-delta=0.5 调两次 = 1 碗）
+  await callPage('onRiceStep', { currentTarget: { dataset: { delta: 0.5 } } })
+  await callPage('onRiceStep', { currentTarget: { dataset: { delta: 0.5 } } })
+  await sleep(2000) // 等服务端 upsert 回来
+  const after = await mini.evaluate(() => {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    return page.data.rice
+  })
+  record('S6.5 米饭步进：未报→1 碗', after.mine === 1, `mine=${after.mine}, total=${after.total}`)
+  // 点 -0.5 碗 → 0.5 碗
+  await callPage('onRiceStep', { currentTarget: { dataset: { delta: -0.5 } } })
+  await sleep(1200)
+  const half = await mini.evaluate(() => {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    return page.data.rice
+  })
+  record('S6.6 米饭步进：减 0.5→0.5 碗', half.mine === 0.5, `mine=${half.mine}`)
+}
+
 async function t07_theme_switch() {
   await reLaunch('/pages/settings/theme/theme')
   await sleep(800)
@@ -423,6 +454,7 @@ async function main() {
     await t04_vote_and_summary()
     await t05_decide()
     await t06_veto_semantics()
+    await t06b_rice_step()
     await t07_theme_switch()
     await t08_history()
   } catch (err) {

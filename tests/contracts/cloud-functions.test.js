@@ -17,7 +17,7 @@ const DOCUMENTED_ACTIONS = {
   login: ['login', 'setNotifyStatus', 'updateProfile'],
   family: ['create', 'joinByCode', 'list', 'switch', 'members', 'removeMember', 'leave', 'updateRole', 'updateMemberRole'],
   dish: ['list', 'add', 'update', 'delete', 'toggleHidden'],
-  vote: ['add', 'cancel', 'chefCancel', 'todayList', 'history'],
+  vote: ['add', 'cancel', 'chefCancel', 'decideMenu', 'todayList', 'setRice', 'getRice', 'history'],
   notify: ['sendVoteNotify', 'sendCancelNotify'],
   dailyReset: []
 };
@@ -62,6 +62,14 @@ test('vote：确定性投票 _id 与幂等错误码（DATA-002）', () => {
   // cookCount 只增不减（累计语义）
   assert.match(src, /cookCount: _\.inc\(1\)/, '点菜未增加 cookCount');
   assert.ok(!src.includes("cookCount: _.inc(-1)"), '取消/撤菜不得扣减累计 cookCount');
+});
+
+test('vote：饭量上报确定性 _id + 碗数校验（RICE-001）', () => {
+  const src = readFn('vote');
+  assert.match(src, /r_\$\{today\}_\$\{familyId\}_\$\{openid\}/, '饭量记录缺少确定性 _id');
+  assert.match(src, /validateBowls/, '缺少碗数校验器');
+  assert.match(src, /bowls <= RICE_BOWLS_MAX/, '碗数缺少上限校验');
+  assert.match(src, /\(bowls \* 2\) % 1 === 0/, '碗数缺少半碗步进校验');
 });
 
 test('vote：第一票通知使用 ledger 防竞态（NOTIFY-001）', () => {

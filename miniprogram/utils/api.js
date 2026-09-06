@@ -103,6 +103,12 @@ const historyApi = {
   list: (familyId, date) => call('vote', { action: 'history', familyId, date })
 };
 
+// 今日米饭饭量（RICE-001，走 vote 云函数）
+const riceApi = {
+  get: (familyId) => call('vote', { action: 'getRice', familyId }),
+  set: (familyId, bowls) => call('vote', { action: 'setRice', familyId, bowls })
+};
+
 // 通知相关（授权状态持久化走 login 云函数）
 const notifyApi = {
   setStatus: (status, reason) => call('login', { action: 'setNotifyStatus', status, reason })
@@ -121,6 +127,7 @@ module.exports = {
   dishApi,
   voteApi,
   historyApi,
+  riceApi,
   notifyApi,
   userApi
 };
