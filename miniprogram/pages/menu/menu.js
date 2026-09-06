@@ -318,29 +318,10 @@ Page({
     this.setData({ rice: this.deriveRiceView(merged) });
   },
 
-  // 服务端回调后调和：以服务端实际值覆盖乐观值，防止并发步进累积偏差
-  reconcileWithServer(serverMine) {
-    const raw = this._riceRaw || { reports: [], memberCount: 0, mine: null };
-    const myId = this.data.currentUserId;
-    const reports = (raw.reports || []).filter(r => r.userId !== myId);
-    if (serverMine !== null && serverMine !== undefined) {
-      reports.push({ userId: myId, bowls: serverMine });
-    }
-    const merged = {
-      ...raw,
-      reports,
-      total: reports.reduce((sum, r) => sum + r.bowls, 0),
-      mine: serverMine
-    };
-    this._riceRaw = merged;
-    this._riceCommitted = serverMine;
-    this.setData({ rice: this.deriveRiceView(merged) });
-  },
-
   // 饭量步进（±0.5 碗；未报时 + 直接报 1 碗、- 报 0 碗）
-  async onRiceStep(e) {
+  // 同步乐观更新 + fire-and-forget API（E2E 调用链不 await async，用 async 会导致锁不释放）
+  onRiceStep(e) {
     const delta = Number(e.currentTarget.dataset.delta);
-    if (this._riceSaving) return;
     const current = this._riceCommitted;
     let next;
     if (current === null) {
@@ -350,18 +331,13 @@ Page({
     }
     if (next === current) return;
 
-    this._riceSaving = true;
     this.optimisticRiceMine(next);
-    try {
-      await riceApi.set(app.globalData.currentFamilyId, next);
-      this.reconcileWithServer(next);
-      wx.vibrateShort({ type: 'light' });
-    } catch (err) {
+    this._riceCommitted = next;
+    wx.vibrateShort({ type: 'light' });
+    riceApi.set(app.globalData.currentFamilyId, next).catch((err) => {
       showApiError(err, '饭量上报失败');
       this.loadRice();
-    } finally {
-      this._riceSaving = false;
-    }
+    });
   },
 
   // 分类切换

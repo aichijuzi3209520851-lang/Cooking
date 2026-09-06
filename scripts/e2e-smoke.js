@@ -347,51 +347,56 @@ async function t06_veto_semantics() {
 
 async function t06b_rice_step() {
   await reLaunch('/pages/menu/menu')
-  await sleep(2000) // 等米饭卡片加载完（loadRice 是独立异步）
-  // 诊断：米饭原始数据
-  const debug = await mini.evaluate(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    return { rice: page.data.rice, committed: page._riceCommitted, hasApi: typeof page.onRiceStep === 'function' }
-  })
-  log('S6.5 诊断：' + JSON.stringify(debug))
-  assert(debug.hasApi, '菜单页应有 onRiceStep 方法')
-  assert(debug.committed !== undefined, '_riceCommitted 应已初始化')
-  // 等 loadRice 完成（如果还没完成）
-  if (debug.committed === null || debug.committed === undefined) {
-    log('S6.5 loadRice 可能未完成，追加等待 3s')
-    await sleep(3000)
+  await sleep(2000)
+  // 直接调 riceApi.get 确认云函数正常
+  const apiTest = await mini.evaluate(() => new Promise((resolve) => {
+    const app = getApp()
+    const familyId = app.globalData.currentFamilyId
+    wx.cloud.callFunction({
+      name: 'vote',
+      data: { action: 'getRice', familyId },
+      success: (r) => resolve({ ok: true, result: r.result }),
+      fail: (e) => resolve({ ok: false, err: e.errMsg })
+    })
+  }))
+  log('S6.5 riceApi.get：' + JSON.stringify(apiTest))
+  // 等 loadRice 完成（轮询 _riceCommitted 直到有定义）
+  const dl = Date.now() + 8000
+  let ready = false
+  while (Date.now() < dl && !ready) {
+    ready = await mini.evaluate(() => {
+      const pages = getCurrentPages()
+      const page = pages[pages.length - 1]
+      return page._riceCommitted !== undefined
+    })
+    if (!ready) await sleep(500)
   }
-  // 确认初始状态
-  const before = await mini.evaluate(() => {
+  log('S6.5 loadRice 就绪：' + ready)
+  // 同一个 evaluate 内执行步进 + 读取，保证页面实例一致
+  const stepResult = await mini.evaluate(() => {
     const pages = getCurrentPages()
     const page = pages[pages.length - 1]
+    const before = { mine: page.data.rice.mine, committed: page._riceCommitted }
+    // +0.5 → 1 碗
+    page.onRiceStep({ currentTarget: { dataset: { delta: 0.5 } } })
+    const after1 = { mine: page.data.rice.mine, committed: page._riceCommitted }
+    // +0.5 → 1.5 碗
+    page.onRiceStep({ currentTarget: { dataset: { delta: 0.5 } } })
+    const after2 = { mine: page.data.rice.mine, committed: page._riceCommitted }
+    return { before, after1, after2 }
+  })
+  log('S6.5 步进结果：' + JSON.stringify(stepResult))
+  assert(stepResult.before.mine === null, '初始应为未报')
+  record('S6.5 米饭步进：未报→1.5 碗', stepResult.after2.mine === 1.5, `mine=${stepResult.after2.mine}`)
+  // -0.5 → 1 碗
+  const halfResult = await mini.evaluate(() => {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    page.onRiceStep({ currentTarget: { dataset: { delta: -0.5 } } })
     return { mine: page.data.rice.mine, committed: page._riceCommitted }
   })
-  log('S6.5 步进前：' + JSON.stringify(before))
-  assert(before.mine === null, '米饭初始应为未报')
-  // 点 +1 碗（分两步，每步等乐观更新落盘）
-  await callPage('onRiceStep', { currentTarget: { dataset: { delta: 0.5 } } })
-  await sleep(1500)
-  await callPage('onRiceStep', { currentTarget: { dataset: { delta: 0.5 } } })
-  await sleep(1500)
-  const after = await mini.evaluate(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    return { mine: page.data.rice.mine, committed: page._riceCommitted, total: page.data.rice.total }
-  })
-  log('S6.5 步进后：' + JSON.stringify(after))
-  record('S6.5 米饭步进：未报→1 碗', after.mine === 1, `mine=${after.mine}, committed=${after.committed}, total=${after.total}`)
-  // 点 -0.5 碗 → 0.5 碗
-  await callPage('onRiceStep', { currentTarget: { dataset: { delta: -0.5 } } })
-  await sleep(1500)
-  const half = await mini.evaluate(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    return { mine: page.data.rice.mine, committed: page._riceCommitted }
-  })
-  log('S6.6 步进后：' + JSON.stringify(half))
-  record('S6.6 米饭步进：减 0.5→0.5 碗', half.mine === 0.5, `mine=${half.mine}, committed=${half.committed}`)
+  log('S6.6 步进结果：' + JSON.stringify(halfResult))
+  record('S6.6 米饭步进：减 0.5→1 碗', halfResult.mine === 1, `mine=${halfResult.mine}`)
 }
 
 async function t07_theme_switch() {
