@@ -5,6 +5,7 @@ const {
   getCategoryList,
   getCategoryName,
   getCategoryEmoji,
+  guardChefPage,
   showSuccess,
   showError,
   showConfirm,
@@ -27,8 +28,11 @@ Page({
     loadError: false
   },
 
-  onShow() {
+  async onShow() {
     theme.applyTheme(this);
+    // 页面守卫（UI-001）：菜品库管理仅掌勺可用，防止非常规路径误入
+    await app.waitForLogin();
+    if (!guardChefPage()) return;
     this.loadData(true);
   },
 

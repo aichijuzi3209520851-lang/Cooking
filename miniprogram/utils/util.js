@@ -188,6 +188,25 @@ function previewImage(url, urls) {
 }
 
 /**
+ * 页面守卫：菜品管理类页面仅掌勺可用（UI-001）
+ * 返回 true 表示放行；否则提示并返回上一页
+ */
+function guardChefPage() {
+  const app = getApp();
+  if (!app.globalData.currentFamilyId) {
+    showError('请先加入一个家庭');
+    setTimeout(() => wx.navigateBack({ fail() { wx.reLaunch({ url: '/pages/menu/menu' }); } }), 600);
+    return false;
+  }
+  if (app.globalData.currentRole !== 'chef') {
+    showError('掌勺的才能管理菜品哦');
+    setTimeout(() => wx.navigateBack({ fail() { wx.reLaunch({ url: '/pages/menu/menu' }); } }), 600);
+    return false;
+  }
+  return true;
+}
+
+/**
  * 显示确认弹窗
  */
 function showConfirm(title, content) {
@@ -216,6 +235,7 @@ module.exports = {
   getAvatarText,
   getConfirmColor,
   previewImage,
+  guardChefPage,
   showSuccess,
   showError,
   showApiError,

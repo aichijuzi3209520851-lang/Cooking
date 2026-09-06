@@ -3,6 +3,7 @@ const theme = require('../../../utils/theme.js');
 const { dishApi } = require('../../../utils/api.js');
 const {
   getCategoryList,
+  guardChefPage,
   showSuccess,
   showError,
   showApiError
@@ -46,8 +47,11 @@ Page({
     }
   },
 
-  onShow() {
+  async onShow() {
     theme.applyTheme(this);
+    // 页面守卫（UI-001）：菜品管理仅掌勺可用，防止非常规路径误入
+    await app.waitForLogin();
+    if (!guardChefPage()) return;
   },
 
   onUnload() {
