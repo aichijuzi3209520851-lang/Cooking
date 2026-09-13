@@ -2,7 +2,7 @@
 // 菜品管理：列表、新增、修改、删除、隐藏切换
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
-const { getOpenid, requireChef, requireMember, requireDishInFamily } = require('./shared/auth')
+const { getOpenid, requireChef, requireCreator, requireMember, requireDishInFamily } = require('./shared/auth')
 const { getTodayStr } = require('./shared/date')
 const { safeDeleteFiles, removeTodayVotes } = require('./shared/db-helpers')
 const { validateImageUrl, VALID_CATEGORIES } = require('./shared/validators')
@@ -43,6 +43,8 @@ async function safeCallNotify(payload) {
 const NAME_MAX_LENGTH = 30
 // 每个家庭的菜品数量上限（防滥用刷库）
 const DISH_LIMIT_PER_FAMILY = 200
+// 分页页码上限（防超大 skip 造成慢查询/超时）
+const PAGE_MAX = 500
 
 // 查询菜品列表
 // includeHidden=true 时返回全部菜品（含隐藏），仅 chef 可用（UI-001）
@@ -56,8 +58,8 @@ async function listDishes(data, openid) {
   if (!familyId) {
     throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
   }
-  if (!Number.isInteger(page) || page < 1) {
-    throw new ApiError('INVALID_PARAM', 'page 参数无效')
+  if (!Number.isInteger(page) || page < 1 || page > PAGE_MAX) {
+    throw new ApiError('INVALID_PARAM', `page 参数无效（1-${PAGE_MAX}）`)
   }
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
     throw new ApiError('INVALID_PARAM', 'pageSize 参数无效（1-100）')
@@ -194,6 +196,8 @@ async function updateDish(data, openid) {
 }
 
 // 删除菜品
+// 不可逆操作（物理删除 + 云存储图片删除），仅家庭创建者可执行：
+// 普通成员可自行切换 chef 身份，若此处仍用 requireChef，任何成员提权后即可清空整个家庭菜谱。
 async function deleteDish(data, openid) {
   const { familyId, dishId } = data
 
@@ -201,7 +205,7 @@ async function deleteDish(data, openid) {
     throw new ApiError('INVALID_PARAM', '参数不完整')
   }
 
-  await requireChef(db, familyId, openid)
+  await requireCreator(db, familyId, openid)
 
   // 校验菜品属于该家庭
   const oldDish = await requireDishInFamily(db, familyId, dishId)

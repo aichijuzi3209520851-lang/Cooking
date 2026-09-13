@@ -1,0 +1,81 @@
+<!--pages/agreement/privacy/privacy.wxml-->
+<view class="container privacy-page {{themeClass}}">
+
+  <view class="card privacy-card">
+    <view class="privacy-title">隐私协议</view>
+    <view class="caption privacy-date">更新日期：{{updateDate}}</view>
+    <view class="privacy-lead">
+      「筷点吃饭」是一款家庭内部使用的点菜工具。我们深知个人信息对你很重要，因此只收集让这个家能正常点菜所必需的最少信息。
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">一、我们收集哪些信息</view>
+
+    <view class="privacy-item">
+      <view class="privacy-item-t">微信头像与昵称</view>
+      <view class="privacy-p">
+        仅在你主动点击头像或填写昵称时获取，用于让家人认出「这道菜是谁点的」。不填也不影响点菜，我们会用昵称首字和颜色生成一个默认头像。
+      </view>
+    </view>
+
+    <view class="privacy-item">
+      <view class="privacy-item-t">菜品图片</view>
+      <view class="privacy-p">
+        由掌勺人主动拍照或从相册选择上传，仅用于家庭菜谱展示。不上传时会使用分类占位插画。
+      </view>
+    </view>
+
+    <view class="privacy-item">
+      <view class="privacy-item-t">微信身份标识（openid）</view>
+      <view class="privacy-p">
+        你打开小程序时由微信自动提供，用于识别你的身份、把你和你的家庭关联起来。它不包含你的手机号、微信号或真实姓名。
+      </view>
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">二、我们如何使用这些信息</view>
+    <view class="privacy-p">
+      上述信息只用于一个目的：让你和家人能在同一个家里点菜、看到彼此点了什么。
+    </view>
+    <view class="privacy-p">
+      数据存放在微信云开发（腾讯云）的数据库中，只有同一个家庭的成员可以看到本家庭内的头像、昵称和菜品图片。其他人无法访问。
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">三、我们不会做什么</view>
+    <view class="privacy-p">· 不收集手机号、身份证号等任何证件信息</view>
+    <view class="privacy-p">· 不获取你的地理位置、通讯录、相册全部内容或聊天记录</view>
+    <view class="privacy-p">· 不向任何第三方提供、出售或共享你的个人信息</view>
+    <view class="privacy-p">· 不用于广告投放或用户画像</view>
+    <view class="privacy-p">· 本小程序不含支付功能，不会收集任何支付信息</view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">四、你可以随时管理自己的信息</view>
+    <view class="privacy-p">· 在「我的」页轻触头像或昵称，可随时更换或删除</view>
+    <view class="privacy-p">· 在「我的 → 家庭管理」可退出当前家庭，退出后你在本家庭的点菜记录会一并清理</view>
+    <view class="privacy-p">· 当家庭最后一名成员退出时，该家庭及其全部数据（含菜品图片）会被自动删除</view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">五、关于未成年人</view>
+    <view class="privacy-p">
+      本小程序面向家庭日常使用。若你是未成年人，建议在家人陪同下阅读本协议并使用。
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">六、协议的更新</view>
+    <view class="privacy-p">
+      如果我们调整了信息收集方式，会更新本协议并修改顶部日期。继续使用即视为同意更新后的内容。
+    </view>
+  </view>
+
+  <view class="privacy-footer safe-bottom">
+    <view class="caption">如对本协议有疑问，可通过小程序「我的 → 关于」中的信息与我们联系。</view>
+  </view>
+
+</view>

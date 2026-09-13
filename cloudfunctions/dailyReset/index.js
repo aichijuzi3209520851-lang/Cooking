@@ -28,6 +28,19 @@ async function fetchPage(collection, where, lastId, pageSize) {
 }
 
 exports.main = async (event) => {
+  // ===== 入口鉴权（SEC-002）=====
+  // 定时触发器调用时上下文无 OPENID；客户端调用（wx.cloud.callFunction）必定携带 OPENID。
+  // 一律拒绝客户端调用，避免任意用户直接触发全量归档/重置、白烧配额，
+  // 或借 ALLOW_MANUAL_RUN + manualDate 删除任意日期数据。
+  const { OPENID } = cloud.getWXContext()
+  if (OPENID) {
+    return {
+      success: false,
+      errorCode: 'FORBIDDEN',
+      message: '仅允许定时触发器调用'
+    }
+  }
+
   // ===== 任务元信息 =====
   const jobId = event.jobId || `job_${Date.now().toString(36)}`
   const startAt = new Date()

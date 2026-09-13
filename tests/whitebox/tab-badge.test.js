@@ -18,9 +18,20 @@ global.wx = {
   removeTabBarBadge() { removeCalls.push(1) }
 }
 
-// 冻结 Date.now（date 工具依赖）
-const realNow = Date.now
-Date.now = () => nowMs
+// 冻结时钟：必须同时覆盖 new Date() 与 Date.now()。
+// util.today() 走 new Date()（原生时钟，不经过 Date.now 覆盖），
+// 若只冻结 Date.now，测试会在真实日期越过 2026-09-06 后持续失败。
+const RealDate = Date
+global.Date = class extends RealDate {
+  constructor(...args) {
+    if (args.length === 0) {
+      super(nowMs)
+    } else {
+      super(...args)
+    }
+  }
+  static now() { return nowMs }
+}
 
 const util = require('../../miniprogram/utils/util.js')
 

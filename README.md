@@ -56,7 +56,7 @@
 
 | 角色 | 说明 | 权限 |
 |:---|:---|:---|
-| **掌勺人（chef）** | 家里做饭的人 | 创建/编辑/删除菜品、查看投票汇总、一票否决（取消当日投票） |
+| **掌勺人（chef）** | 家里做饭的人 | 创建/编辑菜品、隐藏/恢复菜品、查看投票汇总、一票否决（取消当日投票）；**删除菜品仅家庭创建者可执行**（不可逆，防清库） |
 | **干饭人（eater）** | 家里吃饭的人 | 浏览菜谱、每日投票、查看历史 |
 
 角色可在家庭内随时切换，一个用户可以同时属于多个家庭并承担不同角色。
@@ -439,7 +439,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `list` | `familyId, category, page, pageSize, includeHidden` | 分页获取菜品（默认过滤 `isHidden=true`；`includeHidden=true` 仅 chef 可用，用于恢复隐藏菜品） |
 | `add` | `familyId, name, category, imageUrl` | 新增菜品（仅掌勺人；`imageUrl` 必须属于当前家庭） |
 | `update` | `dishId, …fields` | 编辑菜品（仅本家庭掌勺人；替换图片时自动清理旧图） |
-| `delete` | `dishId` | 删除菜品，级联清理当日投票与关联图片 |
+| `delete` | `dishId` | 删除菜品，级联清理当日投票与关联图片（**仅家庭创建者**，不可逆操作） |
 | `toggleHidden` | `dishId, isHidden` | 切换隐藏状态（隐藏时清理当日投票） |
 
 ### 错误码约定
@@ -450,7 +450,8 @@ users (1) ──── (N) family_members (N) ──── (1) families
 |:---|:---|
 | `INVALID_PARAM` | 参数无效 |
 | `NOT_MEMBER` | 不是该家庭成员 |
-| `PERMISSION_DENIED` | 无权限（如 eater 调用 chef 能力） |
+| `PERMISSION_DENIED` | 无权限（如 eater 调用 chef 能力、非创建者删除菜品、非创建者移除成员） |
+| `RATE_LIMITED` | 加入码连续输入错误触发冷却，请稍后重试 |
 | `FAMILY_FULL` | 家庭人数已达上限（10 人） |
 | `FAMILY_NOT_FOUND` / `JOIN_CODE_INVALID` | 家庭不存在 / 加入码无效 |
 | `DISH_NOT_FOUND` / `DISH_HIDDEN` | 菜品不存在 / 已隐藏 |
@@ -526,7 +527,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 - 客户端写操作全部关闭，所有写入经云函数校验（见 [docs/deployment/database.md](docs/deployment/database.md) 的规则文件 `docs/deployment/security-rules/*.json`）；
 - 客户端读权限按"本人/本家庭成员"最小化开放（依赖 CloudBase 安全规则 `get()` 跨集合校验，需控制台验证）；
-- 云存储：上传路径 `dishes/{familyId}/{openid}/...`，写规则限定上传者自己的目录；图片替换/删除/家庭解散时由服务端清理文件；
+- 云存储：上传路径分两类——菜品图 `dishes/{familyId}/{openid}/...`、头像 `avatars/{openid}/...`，写规则**同时放行两个前缀**且限定上传者自己的目录；图片替换/删除/家庭解散时由服务端清理文件；
 - 索引清单（`joinCode` 唯一、`family_members` 联合、`daily_votes` 联合等）见部署文档。
 
 ### 6. 最小化客户端信任
@@ -581,6 +582,8 @@ users (1) ──── (N) family_members (N) ──── (1) families
 ### 6. 定时任务安全窗口
 
 `dailyReset` 在任务开始时记录 `resetWindow` 时间戳，只重置 `updatedAt ≤ resetWindow` 的隐藏菜品，避免覆盖任务执行期间 chef 正在进行的隐藏/撤菜操作。
+
+入口鉴权：`dailyReset` 检测到调用带有 `OPENID`（即来自客户端）时直接拒绝，**仅允许定时触发器调用**；手动补跑需 `ALLOW_MANUAL_RUN=true` 且只能由控制台/触发器发起。
 
 ---
 
@@ -760,8 +763,11 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 **Q3：加入码输入后提示不存在？**
 加入码全局唯一但区分大小写，输入时会自动转大写；若仍失败，请创建者核对管理页展示的码。
 
-**Q4：菜品图片上传失败？**
-检查云存储权限：控制台 → 存储 → 权限设置，选择"所有用户可读，仅创建者可写"。
+**Q4：菜品图片 / 头像上传失败？**
+按 [docs/deployment/database.md](docs/deployment/database.md) §4「云存储安全配置」在控制台 → 存储 → 权限设置 → **自定义安全规则**中配置：
+`write` 需**同时**放行 `dishes/` 与 `avatars/` 两个前缀，且路径包含上传者 openid。
+
+> ⚠️ **不要**改用"所有用户可读，仅创建者可写"预设——那等于任何登录用户可向任意路径写文件，会丢失安全规则的全部收益。头像与菜品图都靠该自定义规则放行。
 
 **Q5：历史页为什么没数据？**
 历史数据由 `dailyReset` 定时任务产生，请确认已按[定时任务](#定时任务)章节配置触发器。

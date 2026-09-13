@@ -16,6 +16,10 @@ const _ = db.command
 
 const MEMBER_LIMIT = 10
 
+// 加入码失败冷却（纵深防御）：同一 openid 在 1 分钟窗口内失败 5 次则封锁 1 分钟
+const JOIN_FAIL_WINDOW_MS = 60 * 1000
+const JOIN_FAIL_MAX = 5
+
 // 家庭名称长度上限
 const NAME_MAX_LENGTH = 20
 // 每个账号可创建的家庭数量上限（防滥用）
@@ -119,6 +123,56 @@ async function createFamily(data, openid) {
   }
 }
 
+// ============ 加入码失败冷却（纵深防御，SEC-003）============
+// 6 位码空间约 10 亿，纯爆破不现实；本项用于限制单账号的连续错误尝试。
+// 状态存于用户档案（users 文档，客户端写已关闭）。限流设施不可用时不阻塞正常加入。
+
+function toMs(value) {
+  const t = value ? new Date(value).getTime() : 0
+  return Number.isFinite(t) ? t : 0
+}
+
+async function assertJoinNotBlocked(openid) {
+  const res = await db.collection('users').doc(openid).get().catch(() => null)
+  const user = res && res.data ? res.data : null
+  if (user && toMs(user.joinBlockedUntil) > Date.now()) {
+    throw new ApiError('RATE_LIMITED', '尝试次数过多，请 1 分钟后再试')
+  }
+}
+
+// 记录一次"加入码无效"失败；窗口内累计到上限则封锁一个窗口
+async function recordJoinFailure(openid) {
+  const now = Date.now()
+  const res = await db.collection('users').doc(openid).get().catch(() => null)
+  const user = res && res.data ? res.data : null
+  if (!user) {
+    return
+  }
+
+  const windowStart = toMs(user.joinFailWindow)
+  const inWindow = now - windowStart < JOIN_FAIL_WINDOW_MS
+  const failCount = (inWindow ? (user.joinFailCount || 0) : 0) + 1
+
+  const data = {
+    joinFailCount: failCount,
+    joinFailWindow: inWindow ? user.joinFailWindow : new Date(now),
+    updatedAt: new Date(now)
+  }
+  if (failCount >= JOIN_FAIL_MAX) {
+    data.joinBlockedUntil = new Date(now + JOIN_FAIL_WINDOW_MS)
+    data.joinFailCount = 0
+    data.joinFailWindow = new Date(now)
+  }
+  await db.collection('users').doc(openid).update({ data }).catch(() => null)
+}
+
+// 加入成功后清空失败计数
+async function clearJoinFailures(openid) {
+  await db.collection('users').doc(openid).update({
+    data: { joinFailCount: 0, joinBlockedUntil: null }
+  }).catch(() => null)
+}
+
 // 通过加入码加入家庭
 async function joinByCode(data, openid) {
   const joinCode = String(data.joinCode || '').trim().toUpperCase()
@@ -126,14 +180,19 @@ async function joinByCode(data, openid) {
     throw new ApiError('INVALID_PARAM', '加入码不能为空')
   }
 
+  await assertJoinNotBlocked(openid)
+
   const famRes = await db.collection('families').where({ joinCode }).get()
   if (!famRes.data || famRes.data.length === 0) {
     // 码不存在有两种可能：码输错，或该家庭因最后一名成员离开已解散
+    await recordJoinFailure(openid)
     throw new ApiError('JOIN_CODE_INVALID', '加入码无效，或该家庭已解散')
   }
   const family = famRes.data[0]
 
-  return joinFamily(family, openid)
+  const result = await joinFamily(family, openid)
+  await clearJoinFailures(openid)
+  return result
 }
 
 // 加入家庭（DATA-001）：
@@ -143,6 +202,21 @@ async function joinByCode(data, openid) {
 async function joinFamily(family, openid) {
   const familyId = family._id
   const now = new Date()
+
+  // 0. 先查成员：已存在则直接走幂等分支，**不占用容量闸门**。
+  //    否则满员家庭（memberCount 已达上限）的现有成员无法重新切回该家庭（FAMILY_FULL 误报）。
+  const alreadyMember = await getMember(db, familyId, openid)
+  if (alreadyMember) {
+    await db.collection('users').doc(openid).update({
+      data: { currentFamilyId: familyId, updatedAt: now }
+    }).catch(() => null)
+    return {
+      familyId,
+      name: family.name,
+      joinCode: family.joinCode,
+      alreadyJoined: true
+    }
+  }
 
   // 1. 原子容量闸门
   const gateRes = await db.collection('families')

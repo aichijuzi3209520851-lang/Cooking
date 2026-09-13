@@ -1,8 +1,10 @@
 <!--pages/family/join/join.wxml-->
 <view class="container join-page {{themeClass}}">
   <view class="join-header">
-    <view class="title-md join-title">加入家庭</view>
-    <view class="caption join-tip">请输入掌勺的分享的6位家庭码</view>
+    <view class="title-md join-title">{{fromInvite ? '收到邀请' : '加入家庭'}}</view>
+    <view class="caption join-tip">
+      {{fromInvite ? '正在通过邀请加入这个家庭，请稍候…' : '请输入掌勺的分享的6位家庭码'}}
+    </view>
   </view>
 
   <!-- 6位字母数字输入区域（长按可粘贴剪贴板中的邀请码） -->
@@ -41,8 +43,10 @@
       disabled="{{codeValue.length !== 6 || loading}}"
       bindtap="onSubmitTap"
     >
-      {{loading ? '加入中...' : '加入家庭'}}
+      {{loading ? '加入中...' : (fromInvite ? '确认加入' : '加入家庭')}}
     </button>
-    <view class="caption join-hint">长按粘贴邀请码，或直接输入 · 输满自动加入</view>
+    <view class="caption join-hint">
+      {{fromInvite ? '若自动加入未完成，可点击上方按钮重试' : '长按粘贴邀请码，或直接输入 · 输满自动加入'}}
+    </view>
   </view>
 </view>

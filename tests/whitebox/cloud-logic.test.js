@@ -87,10 +87,11 @@ test('W-C-F3 join：容量闸门边界（第 10 人可进、第 11 人 FULL）�
   const full = await run(familyFn, { action: 'joinByCode', joinCode })
   assert.equal(full.errorCode, 'FAMILY_FULL')
 
-  // 重复加入（容量已满）→ 也返回 FULL，但成员记录与计数不得漂移
+  // 已有成员在容量已满时重新加入/切回 → 幂等成功（不占用容量闸门），计数不得漂移
   as('u1')
   const dup = await run(familyFn, { action: 'joinByCode', joinCode })
-  assert.equal(dup.errorCode, 'FAMILY_FULL')
+  assert.equal(dup.success, true, '已有成员应可重新切回满员家庭')
+  assert.equal(dup.data.alreadyJoined, true)
   const famDoc = await env.db.collection('families').doc(familyId).get()
   assert.equal(famDoc.data.memberCount, 10, 'memberCount 不应漂移')
 
@@ -106,6 +107,31 @@ test('W-C-F3 join：容量闸门边界（第 10 人可进、第 11 人 FULL）�
   assert.equal(again.data.alreadyJoined, true)
   const fam2Doc = await env.db.collection('families').doc(fam2.data.familyId).get()
   assert.equal(fam2Doc.data.memberCount, 2, '重复加入后计数应为 2（创建者 + 成员）')
+})
+
+test('W-C-F7 joinByCode：连续失败触发冷却（SEC-003）', async () => {
+  env.resetDb()
+  as('attacker')
+  await seedUser('attacker')
+
+  // 窗口内前 5 次失败 → JOIN_CODE_INVALID
+  for (let i = 1; i <= 5; i++) {
+    const res = await run(familyFn, { action: 'joinByCode', joinCode: 'ZZZZ99' })
+    assert.equal(res.errorCode, 'JOIN_CODE_INVALID', `第 ${i} 次失败应为 INVALID`)
+  }
+
+  // 第 6 次 → 命中封锁窗口
+  const blocked = await run(familyFn, { action: 'joinByCode', joinCode: 'ZZZZ99' })
+  assert.equal(blocked.errorCode, 'RATE_LIMITED', '连续失败应触发冷却')
+
+  // 成功加入后清空失败计数（另一位用户不受影响）
+  as('owner')
+  await seedUser('owner')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  as('lucky')
+  await seedUser('lucky')
+  const ok = await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  assert.equal(ok.success, true)
 })
 
 test('W-C-F4 removeMember：越权 / 自删 / 目标不存在 全分支', async () => {
@@ -454,6 +480,8 @@ test('W-C-N3 notify：notifyEnabled=false 的掌勺被过滤，true 的收到消
 
 test('W-C-R1 dailyReset：手动运行闸门与日期校验', async () => {
   const saved = process.env.ALLOW_MANUAL_RUN
+  // 定时触发器上下文无 OPENID（SEC-002 入口鉴权）
+  as('')
   try {
     delete process.env.ALLOW_MANUAL_RUN
     const forbidden = await resetFn.main({ manualDate: '2026-09-05' })
@@ -485,6 +513,8 @@ test('W-C-R2 dailyReset：归档 + 幂等重跑 + 隐藏重置（白盒循环/�
 
     // 今日日期（东八区）作为手动归档目标
     const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+    // 定时触发器上下文无 OPENID：置空以模拟触发器调用（SEC-002 入口鉴权）
+    as('')
     const run1 = await resetFn.main({ manualDate: today })
     assert.equal(run1.success, true)
     assert.ok(run1.data.archivedCreated >= 1, '应产生归档')
@@ -494,6 +524,7 @@ test('W-C-R2 dailyReset：归档 + 幂等重跑 + 隐藏重置（白盒循环/�
     assert.equal(history1.data.length, 1)
 
     // 幂等重跑：不产生重复历史
+    as('')
     const run2 = await resetFn.main({ manualDate: today })
     assert.equal(run2.success, true)
     assert.equal(run2.data.archivedCreated, 0, '重跑不应新建历史')
@@ -503,6 +534,7 @@ test('W-C-R2 dailyReset：归档 + 幂等重跑 + 隐藏重置（白盒循环/�
     // 隐藏菜品重置：先隐藏，重置后恢复
     as('chef')
     await run(dishFn, { action: 'toggleHidden', familyId, dishId: dish.data.dishId, isHidden: true })
+    as('')
     const run3 = await resetFn.main({ manualDate: today })
     assert.ok(run3.data.resetDishes >= 1, '隐藏菜品应被重置')
     const dishDoc = await env.db.collection('dishes').doc(dish.data.dishId).get()
@@ -510,6 +542,32 @@ test('W-C-R2 dailyReset：归档 + 幂等重跑 + 隐藏重置（白盒循环/�
   } finally {
     delete process.env.ALLOW_MANUAL_RUN
   }
+})
+
+test('W-C-R3 dailyReset：客户端调用被拒绝（SEC-002 入口鉴权）', async () => {
+  env.resetDb()
+
+  // 客户端调用必带 OPENID → 一律拒绝
+  as('someUser')
+  const denied = await resetFn.main({})
+  assert.equal(denied.success, false)
+  assert.equal(denied.errorCode, 'FORBIDDEN')
+
+  // 即使开启 ALLOW_MANUAL_RUN，客户端调用仍被拒绝（封死 manualDate 破坏路径）
+  const saved = process.env.ALLOW_MANUAL_RUN
+  process.env.ALLOW_MANUAL_RUN = 'true'
+  try {
+    const stillDenied = await resetFn.main({ manualDate: '2026-01-01' })
+    assert.equal(stillDenied.errorCode, 'FORBIDDEN')
+  } finally {
+    if (saved === undefined) delete process.env.ALLOW_MANUAL_RUN
+    else process.env.ALLOW_MANUAL_RUN = saved
+  }
+
+  // 定时触发器上下文（无 OPENID）→ 放行
+  as('')
+  const ok = await resetFn.main({})
+  assert.equal(ok.success, true, '无 OPENID 的触发器调用应正常执行')
 })
 
 test('W-C-F6 transferCreator：越权 / 自转 / 目标不存在 / 成功后原创建者可离开', async () => {
@@ -610,4 +668,31 @@ test('W-C-D6 隐藏/删除菜品 → 受影响成员收到通知（语义统一�
   assert.ok(env.sent.some(m => m.data.thing1.value === '菜A'), '隐藏应通知被清票成员')
   assert.equal((await run(dishFn, { action: 'delete', familyId: fam.data.familyId, dishId: d2.data.dishId })).success, true)
   assert.ok(env.sent.some(m => m.data.thing1.value === '菜B'), '删除应通知被清票成员')
+})
+
+test('W-C-D7 delete：仅家庭创建者可执行（普通成员提权为 chef 后仍被拒）', async () => {
+  env.resetDb()
+  as('creator')
+  await seedUser('creator')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const familyId = fam.data.familyId
+  const dish = await run(dishFn, { action: 'add', familyId, name: '私房菜', category: 'meat' })
+  const dishId = dish.data.dishId
+
+  // 普通成员加入后自升 chef（产品允许角色随时切换）
+  as('member')
+  await seedUser('member')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  assert.equal((await run(familyFn, { action: 'updateRole', familyId, role: 'chef' })).success, true)
+
+  // chef 仍可隐藏（可逆），但删除（不可逆）被拒绝
+  assert.equal((await run(dishFn, { action: 'toggleHidden', familyId, dishId, isHidden: true })).success, true)
+  const denied = await run(dishFn, { action: 'delete', familyId, dishId })
+  assert.equal(denied.errorCode, 'PERMISSION_DENIED', '非创建者的 chef 不得删除菜品')
+  const stillExists = await env.db.collection('dishes').doc(dishId).get()
+  assert.ok(stillExists.data, '菜品应仍然存在')
+
+  // 创建者删除成功
+  as('creator')
+  assert.equal((await run(dishFn, { action: 'delete', familyId, dishId })).success, true)
 })

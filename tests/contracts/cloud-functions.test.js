@@ -171,6 +171,40 @@ test('dailyReset：手动触发受环境变量保护', () => {
   assert.match(src, /ALLOW_MANUAL_RUN/, '缺少手动触发开关');
 });
 
+test('dailyReset：仅定时触发器可调用（入口鉴权，SEC-002）', () => {
+  const src = readFn('dailyReset');
+  assert.match(src, /getWXContext/, 'dailyReset 未读取调用者上下文');
+  assert.match(src, /OPENID/, 'dailyReset 未拒绝带 OPENID 的客户端调用');
+});
+
+test('dish：删除菜品仅家庭创建者（SEC-005）', () => {
+  const src = readFn('dish');
+  const block = src.match(/async function deleteDish[\s\S]*?\n\}/);
+  assert.ok(block, '未找到 deleteDish 实现');
+  assert.match(block[0], /requireCreator/, 'deleteDish 未收敛到家庭创建者校验');
+  assert.doesNotMatch(block[0], /requireChef\(/, 'deleteDish 仍在使用 chef 校验');
+});
+
+test('family：加入码失败冷却（SEC-003）', () => {
+  const src = readFn('family');
+  assert.match(src, /JOIN_FAIL_MAX/, '缺少加入失败上限常量');
+  assert.match(src, /RATE_LIMITED/, '缺少限流错误码');
+});
+
+test('安全规则：rice_reports 已配置为全关', () => {
+  const rule = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '../../docs/deployment/security-rules/rice_reports.json'), 'utf8')
+  );
+  assert.equal(rule.read, false, 'rice_reports 读权限应为 false');
+  assert.equal(rule.write, false, 'rice_reports 写权限应为 false');
+});
+
+test('云存储规则：同时放行 dishes/ 与 avatars/ 前缀（STORAGE-001）', () => {
+  const doc = fs.readFileSync(path.resolve(__dirname, '../../docs/deployment/database.md'), 'utf8');
+  assert.match(doc, /path\.startsWith\('dishes\/'\)/, '存储规则未放行 dishes 前缀');
+  assert.match(doc, /path\.startsWith\('avatars\/'\)/, '存储规则未放行 avatars 前缀（头像上传会失败）');
+});
+
 test('notify：内部密钥 fail closed（SEC-002）', () => {
   const src = readFn('notify');
   assert.match(src, /process\.env\.NOTIFY_INTERNAL_KEY/, 'notify 未从环境变量读取密钥');

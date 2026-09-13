@@ -16,11 +16,37 @@ Page({
     codeValue: '',
     focusIndex: 0,
     inputFocus: false,
-    loading: false
+    loading: false,
+    // 来自分享卡片邀请：自动填码并自动加入
+    fromInvite: false
   },
 
-  onShow() {
+  onLoad(options) {
+    // 从分享卡片进入：携带 6 位加入码，登录就绪后自动加入
+    const code = options && options.code;
+    if (code) {
+      const normalized = normalizeJoinCode(code);
+      if (normalized) {
+        this.setData({ fromInvite: true });
+        this._inviteCode = normalized;
+      }
+    }
+  },
+
+  async onShow() {
     theme.applyTheme(this);
+
+    // 邀请路径：等登录就绪再自动填码提交，避免「加入成功后 refreshUser」
+    // 与启动登录流程竞态；_inviteHandled 保证只处理一次（onShow 会多次触发）
+    if (this._inviteCode && !this._inviteHandled) {
+      this._inviteHandled = true;
+      try {
+        await app.waitForLogin();
+        this.applyCode(this._inviteCode);
+      } catch (e) {
+        // 登录等待异常则停留在手动输入态，用户可自行确认
+      }
+    }
   },
 
   // 点击输入区域，聚焦隐藏输入框

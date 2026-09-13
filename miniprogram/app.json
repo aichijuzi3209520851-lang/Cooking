@@ -12,7 +12,8 @@
     "pages/dishes/list/list",
     "pages/dishes/edit/edit",
     "pages/history/history",
-    "pages/settings/theme/theme"
+    "pages/settings/theme/theme",
+    "pages/agreement/privacy/privacy"
   ],
   "window": {
     "backgroundTextStyle": "dark",

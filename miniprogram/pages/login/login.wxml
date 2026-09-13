@@ -62,5 +62,13 @@
     </button>
 
     <view class="login-safe-note">登录后即可创建或加入家庭</view>
+
+    <view class="login-agreement">
+      登录即表示同意<navigator
+        class="login-agreement-link"
+        url="/pages/agreement/privacy"
+        hover-class="none"
+      >《隐私协议》</navigator>
+    </view>
   </view>
 </view>

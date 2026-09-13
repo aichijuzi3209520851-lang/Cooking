@@ -36,6 +36,7 @@
 | `daily_votes` | 家庭成员可见（**实时监听 watch 依赖此读权限**，见下方风险） | false |
 | `vote_history` | 家庭成员可见 | false |
 | `notify_ledger` | false（仅云函数） | false |
+| `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 
 > ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效，需在菜单/汇总页以轮询 todayList 替代（代码中 watcher 异常已有重连与下拉刷新兜底）。
 
@@ -67,13 +68,16 @@
 ```json
 {
   "read": true,
-  "write": "path.startsWith('dishes/') && path.indexOf('/' + auth.openid + '/') >= 0"
+  "write": "(path.startsWith('dishes/') || path.startsWith('avatars/')) && path.indexOf('/' + auth.openid + '/') >= 0"
 }
 ```
 
-- 上传路径约定：`dishes/{familyId}/{openid}/{timestamp}.{ext}`（前端已实现，见 `pages/dishes/edit/edit.js`）；
-- `read: true`：菜品图为家庭内共享的低敏感内容，公开可读以支持 CDN 展示；若需更严格，可改为成员规则并在控制台验证；
-- `write` 规则限定在 `dishes/` 前缀且路径包含上传者 openid，防止向其他用户/家庭目录写入；**需在控制台验证 `indexOf` 是否可用**，若不支持则退化为 `"write": "path.startsWith('dishes/')"` 并在服务端校验 fileID 归属（dish 云函数已实现：`imageUrl` 必须包含 `/dishes/{familyId}/`）；
+- 上传路径约定（**两个前缀都必须放行，否则对应功能必然失败**）：
+  - 菜品图：`dishes/{familyId}/{openid}/{timestamp}.{ext}`（前端已实现，见 `pages/dishes/edit/edit.js`）；
+  - 头像：`avatars/{openid}/avatar-{timestamp}.{ext}`（前端已实现，见 `pages/profile/profile.js` `onChooseAvatar`）；
+- `read: true`：菜品图与头像为低敏感内容，公开可读以支持 CDN 展示；若需更严格，可改为成员规则并在控制台验证；
+- `write` 规则限定在两个前缀内且路径必须包含上传者 openid，防止向其他用户/家庭目录写入；**需在控制台验证 `indexOf` 是否可用**，若不支持则退化为 `"write": "path.startsWith('dishes/') || path.startsWith('avatars/')"`，并依赖服务端校验 fileID 归属（dish 云函数已实现：`imageUrl` 必须包含 `/dishes/{familyId}/`）；
+- ⚠️ **不要把存储权限改成"所有用户可读，仅创建者可写"预设**：该预设等价于任何登录用户可向任意路径写入文件（刷存储、托管任意内容），会丢失上面自定义规则的全部收益。头像上传失败时应按本条规则排查，而不是放宽权限。
 - 图片生命周期由服务端负责（`dish` 云函数）：
   - 替换图片：保存成功后删除旧 fileID；
   - 删除菜品：删除关联 fileID；
@@ -112,17 +116,26 @@
 3. 将模板 ID 同步填入 `miniprogram/config.js` 的 `notifyTemplates`（客户端授权请求需要）；
 4. 用户在小程序"我的 → 通知设置"完成 `wx.requestSubscribeMessage` 授权后，服务端 `users.notifyStatus` 记录授权结果。
 
-## 8. 云函数部署与 cloud-shared 本地依赖
+## 8. 云函数部署与共享模块同步（ENG-001）
 
-所有云函数依赖本地共享包 `cloud-shared`（`"cloud-shared": "file:../shared"`，源码在 `cloudfunctions/shared/`）。
+共享源码位于 `cloudfunctions/shared/`。**每个函数目录内的 `shared/` 是它的一份物理拷贝**，函数统一用相对路径 `require('./shared/xxx')` 引用（不依赖 DevTools 的 `cloud-shared` 黑盒机制；函数 `package.json` 中**没有**该依赖）。
 
-**关键约束**：`file:` 依赖在云端安装时无法解析（`../shared` 不会随函数目录上传），因此**必须先本地安装再整目录上传**：
+**关键约束**：改完 `cloudfunctions/shared/` 后必须**先同步拷贝到每个函数目录**，再整目录上传：
 
-1. 对每个函数目录执行 `npm install`（生成 `node_modules/cloud-shared`）；
-2. 开发者工具：右键函数目录 → **上传并部署：所有文件**（不能用"云端安装依赖"）；
-3. CLI 方式（`tcb fn deploy` / `uploadCloudFunction.sh`）同理，需保证函数目录内 `node_modules/cloud-shared` 已存在且会被打包上传（如 CLI 不支持，改用开发者工具方式）。
+1. 同步（`uploadCloudFunction.sh` 已内置该步骤，也可手动执行）：
 
-修改 `cloudfunctions/shared/` 下任何模块后，须重新 `npm install` 并重新部署**所有**引用它的云函数（6 个函数全部依赖它）。
+   ```bash
+   for fn in login family dish vote notify dailyReset; do
+     rm -rf "cloudfunctions/${fn}/shared"
+     mkdir -p "cloudfunctions/${fn}/shared"
+     cp "cloudfunctions/shared/"*.js "cloudfunctions/${fn}/shared/"
+   done
+   ```
+
+2. 部署：开发者工具右键函数目录 → **上传并部署：所有文件**；
+3. CLI：`ENV_ID=xxx ./uploadCloudFunction.sh`（内部先同步，再 `tcb fn deploy`）。
+
+修改 `cloudfunctions/shared/` 下任何模块后，须重新同步并重新部署**所有** 6 个函数（全部依赖它）。
 
 ## 9. 验证命令（本地可执行）
 

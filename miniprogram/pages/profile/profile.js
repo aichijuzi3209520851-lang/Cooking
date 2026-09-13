@@ -109,8 +109,13 @@ Page({
   onChooseAvatar(e) {
     const filePath = e.detail && e.detail.avatarUrl;
     if (!filePath) return;
+    // openid 未就绪时不能回退到固定目录：会写到 avatars/user/，被云存储规则拒绝且不属于本人
+    const openid = app.globalData.openid;
+    if (!openid) {
+      showError('账号信息未就绪，请稍后重试');
+      return;
+    }
     const that = this;
-    const openid = app.globalData.openid || 'user';
     const rawExt = String(filePath).split('.').pop() || '';
     const ext = /^[a-z0-9]{1,5}$/i.test(rawExt) ? rawExt.toLowerCase() : 'png';
 
@@ -215,6 +220,11 @@ Page({
         showApiError(err, '通知设置失败');
       }
     }
+  },
+
+  // 隐私协议
+  onPrivacy() {
+    wx.navigateTo({ url: '/pages/agreement/privacy' });
   },
 
   // 关于

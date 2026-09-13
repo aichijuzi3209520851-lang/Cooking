@@ -46,6 +46,27 @@ async function requireChef(db, familyId, userId) {
 }
 
 /**
+ * 校验调用者是该家庭的创建者，不是则抛出 PERMISSION_DENIED。
+ * 用于不可逆的破坏性操作（如删除菜品），与 removeMember / updateMemberRole 的门槛对齐：
+ * 普通成员可自行切换 chef 身份，但不可逆操作只归创建者。
+ */
+async function requireCreator(db, familyId, userId) {
+  const member = await getMember(db, familyId, userId)
+  if (!member) {
+    throw new ApiError('NOT_MEMBER', '您不是该家庭的成员')
+  }
+  const familyRes = await db.collection('families').doc(familyId).get().catch(() => null)
+  const family = familyRes && familyRes.data ? familyRes.data : null
+  if (!family) {
+    throw new ApiError('FAMILY_NOT_FOUND', '家庭不存在')
+  }
+  if (family.creatorId !== userId) {
+    throw new ApiError('PERMISSION_DENIED', '仅家庭创建者可以执行该操作')
+  }
+  return member
+}
+
+/**
  * 校验菜品存在且属于该家庭（防止跨家庭越权操作），返回菜品数据
  */
 async function requireDishInFamily(db, familyId, dishId) {
@@ -64,5 +85,6 @@ module.exports = {
   getMember,
   requireMember,
   requireChef,
+  requireCreator,
   requireDishInFamily
 }

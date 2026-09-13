@@ -25,9 +25,38 @@ Page({
     loading: false
   },
 
+  onLoad() {
+    // 开启分享到聊天与朋友圈（邀请裂变入口）
+    wx.showShareMenu({
+      menus: ['shareAppMessage', 'shareTimeline'],
+      fail() {}
+    });
+  },
+
   onShow() {
     theme.applyTheme(this);
     this.loadFamilyData();
+  },
+
+  // 分享给好友/群：携带家庭加入码，接收方点开后自动填入并加入
+  onShareAppMessage() {
+    const f = this.data.currentFamily;
+    const name = (f && f.name) || '我家';
+    return {
+      title: `${name} · 今晚想吃什么？进来点两个菜`,
+      path: `/pages/family/join/join?code=${(f && f.joinCode) || ''}`
+      // TODO: 补充 5:4 分享封面图后启用 imageUrl: '/images/share/invite-cover.png'
+    };
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const f = this.data.currentFamily;
+    const name = (f && f.name) || '我家';
+    return {
+      title: `${name}的今日菜单，你说了算`,
+      query: `code=${(f && f.joinCode) || ''}`
+    };
   },
 
   // 加载家庭数据

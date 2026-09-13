@@ -14,6 +14,12 @@
       <view class="family-code {{codePulse ? 'family-code-pulse' : ''}}">{{currentFamily.joinCode || '------'}}</view>
     </view>
 
+    <!-- 邀请家人：分享卡片，发到家庭群后家人点开即自动加入 -->
+    <button class="invite-btn" open-type="share" hover-class="invite-btn-hover">
+      微信邀请家人
+    </button>
+    <view class="caption invite-hint">发到家庭群，家人点开即可加入</view>
+
   </view>
 
   <!-- 切换家庭 -->

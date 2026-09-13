@@ -25,7 +25,9 @@ Page({
     hasMore: true,
     loading: false,
     refreshing: false,
-    loadError: false
+    loadError: false,
+    isChef: false,
+    isCreator: false
   },
 
   async onShow() {
@@ -33,7 +35,19 @@ Page({
     // 页面守卫（UI-001）：菜品库管理仅掌勺可用，防止非常规路径误入
     await app.waitForLogin();
     if (!guardChefPage()) return;
+    this.syncPermissions();
     this.loadData(true);
+  },
+
+  // 同步权限标记：chef 决定隐藏/恢复；isCreator 决定不可逆的删除入口是否可见（与服务端一致）
+  syncPermissions() {
+    const familyId = app.globalData.currentFamilyId;
+    const families = app.globalData.families || [];
+    const current = families.find(f => f.familyId === familyId);
+    this.setData({
+      isChef: app.globalData.currentRole === 'chef',
+      isCreator: !!(current && current.creatorId === app.globalData.openid)
+    });
   },
 
   onPullDownRefresh() {
@@ -64,7 +78,7 @@ Page({
     this.setData({ loading: true });
     try {
       // 菜品库管理页：chef 携带 includeHidden 查看/恢复隐藏菜品（UI-001），eater 退化为普通列表
-      const isChef = app.globalData.currentRole === 'chef';
+      const isChef = this.data.isChef;
       const res = await dishApi.list(familyId, category, page, PAGE_SIZE, isChef);
       const list = (res && res.list) || [];
       const total = (res && res.total) || 0;
@@ -136,14 +150,20 @@ Page({
     if (!dish) return;
 
     const isHidden = !!dish.isHidden;
+    // 隐藏/恢复：chef 可用；删除菜品：仅家庭创建者（不可逆，与服务端 requireCreator 一致）
+    const actions = [];
+    if (this.data.isChef) actions.push(isHidden ? '显示菜品' : '隐藏菜品');
+    if (this.data.isCreator) actions.push('删除菜品');
+    if (actions.length === 0) return;
+
     wx.showActionSheet({
-      itemList: [isHidden ? '显示菜品' : '隐藏菜品', '删除菜品'],
-      itemColor: isHidden ? '#2F9E6E' : '#F0821E',
+      itemList: actions,
       success: (res) => {
-        if (res.tapIndex === 0) {
-          this.onToggleHidden(dish);
-        } else if (res.tapIndex === 1) {
+        const label = actions[res.tapIndex];
+        if (label === '删除菜品') {
           this.onDeleteDish(dish);
+        } else {
+          this.onToggleHidden(dish);
         }
       }
     });

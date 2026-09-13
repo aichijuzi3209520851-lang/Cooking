@@ -37,6 +37,37 @@
   opacity: 0.7;
 }
 
+/* 邀请家人：分享卡片入口（open-type=share） */
+.invite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  margin-top: 4rpx;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  color: var(--color-on-accent);
+  font-size: 30rpx;
+  font-weight: 500;
+  box-shadow: var(--shadow-accent);
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.invite-btn::after {
+  border: none;
+}
+
+.invite-btn-hover {
+  opacity: 0.88;
+  transform: scale(0.98);
+}
+
+.invite-hint {
+  margin-top: var(--spacing-sm);
+  text-align: center;
+  color: var(--color-text-tertiary);
+}
+
 .family-code-label {
   margin-bottom: 8rpx;
 }
