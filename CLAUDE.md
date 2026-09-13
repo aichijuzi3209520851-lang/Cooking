@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `npm run predeploy` — 部署前完整门禁
 - **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset`）：
   - ⚠️ 所有函数依赖本地包 `cloud-shared`（`"file:../shared"`，源码在 `cloudfunctions/shared/`）。**必须先对每个函数目录 `npm install`，然后用开发者工具「上传并部署：所有文件」**（"云端安装依赖"无法解析 file: 依赖）。详见 `docs/deployment/database.md` §8。
-  - CLI：`tcb fn deploy <name> -e <envID> --force`，或 `ENV_ID=<envID> ./uploadCloudFunction.sh`。
+  - CLI：`tcb fn deploy <name> -e <envID> --force`，或 `ENV_ID=<envID> ./scripts/uploadCloudFunction.sh`。
   - 修改 `cloudfunctions/shared/` 后需重新部署**全部 6 个函数**。
 - **定时触发器**：`dailyReset` 需在控制台手动配置 Cron `0 0 * * * * *`（东八区每日 0 点）。未配置时历史页无数据、菜品 `isHidden` 不会自动恢复。
 - **云环境 ID**：在 `miniprogram/config.js` 的 `cloudEnv`（当前 `lcw-d5gfcge7b41bedd02`），`app.js` 从 config 读取；必须与控制台环境一致。
@@ -97,7 +97,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `README.md`：功能说明、云函数 API、错误码表、数据库设计、部署与常见问题。
 - `docs/deployment/database.md`：控制台人工配置全清单（集合/规则/索引/存储/触发器/环境变量）+ cloud-shared 部署说明。
-- `plan-do-chack/plan-do-chack.md` 与 `plan-do-chack/结果验收.md`：优化需求编号与逐项验收状态（含手工测试矩阵、BLOCKED 项）。
-- `task-checklist.md`：里程碑任务清单及真实完成状态说明。
-- `2026-08-15-family-dining-miniprogram-design.md`：产品设计稿。
+- `docs/history/plan-do-chack/plan-do-chack.md` 与 `docs/history/plan-do-chack/结果验收.md`：优化需求编号与逐项验收状态（含手工测试矩阵、BLOCKED 项）。
+- `docs/history/task-checklist.md`：里程碑任务清单及真实完成状态说明。
+- `docs/2026-08-15-family-dining-miniprogram-design.md`：产品设计稿。
 - 仓库自带 CloudBase 技能/规则（`.claude/skills/cloudbase`、`.agents/skills/cloudbase`、`.codebuddy/rules/tcb`）：涉及云开发、数据库、部署等任务时先调用 `cloudbase` skill。

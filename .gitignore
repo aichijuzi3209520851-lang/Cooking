@@ -8,6 +8,7 @@ yarn.lock
 .claude/
 .codebuddy/
 .ui-check/
+.workbuddy/
 skills-lock.json
 
 # ---- 微信开发者工具私有配置 ----

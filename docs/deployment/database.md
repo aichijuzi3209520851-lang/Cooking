@@ -133,7 +133,7 @@
    ```
 
 2. 部署：开发者工具右键函数目录 → **上传并部署：所有文件**；
-3. CLI：`ENV_ID=xxx ./uploadCloudFunction.sh`（内部先同步，再 `tcb fn deploy`）。
+3. CLI：`ENV_ID=xxx ./scripts/uploadCloudFunction.sh`（内部先同步，再 `tcb fn deploy`）。
 
 修改 `cloudfunctions/shared/` 下任何模块后，须重新同步并重新部署**所有** 6 个函数（全部依赖它）。
 

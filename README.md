@@ -195,14 +195,15 @@ miniprogram-11/
 │
 ├── docs/                         # 项目文档
 │   ├── deployment/               #   部署文档与数据库安全规则
+│   ├── history/                  #   历史规划归档（任务清单、Plan-Do-Check 执行记录）
 │   ├── theme-system-plan.md      #   主题系统方案与实施记录
 │   ├── ui-audit-plan.md          #   UI/UX 审查与优化方案
 │   ├── login-animation-plan.md   #   登录页动效方案
 │   ├── image-asset-generation-brief.md  # 插画素材生成需求单
 │   └── tabbar-icon-brief.md      #   tabBar 图标生成需求单
-├── scripts/                      # 工程脚本（语法检查 / lint）
+├── design/                       # 设计素材（SVG 源档 / 头像 / 应用图标）
+├── scripts/                      # 工程脚本（语法检查 / lint / 云函数批量部署）
 ├── .github/workflows/            # CI：push/PR 自动跑语法 + lint + 测试
-├── SVG/                          # 素材源档（生图模型原始输出）
 ├── project.config.json           # 开发者工具项目配置（appid、编译选项）
 ├── project.private.config.json   # 个人私有配置（不入库）
 └── README.md
@@ -327,7 +328,7 @@ tcb fn deploy notify  -e <环境ID> --force
 tcb fn deploy dailyReset -e <环境ID> --force
 ```
 
-也可运行 `ENV_ID=<环境ID> ./uploadCloudFunction.sh` 批量部署。
+也可运行 `ENV_ID=<环境ID> ./scripts/uploadCloudFunction.sh` 批量部署。
 
 ### 配置云函数环境变量（notify / vote）
 
@@ -352,7 +353,7 @@ tcb fn deploy dailyReset -e <环境ID> --force
    - **Cron 表达式**：`0 0 * * * * *`（每日 0 点，东八区）
    - **入参**：留空
 
-> 也可使用仓库中的 [uploadCloudFunction.sh](uploadCloudFunction.sh) 辅助批量部署。
+> 也可使用仓库中的 [uploadCloudFunction.sh](scripts/uploadCloudFunction.sh) 辅助批量部署。
 
 ---
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 批量部署云函数到 CloudBase（ENG-001：可执行、无未定义占位变量）
 # 用法：
-#   ENV_ID=lcw-xxxxxxxx ./uploadCloudFunction.sh
+#   ENV_ID=lcw-xxxxxxxx ./scripts/uploadCloudFunction.sh
 # 依赖：已执行 `npm install -g @cloudbase/cli` 并完成 `tcb login`
 set -euo pipefail
 
-ENV_ID="${ENV_ID:?请先设置环境变量 ENV_ID，例如：ENV_ID=lcw-xxxxxxxx ./uploadCloudFunction.sh}"
+ENV_ID="${ENV_ID:?请先设置环境变量 ENV_ID，例如：ENV_ID=lcw-xxxxxxxx ./scripts/uploadCloudFunction.sh}"
 
 FUNCTIONS=(login family dish vote notify dailyReset)
 
