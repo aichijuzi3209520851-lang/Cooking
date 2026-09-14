@@ -1,11 +1,13 @@
 <!--pages/summary/summary.wxml-->
 <view class="container summary-page {{themeClass}}">
 
-  <!-- 顶部标题 -->
-  <view class="header">
-    <view class="header-title">点菜汇总</view>
-    <view class="header-sub">{{dateText}}</view>
-    <view class="rice-line" wx:if="{{riceLine}}">{{riceLine}}</view>
+  <!-- 顶部英雄区：与点菜页保持同一视觉语言 -->
+  <view class="summary-hero">
+    <view class="header">
+      <view class="header-title">点菜汇总</view>
+      <view class="header-sub">{{dateText}}</view>
+      <view class="rice-line" wx:if="{{riceLine}}">{{riceLine}}</view>
+    </view>
   </view>
 
   <!-- 无家庭 -->

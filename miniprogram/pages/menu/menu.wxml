@@ -1,23 +1,25 @@
 <!--pages/menu/menu.wxml-->
 <view class="container menu-page {{themeClass}}">
 
-  <!-- 顶部区域 -->
-  <view class="header">
-    <view class="header-left">
-      <view class="header-title">筷点吃饭</view>
-      <view class="header-sub">
-        <text>{{dateText}}</text>
-        <text wx:if="{{currentFamily}}" class="header-dot">·</text>
-        <text wx:if="{{currentFamily}}" class="header-family">{{currentFamily.name}}</text>
+  <!-- 顶部英雄区：主题签名色淡染，强化首屏视觉层级 -->
+  <view class="menu-hero">
+    <view class="header">
+      <view class="header-left">
+        <view class="header-title">筷点吃饭</view>
+        <view class="header-sub">
+          <text>{{dateText}}</text>
+          <text wx:if="{{currentFamily}}" class="header-dot">·</text>
+          <text wx:if="{{currentFamily}}" class="header-family">{{currentFamily.name}}</text>
+        </view>
       </view>
-    </view>
-    <view
-      class="header-right"
-      wx:if="{{currentFamily}}"
-      catchtap="onFamilyTap"
-    >
-      <text class="switch-text">{{currentFamily.name}}</text>
-      <text class="switch-arrow">›</text>
+      <view
+        class="header-right"
+        wx:if="{{currentFamily}}"
+        catchtap="onFamilyTap"
+      >
+        <text class="switch-text">{{currentFamily.name}}</text>
+        <text class="switch-arrow">›</text>
+      </view>
     </view>
   </view>
 

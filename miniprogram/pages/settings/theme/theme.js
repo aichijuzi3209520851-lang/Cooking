@@ -7,10 +7,12 @@ Page({
     resolvedFamilyName: '',
     themeFamily: 'system',
     familyOptions: [
-      { key: 'system', name: '跟随系统' },
-      { key: 'warm', name: '温馨暖调' },
-      { key: 'fresh', name: '清新绿意' },
-      { key: 'dark', name: '静谧夜间' }
+      { key: 'system', name: '跟随系统', sub: '随手机深浅色自动切换' },
+      { key: 'warm', name: '温馨暖调', sub: '辣椒红 · 暖米白' },
+      { key: 'fresh', name: '清新绿意', sub: '葱青绿 · 薄荷白' },
+      { key: 'sky', name: '晴空浅蓝', sub: '晴空蓝 · 云白' },
+      { key: 'pink', name: '樱粉', sub: '樱花粉 · 奶白' },
+      { key: 'dark', name: '静谧夜间', sub: '暖黑 · 低亮度护眼' }
     ]
   },
 

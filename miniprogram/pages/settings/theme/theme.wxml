@@ -1,8 +1,13 @@
 <!--pages/settings/theme/theme.wxml-->
 <view class="container theme-page {{themeClass}}">
-  <!-- 外观主题：4 张色卡，所见即所得 -->
+
+  <!-- 外观主题：4 张色卡，预览块还原「页面底 + 卡片 + 强调色」三层真实关系 -->
   <view class="section">
-    <view class="section-title">外观主题</view>
+    <view class="section-head">
+      <view class="section-title">外观主题</view>
+      <view class="current-tag">当前：{{resolvedFamilyName}}</view>
+    </view>
+
     <view class="theme-grid">
       <view
         class="theme-card {{themeFamily === item.key ? 'theme-card-active' : ''}}"
@@ -11,30 +16,61 @@
         data-key="{{item.key}}"
         bindtap="onSelectFamily"
       >
+        <!-- 预览：跟随时左右对半（暖调 / 夜间），其余展示单层真实配色 -->
         <view class="pv pv-{{item.key}}">
-          <!-- 跟随系统：暖调/夜间对半预览 -->
           <block wx:if="{{item.key === 'system'}}">
             <view class="pv-half pv-half-warm">
-              <view class="pv-btn pv-btn-warm"></view>
+              <view class="pv-mini-card">
+                <view class="pv-mini-line"></view>
+                <view class="pv-mini-btn"></view>
+              </view>
             </view>
             <view class="pv-half pv-half-dark">
-              <view class="pv-btn pv-btn-dark"></view>
+              <view class="pv-mini-card">
+                <view class="pv-mini-line"></view>
+                <view class="pv-mini-btn"></view>
+              </view>
             </view>
           </block>
+
           <block wx:else>
-            <view class="pv-line pv-title"></view>
+            <view class="pv-card">
+              <view class="pv-line pv-title"></view>
+              <view class="pv-line pv-short"></view>
+            </view>
             <view class="pv-btn"></view>
-            <view class="pv-line pv-short"></view>
           </block>
+
           <view class="theme-card-check" wx:if="{{themeFamily === item.key}}">✓</view>
         </view>
+
         <view class="theme-card-name">{{item.name}}</view>
-        <view class="theme-card-sub" wx:if="{{item.key === 'system'}}">当前：{{resolvedFamilyName}}</view>
+        <view class="theme-card-sub">{{item.sub}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 色板说明：强调色的实际落点 -->
+  <view class="section">
+    <view class="section-title">强调色落点</view>
+    <view class="swatch-row">
+      <view class="swatch-item">
+        <view class="swatch-dot swatch-accent"></view>
+        <text class="swatch-label">主按钮 / 选中态</text>
+      </view>
+      <view class="swatch-item">
+        <view class="swatch-dot swatch-soft"></view>
+        <text class="swatch-label">淡底标签</text>
+      </view>
+      <view class="swatch-item">
+        <view class="swatch-dot swatch-cream"></view>
+        <text class="swatch-label">信息块</text>
       </view>
     </view>
   </view>
 
   <view class="preview-tip">
-    <text class="caption">设置立即生效，所有页面同步切换</text>
+    <text class="caption">设置立即生效，全站页面同步切换</text>
   </view>
+
 </view>

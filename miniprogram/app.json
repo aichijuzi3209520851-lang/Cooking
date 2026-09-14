@@ -17,13 +17,13 @@
   ],
   "window": {
     "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#FAF6F0",
+    "navigationBarBackgroundColor": "#F3E9DA",
     "navigationBarTitleText": "筷点吃饭",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#FAF6F0"
+    "backgroundColor": "#F3E9DA"
   },
   "tabBar": {
-    "color": "#6F6459",
+    "color": "#6B5F52",
     "selectedColor": "#D93A2B",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",

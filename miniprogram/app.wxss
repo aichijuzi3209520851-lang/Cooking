@@ -1,8 +1,22 @@
-/* app.wxss - 暖调餐饮设计系统（参考餐饮品牌风格：辣椒红 + 米白 + 暖黑） */
+/* app.wxss - 筷点吃饭 · 设计系统 v2
+ * 暖调餐饮设计语言：辣椒红 + 米白 + 暖黑
+ *
+ * 令牌分四层：
+ *   1) 主题家族色（warm / fresh / dark）—— 决定「情绪」，三家族表面色差异显著
+ *   2) 语义色（text / surface / border）—— 页面只消费语义色，不直接写死颜色
+ *   3) 尺度（space / radius / font / elev）—— 8pt 栅格，全局统一
+ *   4) 语义类（.card / .btn / .section …）—— 组合令牌，保证跨页一致
+ *
+ * 使用约定：
+ *   - 主题 class 挂在页面根 view（.theme-xxx），CSS 选择器写 .theme-xxx，不能写 page.theme-xxx
+ *   - 新增颜色必须先定义语义令牌，禁止在页面 wxss 里直接写十六进制
+ */
 
-/* ===== Light Mode CSS Variables ===== */
+/* ============================================================
+ * 1. 默认令牌（温馨暖调 = 冷启动首帧 / 无主题 class 时的兜底）
+ * ============================================================ */
 page {
-  /* Colors - Light 暖色系 */
+  /* ---- 品牌多色板（分类、标签、图表专用，不随主题家族改变语义） ---- */
   --color-primary: #D93A2B;
   --color-primary-green: #2F9E6E;
   --color-primary-orange: #F0821E;
@@ -10,275 +24,638 @@ page {
   --color-primary-purple: #9B59B6;
   --color-primary-pink: #E8467C;
 
-  --color-text-primary: #2B2118;
-  --color-text-secondary: #6F6459;
-  --color-text-tertiary: #A69A8B;
+  /* ---- 文本层级（4 级，逐级降低关注度） ---- */
+  --color-text-primary: #241B12;    /* 标题、菜品名 */
+  --color-text-secondary: #6B5F52;  /* 正文、说明 */
+  --color-text-tertiary: #A2968A;   /* 辅助信息、占位 */
+  --color-text-inverse: #FFFFFF;    /* 压在深色/强调色上的文本 */
 
-  --color-bg: #FFFDF9;
-  --color-bg-secondary: #FAF6F0;
-  --color-bg-tertiary: #F1E9DE;
+  /* ---- 表面层级（关键：与页面底色拉开明度差，卡片才「浮」得起来） ---- */
+  --surface-page: #F3E9DA;          /* 页面底：暖米，比卡片深一档 */
+  --surface-card: #FFFFFF;          /* 卡片：纯白 */
+  --surface-sunken: #FBF5EC;        /* 凹陷块：卡内分区、输入框底 */
+  --surface-raised: #FFFFFF;        /* 浮层：弹窗、菜单 */
 
-  --color-card: #FFFFFF;
-  --color-card-inner: #FAF3EA;
-  --color-border: #EDE3D5;
-  --color-separator: rgba(139, 110, 78, 0.14);
+  /* ---- 描边与分隔 ---- */
+  --color-border: #EADCC6;          /* 常规描边 */
+  --color-border-strong: #DCC9AC;   /* 强调描边（选中、输入框聚焦） */
+  --hairline: rgba(139, 110, 78, 0.14);  /* 发丝分隔线 */
 
+  /* ---- 强调色（主题家族的「签名色」） ---- */
   --color-accent: #D93A2B;
-  --color-accent-soft: rgba(217, 58, 43, 0.10);
-  --color-accent-deep: #B42A1D;
-  --color-gold: #E6A23C;
-  --color-cream: #FDF3E3;
+  --color-accent-hover: #C22E20;
+  --color-accent-deep: #A32318;
+  --color-accent-soft: rgba(217, 58, 43, 0.10);   /* 淡底标签 */
+  --color-accent-wash: rgba(217, 58, 43, 0.06);   /* 大面积淡染 */
+  --color-on-accent: #FFFFFF;       /* 压在强调色上的文字/图标 */
+  --color-num-strong: #A32318;      /* 大数字：比 accent 深一档，保证浅色系下可读 */
 
-  /* 压在强调色渐变上的文字/图标色；金色等浅强调色需覆盖为深色（见 accent-gold） */
-  --color-on-accent: #FFFFFF;
-  /* 大数字专用：比 accent 深一档，保证金色等浅色系下依然可读 */
-  --color-num-strong: var(--color-accent-deep);
-  /* 菜品/头像图片压暗（深色模式置为 brightness(0.9)） */
+  /* ---- 主题签名装饰（hero 渐变、光斑） ---- */
+  --tint-1: rgba(217, 58, 43, 0.10);
+  --tint-2: rgba(230, 162, 60, 0.12);
+  --tint-3: rgba(217, 58, 43, 0);
+
+  /* ---- 功能色 ---- */
+  --color-success: #2F9E6E;
+  --color-warning: #E6A23C;
+  --color-danger: #E02020;
+  --color-gold: #E6A23C;
+  --color-cream: #FDEBD2;           /* 米黄信息块（米饭卡、统计栏） */
+
+  /* ---- 图片滤镜（深色模式压暗，手动浅色可还原） ---- */
   --img-filter: none;
 
-  /* Spacing */
-  --spacing-xs: 8rpx;
-  --spacing-sm: 16rpx;
-  --spacing-md: 24rpx;
-  --spacing-lg: 32rpx;
-  --spacing-xl: 48rpx;
+  /* ============================================================
+   * 3a. 间距：8pt 栅格（1pt = 2rpx @750rpx 设计稿）
+   * ============================================================ */
+  --space-1: 8rpx;    /* 4pt  */
+  --space-2: 16rpx;   /* 8pt  */
+  --space-3: 24rpx;   /* 12pt */
+  --space-4: 32rpx;   /* 16pt —— 页边距基准 */
+  --space-5: 40rpx;   /* 20pt */
+  --space-6: 48rpx;   /* 24pt —— 卡片内边距 / 区块间距 */
+  --space-8: 64rpx;   /* 32pt */
+  --space-10: 80rpx;  /* 40pt */
+  --space-12: 96rpx;  /* 48pt */
 
-  /* Radius */
-  --radius-sm: 12rpx;
-  --radius-md: 20rpx;
-  --radius-lg: 28rpx;
-  --radius-xl: 40rpx;
+  /* 旧别名：保证存量页面不破坏 */
+  --spacing-xs: var(--space-1);
+  --spacing-sm: var(--space-2);
+  --spacing-md: var(--space-3);
+  --spacing-lg: var(--space-4);
+  --spacing-xl: var(--space-6);
+
+  /* ============================================================
+   * 3b. 圆角：层级化，大容器更圆、小元素更收敛
+   * ============================================================ */
+  --radius-xs: 12rpx;
+  --radius-sm: 16rpx;
+  --radius-md: 24rpx;
+  --radius-lg: 32rpx;
+  --radius-xl: 44rpx;
   --radius-pill: 999rpx;
 
-  /* Typography */
+  /* ============================================================
+   * 3c. 字阶：5 档 + 行高，杜绝「随手定字号」
+   * ============================================================ */
   --font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 
-  /* Shadows 暖色阴影 */
-  --shadow-card: 0 4rpx 16rpx rgba(160, 110, 60, 0.08);
-  --shadow-float: 0 12rpx 48rpx rgba(160, 110, 60, 0.18);
-  --shadow-accent: 0 8rpx 28rpx rgba(217, 58, 43, 0.32);
+  --text-display: 64rpx;   /* 欢迎页大标题 */
+  --text-h1: 52rpx;        /* 页面主标题 */
+  --text-h2: 40rpx;        /* 区块标题 */
+  --text-h3: 34rpx;        /* 卡片标题 / 大数字 */
+  --text-body: 30rpx;      /* 正文 */
+  --text-body-sm: 28rpx;   /* 次要正文 / 按钮 */
+  --text-caption: 24rpx;   /* 辅助说明 */
+  --text-mini: 22rpx;      /* 角标 / 时间戳 */
 
-  background-color: var(--color-bg-secondary);
+  --lh-tight: 1.2;   /* 标题 */
+  --lh-normal: 1.5;  /* 正文 */
+  --lh-loose: 1.6;   /* 多行说明 */
+
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* ============================================================
+   * 3d. 阴影层级：明度差 + 投影双重表达；深色模式降级为发丝描边
+   * ============================================================ */
+  --elev-1: 0 2rpx 8rpx rgba(140, 95, 45, 0.06), 0 8rpx 24rpx rgba(140, 95, 45, 0.06);
+  --elev-2: 0 4rpx 12rpx rgba(140, 95, 45, 0.08), 0 16rpx 40rpx rgba(140, 95, 45, 0.10);
+  --elev-3: 0 12rpx 48rpx rgba(140, 95, 45, 0.18);
+  --elev-accent: 0 6rpx 20rpx rgba(217, 58, 43, 0.30);
+
+  /* 旧别名 */
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
+
+  /* ============================================================
+   * 3e. 动效与按压
+   * ============================================================ */
+  --press-scale: 0.97;
+  --press-opacity: 0.7;
+  --dur-fast: 0.15s;
+  --dur-base: 0.25s;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* 旧令牌别名：存量页面过渡期继续可用；新代码一律用语义令牌 */
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
+
+  background-color: #F3E9DA;
   color: var(--color-text-primary);
   font-family: var(--font-family);
-  font-size: 28rpx;
-  line-height: 1.5;
+  font-size: var(--text-body-sm);
+  line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== Dark Mode 暖黑（媒体查询版：仅作冷启动首帧的跟随系统兜底，
-   运行时统一由 theme.js 挂 .theme-dark class 接管，两块内容保持一致） ===== */
+/* ============================================================
+ * 1a. 系统深色兜底（冷启动首帧，onShow 前）
+ *     运行时由 theme.js 挂 .theme-dark 接管，两块内容必须保持一致
+ * ============================================================ */
 @media (prefers-color-scheme: dark) {
   page {
-    --color-primary: #E8564A;
-    --color-primary-green: #3DB584;
-    --color-primary-orange: #F59543;
-    --color-primary-red: #FF5A4E;
-    --color-primary-purple: #B478C7;
-    --color-primary-pink: #F06292;
+    --color-text-primary: #F7F1E9;
+    --color-text-secondary: #ADA093;
+    --color-text-tertiary: #8A7D70;
+    --color-text-inverse: #1A1510;
 
-    --color-text-primary: #F5EFE8;
-    --color-text-secondary: #A89C8E;
-    --color-text-tertiary: #8C8074;
+    --surface-page: #14100C;
+    --surface-card: #221C16;
+    --surface-sunken: #1A1510;
+    --surface-raised: #2C251D;
 
-    --color-bg: #17130F;
-    --color-bg-secondary: #201B16;
-    --color-bg-tertiary: #2C261F;
+    --color-border: #362E25;
+    --color-border-strong: #4A4034;
+    --hairline: rgba(220, 200, 175, 0.12);
 
-    --color-card: #2A241D;
-    --color-card-inner: #352E25;
-    --color-border: #3E362C;
-    --color-separator: rgba(200, 180, 150, 0.14);
+    --color-accent: #FF6B5A;
+    --color-accent-hover: #FF8071;
+    --color-accent-deep: #E8503E;
+    --color-accent-soft: rgba(255, 107, 90, 0.16);
+    --color-accent-wash: rgba(255, 107, 90, 0.08);
+    --color-on-accent: #1A1510;
+    --color-num-strong: #FF8B7C;
 
-    --color-accent: #E8564A;
-    --color-accent-soft: rgba(232, 86, 74, 0.16);
-    --color-accent-deep: #C93F33;
+    --tint-1: rgba(255, 107, 90, 0.14);
+    --tint-2: rgba(217, 166, 72, 0.10);
+    --tint-3: rgba(255, 107, 90, 0);
+
+    --color-success: #3DB584;
+    --color-warning: #D9A648;
+    --color-danger: #FF5A4E;
     --color-gold: #D9A648;
-    --color-cream: #3A3125;
+    --color-cream: #2E2418;
 
-    --color-on-accent: #FFFFFF;
-    --color-num-strong: var(--color-accent-deep);
+    --img-filter: brightness(0.88);
 
-    /* 深色下阴影置 none 会与背景融为一体，改用发丝描边分离卡片层级 */
-    --shadow-card: 0 0 0 1rpx rgba(255, 255, 255, 0.05);
-    --shadow-float: 0 12rpx 48rpx rgba(0, 0, 0, 0.5);
-    --shadow-accent: 0 8rpx 28rpx rgba(232, 86, 74, 0.30);
+    --color-bg: var(--surface-card);
+    --color-bg-secondary: var(--surface-page);
+    --color-bg-tertiary: var(--surface-sunken);
+    --color-card: var(--surface-card);
+    --color-card-inner: var(--surface-sunken);
+    --color-separator: var(--hairline);
 
-    --img-filter: brightness(0.9);
+    /* 深色下投影会被背景吞掉，改用「发丝描边 + 微弱投影」分离层级 */
+    --elev-1: 0 0 0 1rpx rgba(255, 240, 220, 0.06);
+    --elev-2: 0 0 0 1rpx rgba(255, 240, 220, 0.08), 0 8rpx 24rpx rgba(0, 0, 0, 0.32);
+    --elev-3: 0 0 0 1rpx rgba(255, 240, 220, 0.10), 0 16rpx 48rpx rgba(0, 0, 0, 0.55);
+    --elev-accent: 0 6rpx 20rpx rgba(255, 107, 90, 0.26);
+
+    --shadow-card: var(--elev-1);
+    --shadow-float: var(--elev-3);
+    --shadow-accent: var(--elev-accent);
   }
 }
 
-/* ===== Manual Dark（保留媒体查询双份内容：class 用于运行时切换，
-   媒体查询仅作为冷启动首帧（onShow 前）的跟随系统兜底 ===== */
+/* ============================================================
+ * 主题家族 A：静谧夜间（暖黑）
+ * ============================================================ */
 .theme-dark {
-  --color-primary: #E8564A;
-  --color-primary-green: #3DB584;
-  --color-primary-orange: #F59543;
-  --color-primary-red: #FF5A4E;
-  --color-primary-purple: #B478C7;
-  --color-primary-pink: #F06292;
+  --color-text-primary: #F7F1E9;
+  --color-text-secondary: #ADA093;
+  --color-text-tertiary: #8A7D70;
+  --color-text-inverse: #1A1510;
 
-  --color-text-primary: #F5EFE8;
-  --color-text-secondary: #A89C8E;
-  --color-text-tertiary: #8C8074;
+  --surface-page: #14100C;
+  --surface-card: #221C16;
+  --surface-sunken: #1A1510;
+  --surface-raised: #2C251D;
 
-  --color-bg: #17130F;
-  --color-bg-secondary: #201B16;
-  --color-bg-tertiary: #2C261F;
+  --color-border: #362E25;
+  --color-border-strong: #4A4034;
+  --hairline: rgba(220, 200, 175, 0.12);
 
-  --color-card: #2A241D;
-  --color-card-inner: #352E25;
-  --color-border: #3E362C;
-  --color-separator: rgba(200, 180, 150, 0.14);
+  --color-accent: #FF6B5A;
+  --color-accent-hover: #FF8071;
+  --color-accent-deep: #E8503E;
+  --color-accent-soft: rgba(255, 107, 90, 0.16);
+  --color-accent-wash: rgba(255, 107, 90, 0.08);
+  --color-on-accent: #1A1510;
+  --color-num-strong: #FF8B7C;
 
-  --color-accent: #E8564A;
-  --color-accent-soft: rgba(232, 86, 74, 0.16);
-  --color-accent-deep: #C93F33;
+  --tint-1: rgba(255, 107, 90, 0.14);
+  --tint-2: rgba(217, 166, 72, 0.10);
+  --tint-3: rgba(255, 107, 90, 0);
+
+  --color-success: #3DB584;
+  --color-warning: #D9A648;
+  --color-danger: #FF5A4E;
   --color-gold: #D9A648;
-  --color-cream: #3A3125;
+  --color-cream: #2E2418;
 
-  --color-on-accent: #FFFFFF;
-  --color-num-strong: var(--color-accent-deep);
+  --img-filter: brightness(0.88);
 
-  --shadow-card: 0 0 0 1rpx rgba(255, 255, 255, 0.05);
-  --shadow-float: 0 12rpx 48rpx rgba(0, 0, 0, 0.5);
-  --shadow-accent: 0 8rpx 28rpx rgba(232, 86, 74, 0.30);
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
 
-  --img-filter: brightness(0.9);
+  --elev-1: 0 0 0 1rpx rgba(255, 240, 220, 0.06);
+  --elev-2: 0 0 0 1rpx rgba(255, 240, 220, 0.08), 0 8rpx 24rpx rgba(0, 0, 0, 0.32);
+  --elev-3: 0 0 0 1rpx rgba(255, 240, 220, 0.10), 0 16rpx 48rpx rgba(0, 0, 0, 0.55);
+  --elev-accent: 0 6rpx 20rpx rgba(255, 107, 90, 0.26);
+
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
 }
 
-/* ===== 温馨暖调（默认亮色主题；用于从夜间/清新切回，及系统深色下的手动亮色） ===== */
+/* ============================================================
+ * 主题家族 B：温馨暖调（辣椒红 + 米白）
+ * 页面底刻意压深到 #F3E9DA，让纯白卡片有明确「浮起」感
+ * ============================================================ */
 .theme-warm {
-  --color-primary: #D93A2B;
-  --color-primary-green: #2F9E6E;
-  --color-primary-orange: #F0821E;
-  --color-primary-red: #E02020;
-  --color-primary-purple: #9B59B6;
-  --color-primary-pink: #E8467C;
+  --color-text-primary: #241B12;
+  --color-text-secondary: #6B5F52;
+  --color-text-tertiary: #A2968A;
+  --color-text-inverse: #FFFFFF;
 
-  --color-text-primary: #2B2118;
-  --color-text-secondary: #6F6459;
-  --color-text-tertiary: #A69A8B;
+  --surface-page: #F3E9DA;
+  --surface-card: #FFFFFF;
+  --surface-sunken: #FBF5EC;
+  --surface-raised: #FFFFFF;
 
-  --color-bg: #FFFDF9;
-  --color-bg-secondary: #FAF6F0;
-  --color-bg-tertiary: #F1E9DE;
-
-  --color-card: #FFFFFF;
-  --color-card-inner: #FAF3EA;
-  --color-border: #EDE3D5;
-  --color-separator: rgba(139, 110, 78, 0.14);
+  --color-border: #EADCC6;
+  --color-border-strong: #DCC9AC;
+  --hairline: rgba(139, 110, 78, 0.14);
 
   --color-accent: #D93A2B;
+  --color-accent-hover: #C22E20;
+  --color-accent-deep: #A32318;
   --color-accent-soft: rgba(217, 58, 43, 0.10);
-  --color-accent-deep: #B42A1D;
-  --color-gold: #E6A23C;
-  --color-cream: #FDF3E3;
-
+  --color-accent-wash: rgba(217, 58, 43, 0.06);
   --color-on-accent: #FFFFFF;
-  --color-num-strong: var(--color-accent-deep);
+  --color-num-strong: #A32318;
 
-  --shadow-card: 0 4rpx 16rpx rgba(160, 110, 60, 0.08);
-  --shadow-float: 0 12rpx 48rpx rgba(160, 110, 60, 0.18);
-  --shadow-accent: 0 8rpx 28rpx rgba(217, 58, 43, 0.32);
+  --tint-1: rgba(217, 58, 43, 0.10);
+  --tint-2: rgba(230, 162, 60, 0.12);
+  --tint-3: rgba(217, 58, 43, 0);
+
+  --color-success: #2F9E6E;
+  --color-warning: #E6A23C;
+  --color-danger: #E02020;
+  --color-gold: #E6A23C;
+  --color-cream: #FDEBD2;
 
   --img-filter: none;
+
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
+
+  --elev-1: 0 2rpx 8rpx rgba(140, 95, 45, 0.06), 0 8rpx 24rpx rgba(140, 95, 45, 0.06);
+  --elev-2: 0 4rpx 12rpx rgba(140, 95, 45, 0.08), 0 16rpx 40rpx rgba(140, 95, 45, 0.10);
+  --elev-3: 0 12rpx 48rpx rgba(140, 95, 45, 0.18);
+  --elev-accent: 0 6rpx 20rpx rgba(217, 58, 43, 0.30);
+
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
 }
 
-/* ===== 清新绿意（「清晨菜市场」：葱青绿 + 薄荷白） ===== */
+/* ============================================================
+ * 主题家族 C：清新绿意（葱青绿 + 薄荷白）
+ * 与暖调的差异不只换强调色：页面底换成明显偏冷的薄荷绿、
+ * 卡内分区换成淡绿、投影带绿相 —— 一眼可辨
+ * ============================================================ */
 .theme-fresh {
-  --color-primary: #2F9E6E;
-  --color-primary-green: #2F9E6E;
-  --color-primary-orange: #E6A23C;
-  --color-primary-red: #E02020;
-  --color-primary-purple: #5B8C7A;
-  --color-primary-pink: #E88A6E;
+  --color-text-primary: #17251B;
+  --color-text-secondary: #556B5C;
+  --color-text-tertiary: #8AA392;
 
-  --color-text-primary: #1F2B22;
-  --color-text-secondary: #5C6B5F;
-  --color-text-tertiary: #94A69A;
+  --surface-page: #DDEBE0;     /* 明显偏冷偏绿，与暖米底拉开 */
+  --surface-card: #FBFEFC;     /* 带一丝冷白的卡片 */
+  --surface-sunken: #E9F5EB;   /* 卡内分区：薄荷 */
+  --surface-raised: #FFFFFF;
 
-  --color-bg: #FBFDF9;
-  --color-bg-secondary: #F0F7F1;
-  --color-bg-tertiary: #E3EFE6;
+  --color-border: #C9E0CF;
+  --color-border-strong: #A8CCB4;
+  --hairline: rgba(47, 110, 70, 0.14);
 
-  --color-card: #FFFFFF;
-  --color-card-inner: #F2F8F3;
-  --color-border: #E2EDE4;
-  --color-separator: rgba(47, 110, 70, 0.12);
-
-  --color-accent: #2F9E6E;
-  --color-accent-soft: rgba(47, 158, 110, 0.10);
-  --color-accent-deep: #1F7D54;
-  --color-gold: #E6A23C;
-  --color-cream: #E8F5EC;
-
+  --color-accent: #1F9360;
+  --color-accent-hover: #188050;
+  --color-accent-deep: #12653E;
+  --color-accent-soft: rgba(31, 147, 96, 0.12);
+  --color-accent-wash: rgba(31, 147, 96, 0.07);
   --color-on-accent: #FFFFFF;
-  --color-num-strong: #1F7D54;
+  --color-num-strong: #12653E;
 
-  --shadow-card: 0 4rpx 16rpx rgba(47, 110, 70, 0.08);
-  --shadow-float: 0 12rpx 48rpx rgba(47, 110, 70, 0.14);
-  --shadow-accent: 0 8rpx 28rpx rgba(47, 158, 110, 0.30);
+  --tint-1: rgba(31, 147, 96, 0.12);
+  --tint-2: rgba(120, 190, 150, 0.16);
+  --tint-3: rgba(31, 147, 96, 0);
+
+  --color-success: #1F9360;
+  --color-warning: #D99B33;
+  --color-danger: #D94A3D;
+  --color-gold: #D99B33;
+  --color-cream: #E2F3E7;      /* 薄荷信息块 */
 
   --img-filter: none;
+
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
+
+  --elev-1: 0 2rpx 8rpx rgba(30, 105, 65, 0.06), 0 8rpx 24rpx rgba(30, 105, 65, 0.08);
+  --elev-2: 0 4rpx 12rpx rgba(30, 105, 65, 0.08), 0 16rpx 40rpx rgba(30, 105, 65, 0.12);
+  --elev-3: 0 12rpx 48rpx rgba(30, 105, 65, 0.20);
+  --elev-accent: 0 6rpx 20rpx rgba(31, 147, 96, 0.28);
+
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
 }
 
-/* 强调色体系已随主题家族制废除（从未生效的死代码，详见 docs/theme-system-plan.md）：
-   强调色由各主题家族的 --color-accent 统一提供 */
+/* ============================================================
+ * 主题家族 D：晴空浅蓝（晴空蓝 + 云白）
+ * 底色偏冷蓝，投影带蓝相，与暖米/薄荷绿形成第三种可辨情绪
+ * ============================================================ */
+.theme-sky {
+  --color-text-primary: #14212B;
+  --color-text-secondary: #52646F;
+  --color-text-tertiary: #8FA1AC;
 
-/* ===== Global Utility Classes ===== */
-.container {
-  padding: 0 var(--spacing-lg);
+  --surface-page: #DCEAF6;     /* 云蓝底 */
+  --surface-card: #FBFDFF;     /* 冷白云卡 */
+  --surface-sunken: #E8F2FA;
+  --surface-raised: #FFFFFF;
+
+  --color-border: #C6DAEA;
+  --color-border-strong: #A3C2D9;
+  --hairline: rgba(47, 110, 150, 0.14);
+
+  --color-accent: #2E8FD8;
+  --color-accent-hover: #2579BD;
+  --color-accent-deep: #1C5F94;
+  --color-accent-soft: rgba(46, 143, 216, 0.12);
+  --color-accent-wash: rgba(46, 143, 216, 0.07);
+  --color-on-accent: #FFFFFF;
+  --color-num-strong: #1C5F94;
+
+  --tint-1: rgba(46, 143, 216, 0.12);
+  --tint-2: rgba(120, 170, 220, 0.16);
+  --tint-3: rgba(46, 143, 216, 0);
+
+  --color-success: #2F9E6E;
+  --color-warning: #D99B33;
+  --color-danger: #D94A3D;
+  --color-gold: #D99B33;
+  --color-cream: #E0EFF8;      /* 淡蓝信息块 */
+
+  --img-filter: none;
+
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
+
+  --elev-1: 0 2rpx 8rpx rgba(30, 90, 140, 0.06), 0 8rpx 24rpx rgba(30, 90, 140, 0.08);
+  --elev-2: 0 4rpx 12rpx rgba(30, 90, 140, 0.08), 0 16rpx 40rpx rgba(30, 90, 140, 0.12);
+  --elev-3: 0 12rpx 48rpx rgba(30, 90, 140, 0.20);
+  --elev-accent: 0 6rpx 20rpx rgba(46, 143, 216, 0.28);
+
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
+}
+
+/* ============================================================
+ * 主题家族 E：樱粉（樱花粉 + 奶白）
+ * 强调色 #E05580 与暖调红 #D93A2B 拉开「粉 vs 红」的明确区分
+ * ============================================================ */
+.theme-pink {
+  --color-text-primary: #2B1720;
+  --color-text-secondary: #745560;
+  --color-text-tertiary: #A98E97;
+
+  --surface-page: #F8E3EA;     /* 樱粉底 */
+  --surface-card: #FFFBFC;
+  --surface-sunken: #FBEFF3;
+  --surface-raised: #FFFFFF;
+
+  --color-border: #EFCED9;
+  --color-border-strong: #E0B3C2;
+  --hairline: rgba(160, 80, 110, 0.14);
+
+  --color-accent: #E05580;
+  --color-accent-hover: #C94570;
+  --color-accent-deep: #A83362;
+  --color-accent-soft: rgba(224, 85, 128, 0.12);
+  --color-accent-wash: rgba(224, 85, 128, 0.07);
+  --color-on-accent: #FFFFFF;
+  --color-num-strong: #A83362;
+
+  --tint-1: rgba(224, 85, 128, 0.12);
+  --tint-2: rgba(240, 160, 190, 0.16);
+  --tint-3: rgba(224, 85, 128, 0);
+
+  --color-success: #2F9E6E;
+  --color-warning: #D99B33;
+  --color-danger: #E04050;
+  --color-gold: #D99B33;
+  --color-cream: #FBE4EC;      /* 粉信息块 */
+
+  --img-filter: none;
+
+  --color-bg: var(--surface-card);
+  --color-bg-secondary: var(--surface-page);
+  --color-bg-tertiary: var(--surface-sunken);
+  --color-card: var(--surface-card);
+  --color-card-inner: var(--surface-sunken);
+  --color-separator: var(--hairline);
+
+  --elev-1: 0 2rpx 8rpx rgba(150, 60, 90, 0.06), 0 8rpx 24rpx rgba(150, 60, 90, 0.08);
+  --elev-2: 0 4rpx 12rpx rgba(150, 60, 90, 0.08), 0 16rpx 40rpx rgba(150, 60, 90, 0.12);
+  --elev-3: 0 12rpx 48rpx rgba(150, 60, 90, 0.20);
+  --elev-accent: 0 6rpx 20rpx rgba(224, 85, 128, 0.28);
+
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-3);
+  --shadow-accent: var(--elev-accent);
+}
+
+/* ============================================================
+ * 主题载体：根 view 承载页面底色，保证三家族切换时整屏变色
+ * （theme.js 同时会调用 wx.setBackgroundColor 兜住窗口层）
+ * ============================================================ */
+.theme-warm,
+.theme-fresh,
+.theme-sky,
+.theme-pink,
+.theme-dark {
+  background-color: var(--surface-page);
   min-height: 100vh;
   box-sizing: border-box;
 }
 
-.card {
-  background: var(--color-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-  box-shadow: var(--shadow-card);
+/* ============================================================
+ * 4. 全局语义类
+ * ============================================================ */
+
+/* ---- 页面容器：统一页边距与底部安全区 ---- */
+.container {
+  padding: 0 var(--space-4);
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* Buttons */
+/* ---- 区块：垂直节奏统一 ---- */
+.section {
+  margin-bottom: var(--space-6);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-1);
+}
+
+.section-sub {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
+  margin-bottom: var(--space-3);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+/* ---- 卡片 ---- */
+.card {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
+}
+
+.card-flat {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  border: 1rpx solid var(--color-border);
+  box-sizing: border-box;
+}
+
+.card-sunken {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+
+/* 卡片按压（可点击整卡时使用） */
+.card-tappable {
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+
+.card-tappable:active {
+  transform: scale(0.985);
+  opacity: 0.92;
+}
+
+/* ---- 分隔线 ---- */
+.divider {
+  height: 1rpx;
+  background: var(--hairline);
+  margin: var(--space-3) 0;
+}
+
+/* ============================================================
+ * 按钮体系：三档高度 × 三种强调
+ * ============================================================ */
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 96rpx;
   border-radius: var(--radius-pill);
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
   border: none;
-  padding: 0 var(--spacing-xl);
-  transition: all 0.2s ease;
+  padding: 0 var(--space-6);
+  box-sizing: border-box;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
 .btn::after {
   border: none;
 }
 
+/* 中号按钮（表单、卡片内） */
+.btn-md {
+  height: 84rpx;
+  font-size: var(--text-body-sm);
+  padding: 0 var(--space-5);
+}
+
+/* 小号按钮（列表项右侧） */
+.btn-sm {
+  height: 68rpx;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  padding: 0 var(--space-4);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: var(--color-on-accent);
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--elev-accent);
 }
 
 .btn-primary:active {
-  opacity: 0.88;
+  opacity: 0.9;
   transform: scale(0.98);
 }
 
 .btn-secondary {
-  background: var(--color-card);
+  background: var(--surface-card);
   color: var(--color-accent-deep);
-  border: 3rpx solid var(--color-accent);
-  box-shadow: var(--shadow-card);
+  border: 2rpx solid var(--color-accent);
+  box-shadow: var(--elev-1);
 }
 
 .btn-secondary:active {
-  opacity: 0.7;
+  opacity: var(--press-opacity);
+}
+
+.btn-soft {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
+}
+
+.btn-soft:active {
+  opacity: var(--press-opacity);
 }
 
 .btn-ghost {
@@ -286,93 +663,148 @@ page {
   color: var(--color-accent);
 }
 
+.btn-ghost:active {
+  opacity: var(--press-opacity);
+}
+
 .btn-danger {
-  background: var(--color-primary-red);
+  background: var(--color-danger);
   color: #FFFFFF;
+}
+
+.btn-danger:active {
+  opacity: 0.9;
 }
 
 .btn-block {
   width: 100%;
 }
 
-.btn-disabled {
+.btn-disabled,
+.btn[disabled] {
   opacity: 0.4;
   pointer-events: none;
 }
 
-/* Typography */
+/* 按钮组：统一间距与对齐 */
+.btn-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.btn-group > .btn,
+.btn-group > view {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================================
+ * 文字工具类
+ * ============================================================ */
 .title-lg {
-  font-size: 64rpx;
-  font-weight: 800;
+  font-size: var(--text-display);
+  font-weight: var(--weight-black);
   color: var(--color-text-primary);
   letter-spacing: -1rpx;
-  line-height: 1.2;
+  line-height: var(--lh-tight);
 }
 
 .title-md {
-  font-size: 44rpx;
-  font-weight: 800;
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
+  line-height: var(--lh-tight);
 }
 
 .title-sm {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
+  line-height: var(--lh-tight);
 }
 
 .body-text {
-  font-size: 28rpx;
+  font-size: var(--text-body);
   color: var(--color-text-primary);
-  line-height: 1.6;
+  line-height: var(--lh-loose);
 }
 
 .caption {
-  font-size: 24rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
-/* Input */
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-accent { color: var(--color-accent); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+
+.text-medium { font-weight: var(--weight-medium); }
+.text-semibold { font-weight: var(--weight-semibold); }
+.text-bold { font-weight: var(--weight-bold); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* 单行截断 / 两行截断 */
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ============================================================
+ * 表单
+ * ============================================================ */
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field-label {
+  display: block;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
 .input {
   width: 100%;
   height: 96rpx;
-  background: var(--color-card);
+  background: var(--surface-sunken);
+  border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 0 var(--spacing-lg);
-  font-size: 30rpx;
+  padding: 0 var(--space-4);
+  font-size: var(--text-body);
   color: var(--color-text-primary);
   box-sizing: border-box;
-  box-shadow: var(--shadow-card);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .input-placeholder {
   color: var(--color-text-tertiary);
 }
 
-/* Safe area */
-.safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
-}
-
-/* Flex utilities */
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.flex-1 { flex: 1; }
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
-.gap-lg { gap: var(--spacing-lg); }
-
-/* Badge：小尺寸纯文字徽章（emoji 仅用于大尺寸场景，小尺寸下渲染浑浊） */
+/* ============================================================
+ * 徽章
+ * ============================================================ */
 .badge {
   display: inline-flex;
   align-items: center;
   padding: 6rpx 18rpx;
   border-radius: var(--radius-pill);
-  font-size: 22rpx;
-  font-weight: 500;
+  font-size: var(--text-mini);
+  font-weight: var(--weight-medium);
   line-height: 1.4;
 }
 
@@ -384,26 +816,71 @@ page {
 
 /* 等饭的：中性安静样式，与掌勺形成层级 */
 .badge-eater {
-  background: var(--color-bg-tertiary);
+  background: var(--surface-sunken);
   color: var(--color-text-secondary);
 }
 
-/* Loading */
+/* ============================================================
+ * 布局工具：栅格 + 堆叠
+ * ============================================================ */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-baseline { align-items: baseline; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.flex-1 { flex: 1; min-width: 0; }
+
+.gap-xs { gap: var(--space-1); }
+.gap-sm { gap: var(--space-2); }
+.gap-md { gap: var(--space-3); }
+.gap-lg { gap: var(--space-4); }
+
+/* 等宽两列 / 三列栅格 */
+.grid { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.grid-2 > view, .grid-2 > .grid-item { width: calc((100% - var(--space-3)) / 2); }
+.grid-3 > view, .grid-3 > .grid-item { width: calc((100% - var(--space-3) * 2) / 3); }
+
+/* 垂直堆叠（替代逐个元素写 margin-bottom） */
+.stack { display: flex; flex-direction: column; }
+.stack-sm { gap: var(--space-2); }
+.stack-md { gap: var(--space-3); }
+.stack-lg { gap: var(--space-4); }
+
+/* ============================================================
+ * 其它
+ * ============================================================ */
+.press {
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+
+.press:active {
+  opacity: var(--press-opacity);
+  transform: scale(0.98);
+}
+
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 140rpx);
+}
+
 .loading-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) 0;
+  padding: var(--space-10) 0;
 }
 
-/* Animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10rpx); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn var(--dur-base) var(--ease-out);
 }
 
 @keyframes pulse {
@@ -425,7 +902,7 @@ page {
 /* ===== 悬浮添加按钮（全局统一，自动避让 tabBar 与底部安全区） ===== */
 .fab {
   position: fixed;
-  right: 32rpx;
+  right: var(--space-4);
   bottom: calc(env(safe-area-inset-bottom) + 140rpx);
   width: 112rpx;
   height: 112rpx;
@@ -434,9 +911,9 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--elev-accent);
   z-index: 100;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
 .fab:active {

@@ -1,17 +1,30 @@
-/* pages/menu/menu.wxss */
+/* pages/menu/menu.wxss
+ * 布局原则：
+ *   - 页边距 32rpx（--space-4），卡片内边距 32rpx，卡片间距 24rpx
+ *   - 区块之间用「卡片 → 淡染条 → 胶囊 → 卡片」交替，避免一片白导致层级塌陷
+ */
 .menu-page {
-  padding-top: 24rpx;
-  padding-bottom: 48rpx;
+  padding-top: 0;
+  padding-bottom: var(--space-6);
   min-height: 100vh;
   box-sizing: border-box;
 }
 
-/* ===== 顶部区域 ===== */
+/* ===== 英雄区：主题签名色淡染，负边距做全出血 ===== */
+.menu-hero {
+  margin: 0 calc(var(--space-4) * -1) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: linear-gradient(160deg, var(--tint-1) 0%, var(--tint-2) 55%, var(--tint-3) 100%);
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+}
+
+/* ===== 顶部标题区 ===== */
 .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 24rpx 8rpx 28rpx;
+  gap: var(--space-2);
 }
 
 .header-left {
@@ -20,24 +33,24 @@
 }
 
 .header-title {
-  font-size: 52rpx;
-  font-weight: 800;
+  font-size: var(--text-h1);
+  font-weight: var(--weight-black);
   color: var(--color-text-primary);
   letter-spacing: -0.5rpx;
-  line-height: 1.2;
+  line-height: var(--lh-tight);
 }
 
 .header-sub {
   display: flex;
   align-items: center;
-  margin-top: 10rpx;
-  font-size: 26rpx;
+  margin-top: var(--space-2);
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .header-dot {
-  margin: 0 10rpx;
+  margin: 0 var(--space-1);
   color: var(--color-text-tertiary);
 }
 
@@ -49,23 +62,30 @@
   white-space: nowrap;
 }
 
+/* 家庭切换胶囊：与标题基线对齐，不抢主标题视觉 */
 .header-right {
   display: flex;
   align-items: center;
-  padding: 8rpx 20rpx;
-  margin-top: 8rpx;
-  margin-left: 16rpx;
+  padding: var(--space-1) var(--space-3);
+  margin-top: 10rpx;
   border-radius: var(--radius-pill);
-  background: var(--color-accent-soft);
+  background: var(--surface-card);
+  box-shadow: var(--elev-1);
   flex-shrink: 0;
-  max-width: 320rpx;
+  max-width: 300rpx;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.header-right:active {
+  transform: scale(0.96);
+  opacity: 0.9;
 }
 
 .switch-text {
-  font-size: 26rpx;
-  color: var(--color-accent-deep);
-  font-weight: 600;
-  max-width: 240rpx;
+  font-size: var(--text-caption);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+  max-width: 220rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -73,18 +93,20 @@
 
 .switch-arrow {
   font-size: 34rpx;
-  color: var(--color-accent-deep);
+  color: var(--color-text-tertiary);
   margin-left: 2rpx;
   line-height: 1;
 }
 
-/* ===== 今日米饭（RICE-001） ===== */
+/* ===== 今日米饭（RICE-001）
+   白卡片 + 米黄凹陷行，与下方的纯白菜品卡形成「信息块 vs 列表项」区分 ===== */
 .rice-card {
-  padding: 22rpx 32rpx;
-  margin-bottom: 24rpx;
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
   border-radius: var(--radius-lg);
-  background: var(--color-cream);
-  border: 1rpx solid rgba(230, 162, 60, 0.18);
+  background: var(--surface-card);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
 }
 
 .rice-head {
@@ -94,49 +116,59 @@
 }
 
 .rice-title {
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 
 .rice-total {
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
   color: var(--color-num-strong);
 }
 
 .rice-total-empty {
-  font-weight: 400;
+  font-weight: var(--weight-medium);
   color: var(--color-text-tertiary);
 }
 
+/* 我的饭量：米黄凹陷行收纳步进器 */
 .rice-mine {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 20rpx;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
 }
 
 .rice-mine-label {
-  font-size: 26rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
 }
 
 .rice-stepper {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
 }
 
 .rice-step-btn {
-  width: 60rpx;
-  height: 60rpx;
-  line-height: 56rpx;
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
   text-align: center;
   border-radius: 50%;
-  background: var(--color-card);
+  background: var(--surface-card);
   border: 1rpx solid var(--color-border);
   color: var(--color-text-primary);
   font-size: 34rpx;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.rice-step-btn:active {
+  transform: scale(0.92);
 }
 
 .rice-step-press {
@@ -145,70 +177,69 @@
 
 .rice-mine-num {
   display: inline-block;
-  min-width: 128rpx;
+  min-width: 120rpx;
   text-align: center;
-  font-size: 30rpx;
-  font-weight: 600;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 
 .rice-others {
-  margin-top: 16rpx;
-  font-size: 24rpx;
-  line-height: 1.6;
+  margin-top: var(--space-3);
+  font-size: var(--text-caption);
+  line-height: var(--lh-loose);
   color: var(--color-text-secondary);
 }
 
 .rice-unreported {
-  margin-top: 8rpx;
-  font-size: 22rpx;
+  margin-top: var(--space-1);
+  font-size: var(--text-mini);
   color: var(--color-text-tertiary);
 }
 
-/* ===== 统计栏（暖色横幅） ===== */
+/* ===== 统计条：极淡主题染条，不做卡片，避免与菜品卡同质化 ===== */
 .stats-bar {
   display: flex;
   align-items: center;
-  padding: 22rpx 32rpx;
-  margin-bottom: 24rpx;
-  border-radius: var(--radius-lg);
-  background: var(--color-cream);
-  border: 1rpx solid rgba(230, 162, 60, 0.18);
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-wash);
+}
+
+.stats-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.stats-num {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-black);
+  color: var(--color-num-strong);
+  padding: 0 6rpx;
+}
+
+.stats-dot {
+  margin: 0 var(--space-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
 }
 
 /* chef 长按撤下提示 */
 .chef-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--text-mini);
   color: var(--color-text-tertiary);
   text-align: center;
-  margin: -12rpx 0 12rpx;
+  margin: calc(var(--space-2) * -1) 0 var(--space-3);
 }
 
-.stats-text {
-  font-size: 26rpx;
-  color: var(--color-text-secondary);
-}
-
-.stats-num {
-  font-size: 34rpx;
-  font-weight: 800;
-  color: var(--color-num-strong);
-  padding: 0 4rpx;
-}
-
-.stats-dot {
-  margin: 0 16rpx;
-  color: var(--color-text-tertiary);
-  font-size: 26rpx;
-}
-
-/* ===== 分类筛选（填充式胶囊） ===== */
+/* ===== 分类筛选（胶囊） ===== */
 .category-scroll {
   white-space: nowrap;
-  margin: 0 -32rpx;
-  padding: 0 32rpx;
-  margin-bottom: 28rpx;
+  margin: 0 calc(var(--space-4) * -1);
+  padding: 0 var(--space-4);
+  margin-bottom: var(--space-4);
   /* 两端渐隐，提示右侧还有更多分类 */
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24rpx, #000 calc(100% - 24rpx), transparent 100%);
 }
@@ -216,64 +247,65 @@
 .category-list {
   display: inline-flex;
   align-items: center;
-  gap: 16rpx;
-  padding-bottom: 8rpx;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
 }
 
 .category-item {
   display: inline-flex;
   align-items: center;
-  padding: 14rpx 32rpx;
+  padding: 14rpx var(--space-4);
   border-radius: var(--radius-pill);
-  background: var(--color-card);
-  box-shadow: var(--shadow-card);
-  transition: all 0.2s ease;
+  background: var(--surface-card);
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
 .category-item:active {
   opacity: 0.7;
+  transform: scale(0.96);
 }
 
 .category-name {
-  font-size: 28rpx;
+  font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   line-height: 1.3;
 }
 
 .category-active {
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--elev-accent);
 }
 
 .category-active .category-name {
   color: var(--color-on-accent);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 /* ===== 菜品列表 ===== */
 .dish-list {
-  padding-top: 8rpx;
+  padding-top: var(--space-1);
 }
 
-/* ===== 首屏加载骨架 ===== */
+/* ===== 首屏加载骨架（形状与 dish-card 对齐，避免加载完成时跳动） ===== */
 .skeleton-card {
   display: flex;
   align-items: center;
-  background: var(--color-card);
+  background: var(--surface-card);
   border-radius: var(--radius-lg);
-  padding: 28rpx;
-  margin-bottom: 20rpx;
-  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
   box-sizing: border-box;
 }
 
 .skeleton-thumb {
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 22rpx;
-  background: var(--color-bg-tertiary);
-  margin-right: 24rpx;
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  margin-right: var(--space-3);
   flex-shrink: 0;
 }
 
@@ -283,9 +315,9 @@
 
 .skeleton-line {
   height: 32rpx;
-  border-radius: 8rpx;
-  background: var(--color-bg-tertiary);
-  margin-bottom: 16rpx;
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  margin-bottom: var(--space-2);
 }
 
 .skeleton-line-short {

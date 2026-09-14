@@ -1,4 +1,6 @@
-/* components/avatar-group/avatar-group.wxss */
+/* components/avatar-group/avatar-group.wxss
+ * 叠压头像组：负边距重叠 12rpx，描边取卡片底色，保证在任意表面上都是干净的圆
+ */
 .avatar-group {
   display: flex;
   flex-direction: row;
@@ -13,8 +15,8 @@
   margin-left: -12rpx;
   box-sizing: border-box;
   /* 描边跟随卡片底色：深色模式下不再出现刺眼白圈 */
-  border: 2rpx solid var(--color-card);
-  background: var(--color-bg-secondary);
+  border: 2rpx solid var(--surface-card);
+  background: var(--surface-sunken);
 }
 
 .avatar-first {
@@ -31,7 +33,7 @@
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   border-radius: 50%;
   box-sizing: border-box;
 }
@@ -40,9 +42,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-tertiary, #F1E9DE);
+  background: var(--surface-sunken);
   color: var(--color-text-secondary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   border-radius: 50%;
   box-sizing: border-box;
 }

@@ -1,37 +1,53 @@
 /* pages/settings/theme/theme.wxss */
 .theme-page {
-  padding-top: 32rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-12);
   min-height: 100vh;
   box-sizing: border-box;
 }
 
-.section {
-  margin-bottom: 40rpx;
+/* ===== 区块头 ===== */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  padding: 0 var(--space-1);
 }
 
 .section-title {
-  padding: 0 8rpx 16rpx;
-  font-size: 26rpx;
-  color: var(--color-text-secondary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
 }
 
-/* ===== 主题色卡选择器 ===== */
+.current-tag {
+  font-size: var(--text-mini);
+  color: var(--color-accent-deep);
+  background: var(--color-accent-soft);
+  padding: 6rpx 18rpx;
+  border-radius: var(--radius-pill);
+}
+
+/* ===== 色卡栅格：两列等宽，间距走 8pt 栅格 ===== */
 .theme-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
+  gap: var(--space-3);
 }
 
 .theme-card {
-  width: calc((100% - 20rpx) / 2);
-  background: var(--color-card);
+  width: calc((100% - var(--space-3)) / 2);
+  background: var(--surface-card);
   border-radius: var(--radius-lg);
-  padding: 20rpx;
+  padding: var(--space-3);
   box-sizing: border-box;
   border: 3rpx solid transparent;
-  box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: var(--elev-1);
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
 
 .theme-card:active {
@@ -40,51 +56,135 @@
 
 .theme-card-active {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 6rpx var(--color-accent-soft);
+  box-shadow: 0 0 0 6rpx var(--color-accent-soft), var(--elev-2);
 }
 
-/* mini 预览块：纯 CSS 绘制，颜色为各主题定值（不随当前主题变化才有预览意义） */
+/* ===== 预览块 =====
+   颜色为各家族定值（不随当前主题变化，否则失去预览意义），
+   必须与 app.wxss 中 --surface-page / --surface-card / --color-accent 保持一致 */
 .pv {
   position: relative;
-  height: 160rpx;
-  border-radius: 16rpx;
-  padding: 20rpx 24rpx;
+  height: 180rpx;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 14rpx;
+  justify-content: space-between;
   overflow: hidden;
 }
 
-.pv-warm { background: #FAF6F0; }
-.pv-fresh { background: #F0F7F1; }
-.pv-dark { background: #201B16; }
+.pv-warm {
+  background: #F3E9DA;
+}
+
+.pv-fresh {
+  background: #DDEBE0;
+}
+
+.pv-sky {
+  background: #DCEAF6;
+}
+
+.pv-pink {
+  background: #F8E3EA;
+}
+
+.pv-dark {
+  background: #14100C;
+}
+
+/* 卡片层：与页面底拉开明度差，直观呈现「浮起」 */
+.pv-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  box-shadow: 0 2rpx 8rpx rgba(140, 95, 45, 0.12);
+}
+
+.pv-fresh .pv-card {
+  background: #FBFEFC;
+  box-shadow: 0 2rpx 8rpx rgba(30, 105, 65, 0.12);
+}
+
+.pv-sky .pv-card {
+  background: #FBFDFF;
+  box-shadow: 0 2rpx 8rpx rgba(30, 90, 140, 0.12);
+}
+
+.pv-pink .pv-card {
+  background: #FFFBFC;
+  box-shadow: 0 2rpx 8rpx rgba(150, 60, 90, 0.10);
+}
+
+.pv-dark .pv-card {
+  background: #221C16;
+  box-shadow: 0 0 0 1rpx rgba(255, 240, 220, 0.08);
+}
 
 .pv-line {
   height: 10rpx;
   border-radius: 5rpx;
 }
 
-.pv-title { width: 65%; background: #2B2118; }
-.pv-fresh .pv-title { background: #1F2B22; }
-.pv-dark .pv-title { background: #F5EFE8; }
+.pv-title {
+  width: 62%;
+  background: #241B12;
+  margin-bottom: 12rpx;
+}
 
-.pv-short { width: 42%; background: #B9AB98; }
-.pv-fresh .pv-short { background: #94A69A; }
-.pv-dark .pv-short { background: #6E645A; }
+.pv-fresh .pv-title {
+  background: #17251B;
+}
 
+.pv-sky .pv-title {
+  background: #14212B;
+}
+
+.pv-pink .pv-title {
+  background: #2B1720;
+}
+
+.pv-dark .pv-title {
+  background: #F7F1E9;
+}
+
+.pv-short {
+  width: 40%;
+  background: #A2968A;
+}
+
+.pv-fresh .pv-short {
+  background: #8AA392;
+}
+
+.pv-sky .pv-short {
+  background: #8FA1AC;
+}
+
+.pv-pink .pv-short {
+  background: #A98E97;
+}
+
+.pv-dark .pv-short {
+  background: #6E645A;
+}
+
+/* 强调色按钮 */
 .pv-btn {
-  height: 34rpx;
-  width: 58%;
-  border-radius: 17rpx;
+  height: 36rpx;
+  width: 56%;
+  border-radius: 18rpx;
+  align-self: flex-start;
 }
 
 .pv-warm .pv-btn { background: #D93A2B; }
-.pv-fresh .pv-btn { background: #2F9E6E; }
-.pv-dark .pv-btn { background: #E8564A; }
+.pv-fresh .pv-btn { background: #1F9360; }
+.pv-sky .pv-btn { background: #2E8FD8; }
+.pv-pink .pv-btn { background: #E05580; }
+.pv-dark .pv-btn { background: #FF6B5A; }
 
-/* 跟随系统：暖调/夜间对半拼 */
+/* ===== 跟随系统：左右对半 ===== */
 .pv-system {
   flex-direction: row;
   padding: 0;
@@ -98,17 +198,44 @@
   justify-content: center;
 }
 
-.pv-half-warm { background: #FAF6F0; }
-.pv-half-dark { background: #201B16; }
+.pv-half-warm { background: #F3E9DA; }
+.pv-half-dark { background: #14100C; }
 
-.pv-half .pv-btn {
-  width: 56rpx;
-  height: 28rpx;
+.pv-mini-card {
+  width: 78%;
+  border-radius: var(--radius-xs);
+  padding: 14rpx;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(140, 95, 45, 0.12);
 }
 
-.pv-btn-warm { background: #D93A2B; }
-.pv-btn-dark { background: #E8564A; }
+.pv-half-dark .pv-mini-card {
+  background: #221C16;
+  box-shadow: 0 0 0 1rpx rgba(255, 240, 220, 0.08);
+}
 
+.pv-mini-line {
+  height: 8rpx;
+  width: 70%;
+  border-radius: 4rpx;
+  background: #241B12;
+  margin-bottom: 12rpx;
+}
+
+.pv-half-dark .pv-mini-line {
+  background: #F7F1E9;
+}
+
+.pv-mini-btn {
+  height: 20rpx;
+  width: 52%;
+  border-radius: 10rpx;
+}
+
+.pv-half-warm .pv-mini-btn { background: #D93A2B; }
+.pv-half-dark .pv-mini-btn { background: #FF6B5A; }
+
+/* ===== 选中角标 ===== */
 .theme-card-check {
   position: absolute;
   top: 14rpx;
@@ -118,29 +245,79 @@
   border-radius: 50%;
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* ===== 文案 ===== */
 .theme-card-name {
-  margin-top: 16rpx;
-  font-size: 28rpx;
-  font-weight: 600;
+  margin-top: var(--space-3);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
+  line-height: var(--lh-tight);
 }
 
 .theme-card-sub {
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
+}
+
+/* ===== 强调色落点说明 ===== */
+.swatch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--elev-1);
+}
+
+.swatch-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch-dot {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elev-1);
+}
+
+.swatch-accent {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+}
+
+.swatch-soft {
+  background: var(--color-accent-soft);
+  border: 2rpx solid var(--color-border);
+}
+
+.swatch-cream {
+  background: var(--color-cream);
+  border: 2rpx solid var(--color-border);
+}
+
+.swatch-label {
+  font-size: var(--text-mini);
   color: var(--color-text-secondary);
+  text-align: center;
+  line-height: var(--lh-normal);
 }
 
 /* 底部提示 */
 .preview-tip {
   display: flex;
   justify-content: center;
-  padding: 32rpx 0;
+  padding: var(--space-6) 0 0;
 }

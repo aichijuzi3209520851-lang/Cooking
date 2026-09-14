@@ -8,36 +8,58 @@ const app = getApp();
 const FAMILY_NAMES = {
   warm: '温馨暖调',
   fresh: '清新绿意',
+  sky: '晴空浅蓝',
+  pink: '樱粉',
   dark: '静谧夜间'
 };
 
 // 各家族的导航栏 / tabBar / 窗口底色（与 app.wxss 令牌保持一致）
+// 取值必须与 app.wxss 中各家族的 --surface-page / --surface-card / --color-accent 一致，
+// 否则会出现「内容区变了、系统 UI 没变」的割裂感。
 const CHROME = {
   warm: {
-    navBg: '#FAF6F0',
+    navBg: '#F3E9DA',   // = --surface-page
     navFront: '#000000',
-    tabBg: '#FFFFFF',
-    tabColor: '#6F6459',
+    tabBg: '#FFFFFF',   // = --surface-card（比页面底亮一档，形成浮起）
+    tabColor: '#6B5F52',
     tabSelected: '#D93A2B',
-    windowBg: '#FFFDF9',
+    windowBg: '#F3E9DA',
     bgTextStyle: 'dark'
   },
   fresh: {
-    navBg: '#F0F7F1',
+    navBg: '#DDEBE0',
     navFront: '#000000',
-    tabBg: '#FFFFFF',
-    tabColor: '#5C6B5F',
-    tabSelected: '#2F9E6E',
-    windowBg: '#FBFDF9',
+    tabBg: '#FBFEFC',
+    tabColor: '#556B5C',
+    tabSelected: '#1F9360',
+    windowBg: '#DDEBE0',
+    bgTextStyle: 'dark'
+  },
+  sky: {
+    navBg: '#DCEAF6',   // = --surface-page
+    navFront: '#000000',
+    tabBg: '#FBFDFF',   // = --surface-card
+    tabColor: '#52646F',
+    tabSelected: '#2E8FD8',
+    windowBg: '#DCEAF6',
+    bgTextStyle: 'dark'
+  },
+  pink: {
+    navBg: '#F8E3EA',
+    navFront: '#000000',
+    tabBg: '#FFFBFC',
+    tabColor: '#745560',
+    tabSelected: '#E05580',
+    windowBg: '#F8E3EA',
     bgTextStyle: 'dark'
   },
   dark: {
-    navBg: '#201B16',
+    navBg: '#14100C',
     navFront: '#ffffff',
-    tabBg: '#201B16',
-    tabColor: '#A89C8E',
-    tabSelected: '#E8564A',
-    windowBg: '#17130F',
+    tabBg: '#221C16',
+    tabColor: '#ADA093',
+    tabSelected: '#FF6B5A',
+    windowBg: '#14100C',
     bgTextStyle: 'light'
   }
 };
@@ -47,6 +69,8 @@ const CHROME = {
 const TAB_SELECTED_ICONS = {
   warm: ['order-active-warm', 'summary-active-warm', 'profile-active-warm'],
   fresh: ['order-active-fresh', 'summary-active-fresh', 'profile-active-fresh'],
+  sky: ['order-active-sky', 'summary-active-sky', 'profile-active-sky'],
+  pink: ['order-active-pink', 'summary-active-pink', 'profile-active-pink'],
   dark: ['order-active-dark', 'summary-active-dark', 'profile-active-dark']
 };
 
@@ -138,7 +162,7 @@ function setThemeFamily(family) {
 }
 
 /**
- * 当前主题家族设置值（'system' | 'warm' | 'fresh' | 'dark'）
+ * 当前主题家族设置值（'system' | 'warm' | 'fresh' | 'sky' | 'pink' | 'dark'）
  */
 function getThemeFamily() {
   return app.globalData.themeFamily || 'system';

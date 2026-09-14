@@ -12,7 +12,7 @@
   box-sizing: border-box;
   padding: 0 48rpx calc(env(safe-area-inset-bottom) + 44rpx);
   background:
-    linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 58%, var(--color-cream) 100%);
+    linear-gradient(180deg, var(--surface-page) 0%, var(--surface-card) 55%, var(--color-cream) 100%);
   overflow: hidden;
   position: relative;
 }
@@ -20,7 +20,7 @@
 @media (prefers-color-scheme: dark) {
   .login-page {
     --glow-a: rgba(217, 166, 72, 0.08);
-    --glow-b: rgba(232, 86, 74, 0.10);
+    --glow-b: rgba(255, 107, 90, 0.10);
     --float-opacity: 0.45;
   }
 }
@@ -33,8 +33,22 @@
 
 /* 清新绿意主题：光晕与漂浮物转绿色调（优先级高于深色媒体查询兜底） */
 .login-page.theme-fresh {
-  --glow-a: rgba(47, 158, 110, 0.14);
-  --glow-b: rgba(47, 158, 110, 0.08);
+  --glow-a: rgba(31, 147, 96, 0.16);
+  --glow-b: rgba(31, 147, 96, 0.10);
+  --float-opacity: 0.8;
+}
+
+/* 晴空浅蓝主题：光晕转蓝色调 */
+.login-page.theme-sky {
+  --glow-a: rgba(46, 143, 216, 0.16);
+  --glow-b: rgba(46, 143, 216, 0.10);
+  --float-opacity: 0.8;
+}
+
+/* 樱粉主题：光晕转粉色调 */
+.login-page.theme-pink {
+  --glow-a: rgba(224, 85, 128, 0.16);
+  --glow-b: rgba(224, 85, 128, 0.10);
   --float-opacity: 0.8;
 }
 

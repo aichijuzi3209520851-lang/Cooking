@@ -1,7 +1,9 @@
-/* pages/profile/profile.wxss */
+/* pages/profile/profile.wxss
+ * 结构：用户卡（带主题淡染） → 分组列表（发丝线内缩 32rpx 对齐标题）
+ */
 .profile-page {
-  padding-top: 32rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-12);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -10,10 +12,12 @@
 .profile-card {
   display: flex;
   align-items: center;
-  background: var(--color-card);
-  border-radius: var(--radius-lg);
-  padding: 36rpx 32rpx;
-  margin-bottom: 32rpx;
+  background-color: var(--surface-card);
+  background-image: linear-gradient(150deg, var(--tint-1) 0%, var(--tint-3) 62%);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--elev-1);
 }
 
 /* 头像区：可见头像用固定尺寸 image（保证正圆），chooseAvatar 按钮做隐形覆盖层 */
@@ -21,7 +25,7 @@
   position: relative;
   width: 112rpx;
   height: 112rpx;
-  margin: 0 24rpx 0 0;
+  margin: 0 var(--space-3) 0 0;
   flex-shrink: 0;
 }
 
@@ -33,13 +37,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.profile-avatar-img {
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
-  display: block;
+  background: var(--color-accent-soft);
 }
 
 /* 隐形覆盖按钮：铺满头像接收点击，本身零视觉（不受微信 button 默认样式干扰） */
@@ -66,7 +64,7 @@
 
 .profile-avatar-text {
   font-size: 44rpx;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: #FFFFFF;
   line-height: 1;
 }
@@ -81,8 +79,8 @@
   align-items: center;
   /* 单行制：昵称 + 编辑笔，不与徽章混排（徽章与家庭名在第二行） */
   flex-wrap: nowrap;
-  padding: 12rpx 0;
-  margin: -12rpx 0;
+  padding: var(--space-2) 0;
+  margin: calc(var(--space-2) * -1) 0;
 }
 
 .profile-name-hover {
@@ -90,10 +88,10 @@
 }
 
 .profile-name {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  line-height: 1.3;
+  line-height: var(--lh-tight);
   max-width: 420rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -104,13 +102,13 @@
 .profile-meta-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-top: 12rpx;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   min-width: 0;
 }
 
 .profile-family {
-  font-size: 24rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,79 +117,77 @@
 
 /* ===== 分组列表 ===== */
 .section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-4);
 }
 
 .section-header {
-  padding: 0 16rpx 14rpx;
-  font-size: 24rpx;
+  padding: 0 var(--space-2) var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
 
 .group-card {
-  background: var(--color-card);
+  background: var(--surface-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: var(--elev-1);
 }
 
 .list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30rpx 32rpx;
-  transition: background 0.15s ease;
+  min-height: 112rpx;
+  padding: var(--space-3) var(--space-4);
+  box-sizing: border-box;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .list-item:active {
-  background: var(--color-bg-tertiary);
+  background: var(--surface-sunken);
 }
 
 .list-item-bordered {
   position: relative;
 }
 
+/* 发丝线左侧内缩，与标题文字对齐 */
 .list-item-bordered::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 32rpx;
+  left: var(--space-4);
   right: 0;
   height: 1rpx;
-  background: var(--color-separator);
+  background: var(--hairline);
 }
 
 .list-item-label {
-  font-size: 30rpx;
+  font-size: var(--text-body);
   color: var(--color-text-primary);
-  line-height: 1.3;
+  line-height: var(--lh-tight);
 }
 
 .list-item-right {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-1);
 }
 
 .list-item-value {
-  font-size: 28rpx;
+  font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
-}
-
-/* 行内右侧组合（徽标 + 箭头） */
-.list-item-right {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
 }
 
 /* 行内引导徽标：中性灰，待办语义（BADGE-002） */
 .row-badge {
   padding: 4rpx 14rpx;
   border-radius: var(--radius-pill);
-  background: var(--color-bg-tertiary);
+  background: var(--surface-sunken);
   color: var(--color-text-secondary);
-  font-size: 20rpx;
-  font-weight: 500;
+  font-size: var(--text-mini);
+  font-weight: var(--weight-medium);
 }
 
 .list-item-arrow {
