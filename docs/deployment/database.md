@@ -16,6 +16,7 @@
 | `vote_history` | 历史归档冷数据 |
 | `notify_ledger` | 第一票通知台账（防并发重复通知），`_id` = `n_{date}_{familyId}_{dishId}` |
 | `rice_reports` | 今日米饭饭量上报，`_id` = `r_{date}_{familyId}_{userId}`（幂等 upsert，dailyReset 清理昨日） |
+| `menu_submissions` | 今日菜单提交记录（NOTIFY-002），`_id` = `s_{date}_{familyId}_{userId}`（每人每天一条，重复提交覆盖；dailyReset 清理昨日） |
 
 ## 2. 数据库安全规则
 
@@ -58,6 +59,8 @@
 | `rice_reports` | `familyId` + `date` | 今日米饭聚合（getRice） |
 | `rice_reports` | `familyId` + `userId` + `date` | 个人饭量查询（setRice 幂等） |
 | `rice_reports` | `date` + `_id` | dailyReset 分页清理 |
+| `menu_submissions` | `familyId` + `date` | 查询当日提交情况（NOTIFY-002） |
+| `menu_submissions` | `date` + `_id` | dailyReset 分页清理 |
 | `vote_history` | `familyId` + `date` + `createdAt` | 历史查询 |
 | `notify_ledger` | `date` | dailyReset 清理 |
 
