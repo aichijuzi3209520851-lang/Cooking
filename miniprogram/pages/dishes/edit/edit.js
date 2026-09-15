@@ -129,14 +129,20 @@ Page({
         console.warn('压缩图片失败，使用原图', err);
       }
 
-      // 上传到云存储：路径包含家庭ID与openid（配合存储安全规则）
+      // 上传到云存储：路径必须包含本人 openid（与存储安全规则的 write 条件匹配）
+      const familyId = app.globalData.currentFamilyId;
+      const openid = app.globalData.openid;
+      if (!familyId || !openid) {
+        // 缺少 openid 时拼出的路径必然不满足安全规则（要求包含 /{openid}/），
+        // 提前拦截并给出可操作提示，而不是用注定失败、且难定位的路径去请求
+        showError('登录状态异常，请返回首页后重试');
+        return;
+      }
+      const cloudPath = `dishes/${familyId}/${openid}/${Date.now()}.${ext}`;
+
       stage = 'upload';
       this.setData({ uploading: true });
       wx.showLoading({ title: '上传中...', mask: true });
-
-      const familyId = app.globalData.currentFamilyId;
-      const openid = app.globalData.openid || 'anonymous';
-      const cloudPath = `dishes/${familyId}/${openid}/${Date.now()}.${ext}`;
 
       const uploadRes = await wx.cloud.uploadFile({
         cloudPath,
