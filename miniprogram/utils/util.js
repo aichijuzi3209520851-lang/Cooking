@@ -1,7 +1,9 @@
 // utils/util.js - 通用工具函数
 
 /**
- * 格式化日期为 YYYY-MM-DD
+ * 格式化日期为 YYYY-MM-DD（按设备本地时区）
+ * 说明：本函数保留「本地时区」语义，仅用于已知本地时刻 → 本地日期的展示场景
+ * （如 history.js 中日期加减的往返计算）。业务日期请使用 today()/yesterday()。
  */
 function formatDate(date) {
   const d = date ? new Date(date) : new Date();
@@ -12,19 +14,32 @@ function formatDate(date) {
 }
 
 /**
- * 获取今天日期
+ * 格式化时间戳为东八区（UTC+8）日期 YYYY-MM-DD
+ *
+ * 与服务端 cloudfunctions/shared/date.js 的 getTodayStr 完全同源。
+ * 业务日期（daily_votes.date / rice_reports.date / 实时监听条件 / 历史归档）
+ * 一律走东八区，避免「客户端本地时区 vs 服务端东八区」错位导致监听失效。
  */
-function today() {
-  return formatDate(new Date());
+function formatDateCST(ms) {
+  const d = new Date((ms === undefined ? Date.now() : ms) + 8 * 3600 * 1000);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
- * 获取昨天日期
+ * 获取今天日期（东八区，与云函数业务日期一致）
+ */
+function today() {
+  return formatDateCST();
+}
+
+/**
+ * 获取昨天日期（东八区，与 dailyReset 归档口径一致）
  */
 function yesterday() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return formatDate(d);
+  return formatDateCST(Date.now() - 24 * 3600 * 1000);
 }
 
 /**
@@ -222,7 +237,8 @@ function refreshSummaryBadge(dishCount) {
   } catch (e) {
     // ignore
   }
-  const today = formatDate(new Date())
+  // 徽标「已看过」的跨日判定必须与业务日期同口径（东八区）
+  const today = formatDateCST()
   const stale = !seen || seen.date !== today ||
     (seen.familyId !== (getApp().globalData.currentFamilyId || '')) ||
     count > (seen.count || 0)
@@ -243,7 +259,7 @@ function refreshSummaryBadge(dishCount) {
 function markSummarySeen(dishCount) {
   try {
     wx.setStorageSync('summarySeen', {
-      date: formatDate(new Date()),
+      date: formatDateCST(),
       familyId: (getApp().globalData.currentFamilyId || ''),
       count: Number(dishCount) || 0
     })
@@ -271,6 +287,7 @@ function showConfirm(title, content) {
 
 module.exports = {
   formatDate,
+  formatDateCST,
   today,
   yesterday,
   getCategoryName,
