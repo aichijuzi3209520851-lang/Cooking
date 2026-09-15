@@ -154,8 +154,9 @@ exports.main = async (event) => {
     // ===== 3. 清理过期通知台账（已归档日期不再需要） =====
     await removeWhere(db, 'notify_ledger', { date: _.lte(bizDate) }, 'dailyReset')
 
-    // ===== 4. 清理昨日饭量上报（RICE-001：无需归档，仅保留当日热数据） =====
+    // ===== 4. 清理当日热数据（RICE-001 / NOTIFY-002：无需归档，仅保留当日） =====
     await removeWhere(db, 'rice_reports', { date: bizDate }, 'dailyReset')
+    await removeWhere(db, 'menu_submissions', { date: bizDate }, 'dailyReset')
 
     // ===== 5. 校准家庭人数（FAMILY-002） =====
     // families.memberCount 是冗余字段，历史上由加入/退出/移除/转让等多处 _.inc 手工维护，
