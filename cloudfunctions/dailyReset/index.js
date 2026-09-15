@@ -72,6 +72,7 @@ exports.main = async (event) => {
     archivedUpdated: 0,
     deletedVotes: 0,
     resetDishes: 0,
+    calibratedFamilies: 0,
     failures: []
   }
 
@@ -155,6 +156,40 @@ exports.main = async (event) => {
 
     // ===== 4. 清理昨日饭量上报（RICE-001：无需归档，仅保留当日热数据） =====
     await removeWhere(db, 'rice_reports', { date: bizDate }, 'dailyReset')
+
+    // ===== 5. 校准家庭人数（FAMILY-002） =====
+    // families.memberCount 是冗余字段，历史上由加入/退出/移除/转让等多处 _.inc 手工维护，
+    // 缺少校准会永久累积漂移（典型表现：「显示满员但成员只有 N 人」、未报人数为负）。
+    // 每日以 family_members 的真实数量回写一次；单个家庭失败只记录，不影响归档主流程。
+    let famLastId = ''
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const famPage = await fetchPage('families', {}, famLastId, BATCH_SIZE)
+      if (famPage.length === 0) {
+        break
+      }
+      for (const fam of famPage) {
+        try {
+          const cntRes = await db.collection('family_members')
+            .where({ familyId: fam._id })
+            .count()
+          const real = (cntRes && cntRes.total) || 0
+          if ((fam.memberCount || 0) !== real) {
+            await db.collection('families').doc(fam._id).update({
+              data: { memberCount: real }
+            })
+            summary.calibratedFamilies += 1
+          }
+        } catch (e) {
+          summary.failures.push({
+            stage: 'calibrateMemberCount',
+            familyId: fam._id,
+            error: (e && e.message) || String(e)
+          })
+        }
+      }
+      famLastId = famPage[famPage.length - 1]._id
+    }
 
     summary.endTime = new Date().toISOString()
     console.log(`[dailyReset] 完成 jobId=${jobId} date=${bizDate}`, JSON.stringify(summary))
