@@ -6,7 +6,6 @@ const {
   today,
   showApiError,
   showSuccess,
-  showConfirm,
   refreshSummaryBadge
 } = require('../../utils/util.js');
 const app = getApp();
@@ -42,6 +41,9 @@ Page({
     loading: false,
     page: 1,
     hasMore: true,
+    // 一票否决原因弹窗（NOTIFY-002）
+    showReject: false,
+    rejectDishName: '',
     // 今日米饭（RICE-001）：mine 为 null 表示未报
     rice: {
       mine: null,
@@ -466,28 +468,43 @@ Page({
     refreshSummaryBadge(stats.dishCount);
   },
 
-  // 掌勺撤下
-  async onChefCancel(e) {
+  // 掌勺一票否决（NOTIFY-002）：先选原因，再执行否决并通知投过票的家人
+  onChefCancel(e) {
     const dish = e.detail.dish;
     if (!dish || !dish.dishId) return;
 
-    // 高危操作：确认弹窗前给一档中强度震动提示
-    wx.vibrateShort({ type: 'medium' });
-    const confirmed = await showConfirm(
-      '撤下菜品',
-      `确定撤下「${dish.name}」吗？所有点菜记录将被清除。`
-    );
-    if (!confirmed) return;
+    // 高危操作：弹出原因选择前给一档中强度震动提示
+    wx.vibrateShort({ type: 'medium', fail() {} });
+    this._rejectDish = dish;
+    this.setData({
+      showReject: true,
+      rejectDishName: dish.name || '这道菜'
+    });
+  },
+
+  onRejectCancel() {
+    this._rejectDish = null;
+    this.setData({ showReject: false, rejectDishName: '' });
+  },
+
+  async onRejectConfirm(e) {
+    const dish = this._rejectDish;
+    const reason = (e.detail && e.detail.reason) || '';
+    this.setData({ showReject: false, rejectDishName: '' });
+    if (!dish || !dish.dishId) return;
 
     try {
-      await voteApi.chefCancel(app.globalData.currentFamilyId, dish.dishId);
-      showSuccess('已撤下');
-      wx.vibrateShort({ type: 'light' });
-      // 撤下后菜品变为隐藏，保持当前顺序刷新（该菜品自然从列表消失）
+      const res = await voteApi.chefCancel(app.globalData.currentFamilyId, dish.dishId, reason);
+      const count = (res && res.affectedCount) || 0;
+      showSuccess(count > 0 ? `已否决，并通知 ${count} 位家人` : '已否决');
+      wx.vibrateShort({ type: 'light', fail() {} });
+      // 否决后该菜当日票被清空，保持当前顺序刷新（自然从列表消失）
       this.loadData(true);
     } catch (err) {
-      console.error('撤下失败', err);
-      showApiError(err, '撤下失败');
+      console.error('否决失败', err);
+      showApiError(err, '操作失败');
+    } finally {
+      this._rejectDish = null;
     }
   },
 

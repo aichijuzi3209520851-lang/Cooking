@@ -3,6 +3,7 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "empty-state": "/components/empty-state/empty-state",
-    "privacy-popup": "/components/privacy-popup/privacy-popup"
+    "privacy-popup": "/components/privacy-popup/privacy-popup",
+    "reject-reason": "/components/reject-reason/reject-reason"
   }
 }

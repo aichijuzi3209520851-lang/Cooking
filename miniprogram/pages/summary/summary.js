@@ -10,6 +10,7 @@ const {
   markSummarySeen,
   showApiError,
   showSuccess,
+  showError,
   showConfirm
 } = require('../../utils/util.js');
 const app = getApp();
@@ -23,6 +24,11 @@ Page({
     stats: { dishCount: 0, voterCount: 0 },
     currentRole: '',
     isChef: false,
+    // 提交今日菜单（NOTIFY-002）
+    submitted: false,
+    // 一票否决原因弹窗（NOTIFY-002）
+    showReject: false,
+    rejectDishName: '',
     hasFamily: false,
     todayDate: '',
     dateText: '',
@@ -265,24 +271,70 @@ Page({
   },
 
   // 掌勺撤下（弹窗薄壳）：确认后执行撤菜逻辑
-  async onChefCancel(e) {
+  onChefCancel(e) {
     const dishId = e.currentTarget.dataset.id;
     const dishName = e.currentTarget.dataset.name;
     if (!dishId) return;
 
-    const confirmed = await showConfirm(
-      '撤下菜品',
-      `确定撤下「${dishName}」吗？点过这道菜的家人会收到通知。`
-    );
-    if (!confirmed) return;
-    return this.doChefCancel(dishId, dishName);
+    // 一票否决（NOTIFY-002）：先选原因，再执行并通知点过这道菜的家人
+    wx.vibrateShort({ type: 'medium', fail() {} });
+    this._rejectDishId = dishId;
+    this._rejectDishName = dishName || '这道菜';
+    this.setData({ showReject: true, rejectDishName: this._rejectDishName });
   },
 
-  // 撤菜执行（与弹窗分离，便于自动化测试直接调用）
-  async doChefCancel(dishId, dishName) {
+  onRejectCancel() {
+    this._rejectDishId = null;
+    this._rejectDishName = '';
+    this.setData({ showReject: false, rejectDishName: '' });
+  },
+
+  onRejectConfirm(e) {
+    const dishId = this._rejectDishId;
+    const dishName = this._rejectDishName;
+    const reason = (e.detail && e.detail.reason) || '';
+    this._rejectDishId = null;
+    this._rejectDishName = '';
+    this.setData({ showReject: false, rejectDishName: '' });
+    if (!dishId) return;
+    return this.doChefCancel(dishId, dishName, reason);
+  },
+
+  // 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知掌勺的
+  async onSubmitMenu() {
+    if (this._submitting) return;
+
+    const dishCount = (this.data.stats && this.data.stats.dishCount) || 0;
+    if (!dishCount) {
+      showError('今天还没有人点菜');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      '提交今日菜单',
+      `把今日 ${dishCount} 道菜提交给掌勺的，并发送通知。`
+    );
+    if (!confirmed) return;
+
+    this._submitting = true;
     try {
-      await voteApi.chefCancel(app.globalData.currentFamilyId, dishId);
-      showSuccess('已撤下');
+      const res = await voteApi.submitMenu(app.globalData.currentFamilyId);
+      this.setData({ submitted: true });
+      showSuccess('已提交给掌勺的');
+      return res;
+    } catch (err) {
+      showApiError(err, '提交失败');
+    } finally {
+      this._submitting = false;
+    }
+  },
+
+  // 否决执行（与弹窗分离，便于自动化测试直接调用）
+  async doChefCancel(dishId, dishName, reason) {
+    try {
+      const res = await voteApi.chefCancel(app.globalData.currentFamilyId, dishId, reason);
+      const count = (res && res.affectedCount) || 0;
+      showSuccess(count > 0 ? `已否决，并通知 ${count} 位家人` : '已否决');
       wx.vibrateShort({ type: 'light' });
       // 本地移除，保证其他设备也能通过 watcher 刷新（隐藏零投票菜品场景）
       const summaryList = this.data.summaryList.filter(item => item.dishId !== dishId);

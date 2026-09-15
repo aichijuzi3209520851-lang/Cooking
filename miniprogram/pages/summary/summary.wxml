@@ -113,6 +113,16 @@
         </view>
       </view>
 
+      <!-- 提交今日菜单（NOTIFY-002）：汇总今日点菜，通知掌勺的 -->
+      <view class="submit-bar">
+        <view
+          class="submit-btn {{stats.dishCount > 0 ? '' : 'is-disabled'}}"
+          bindtap="onSubmitMenu"
+          hover-class="submit-btn-hover"
+        >{{submitted ? '重新提交给掌勺的' : '提交今日菜单'}}</view>
+        <view class="submit-hint">提交后掌勺的会收到一条通知</view>
+      </view>
+
       <!-- 底部统计 -->
       <view class="bottom-stats safe-bottom">
         <text class="bottom-stats-text">
@@ -140,3 +150,10 @@
 
 <!-- 隐私协议授权弹窗（PRIV-001） -->
 <privacy-popup />
+<!-- 一票否决原因选择（NOTIFY-002） -->
+<reject-reason
+  visible="{{showReject}}"
+  dish-name="{{rejectDishName}}"
+  bind:confirm="onRejectConfirm"
+  bind:cancel="onRejectCancel"
+/>

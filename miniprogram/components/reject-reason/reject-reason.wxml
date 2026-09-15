@@ -1,0 +1,46 @@
+<!--components/reject-reason/reject-reason.wxml-->
+<!--掌勺「一票否决」原因选择：预设选项优先，避免打字-->
+<view wx:if="{{visible}}" class="rr-mask" catchtouchmove="noop">
+  <view class="rr-panel">
+
+    <view class="rr-title">今天不做「{{dishName}}」</view>
+    <view class="rr-desc">选个原因，会告诉点这道菜的家人</view>
+
+    <view class="rr-options">
+      <view
+        wx:for="{{reasons}}"
+        wx:key="*this"
+        class="rr-option"
+        data-reason="{{item}}"
+        bindtap="onPick"
+      >{{item}}</view>
+
+      <view
+        wx:if="{{!showInput}}"
+        class="rr-option rr-option-dashed"
+        bindtap="onCustom"
+      >其他原因…</view>
+    </view>
+
+    <view wx:if="{{showInput}}" class="rr-input-row">
+      <input
+        class="rr-input"
+        value="{{customReason}}"
+        maxlength="{{reasonMax}}"
+        placeholder="说说为什么（最多 {{reasonMax}} 字）"
+        placeholder-class="rr-input-ph"
+        focus="{{showInput}}"
+        bindinput="onInput"
+        confirm-type="done"
+        bindconfirm="onSubmitCustom"
+      />
+      <view
+        class="rr-submit {{customReason ? '' : 'is-disabled'}}"
+        bindtap="onSubmitCustom"
+      >确定</view>
+    </view>
+
+    <view class="rr-cancel" bindtap="onCancel">取消</view>
+
+  </view>
+</view>

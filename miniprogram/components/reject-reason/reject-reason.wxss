@@ -1,0 +1,114 @@
+/* components/reject-reason/reject-reason.wxss */
+/* 复用 app.wxss 主题变量，跟随全部主题家族 */
+
+.rr-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* 底部抽屉：选项列表较长，从底部弹出更顺手 */
+.rr-panel {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-raised, #ffffff);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 40rpx 40rpx calc(env(safe-area-inset-bottom) + 32rpx);
+}
+
+.rr-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #241b12);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.rr-desc {
+  margin-top: 10rpx;
+  font-size: 25rpx;
+  color: var(--color-text-tertiary, #a2968a);
+  text-align: center;
+}
+
+.rr-options {
+  margin-top: 32rpx;
+}
+
+.rr-option {
+  height: 92rpx;
+  line-height: 92rpx;
+  padding: 0 32rpx;
+  margin-bottom: 16rpx;
+  border-radius: 20rpx;
+  background: var(--surface-sunken, #fbf5ec);
+  color: var(--color-text-primary, #241b12);
+  font-size: 29rpx;
+}
+
+.rr-option:active {
+  opacity: 0.75;
+}
+
+.rr-option-dashed {
+  background: transparent;
+  border: 2rpx dashed var(--color-border-strong, #dcc9ac);
+  color: var(--color-text-secondary, #6b5f52);
+}
+
+.rr-input-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.rr-input {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  border-radius: 20rpx;
+  background: var(--surface-sunken, #fbf5ec);
+  border: 2rpx solid var(--color-border-strong, #dcc9ac);
+  font-size: 28rpx;
+  color: var(--color-text-primary, #241b12);
+}
+
+.rr-input-ph {
+  color: var(--color-text-tertiary, #a2968a);
+}
+
+.rr-submit {
+  flex-shrink: 0;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 36rpx;
+  border-radius: 20rpx;
+  background: var(--color-accent, #d93a2b);
+  color: var(--color-on-accent, #ffffff);
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.rr-submit.is-disabled {
+  opacity: 0.45;
+}
+
+.rr-cancel {
+  margin-top: 8rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 29rpx;
+  color: var(--color-text-secondary, #6b5f52);
+}
