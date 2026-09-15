@@ -102,3 +102,6 @@
     </button>
   </view>
 </view>
+
+<!-- privacy popup PRIV-001 -->
+<privacy-popup />

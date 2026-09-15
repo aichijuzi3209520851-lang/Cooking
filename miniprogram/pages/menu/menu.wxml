@@ -137,3 +137,6 @@
   </view>
 
 </view>
+
+<!-- 隐私协议授权弹窗（PRIV-001） -->
+<privacy-popup />

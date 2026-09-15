@@ -3,6 +3,7 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "dish-card": "/components/dish-card/dish-card",
-    "empty-state": "/components/empty-state/empty-state"
+    "empty-state": "/components/empty-state/empty-state",
+    "privacy-popup": "/components/privacy-popup/privacy-popup"
   }
 }

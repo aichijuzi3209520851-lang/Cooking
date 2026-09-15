@@ -1,5 +1,6 @@
 // app.js
 const config = require('./config.js');
+const privacy = require('./utils/privacy.js');
 
 App({
   globalData: {
@@ -14,6 +15,9 @@ App({
   },
 
   onLaunch() {
+    // 隐私协议授权（PRIV-001）：注册全局监听，隐私接口调用前确保已获用户同意
+    privacy.init();
+
     // 初始化云开发
     if (!wx.cloud) {
       console.error('请使用 2.2.3 或以上的基础库以使用云能力');

@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "欢迎"
+  "navigationBarTitleText": "欢迎",
+  "usingComponents": {
+    "privacy-popup": "/components/privacy-popup/privacy-popup"
+  }
 }

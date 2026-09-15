@@ -26,3 +26,6 @@
     <view class="welcome-footer">和家人一起决定今天的菜单</view>
   </view>
 </view>
+
+<!-- 隐私协议授权弹窗（PRIV-001） -->
+<privacy-popup />

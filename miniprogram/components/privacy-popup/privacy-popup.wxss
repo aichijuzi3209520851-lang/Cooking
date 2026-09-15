@@ -1,0 +1,97 @@
+/* components/privacy-popup/privacy-popup.wxss */
+/* 复用 app.wxss 的主题变量，跟随暖/清/夜等多套主题 */
+
+.pp-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4, 32rpx);
+  box-sizing: border-box;
+}
+
+.pp-dialog {
+  width: 100%;
+  max-width: 600rpx;
+  background: var(--surface-raised, #ffffff);
+  border-radius: 28rpx;
+  padding: var(--space-6, 48rpx) var(--space-5, 40rpx) var(--space-5, 40rpx);
+  box-sizing: border-box;
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.16);
+}
+
+.pp-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-primary, #241b12);
+  text-align: center;
+  margin-bottom: var(--space-4, 32rpx);
+}
+
+.pp-body {
+  margin-bottom: var(--space-6, 48rpx);
+}
+
+.pp-p {
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: var(--color-text-secondary, #6b5f52);
+}
+
+.pp-center {
+  text-align: center;
+  margin: var(--space-2, 16rpx) 0;
+}
+
+.pp-link {
+  color: var(--color-primary, #d93a2b);
+  font-weight: 500;
+}
+
+.pp-tip {
+  margin-top: var(--space-3, 24rpx);
+  font-size: 25rpx;
+  color: var(--color-text-tertiary, #a2968a);
+  background: var(--surface-sunken, #fbf5ec);
+  border-radius: 16rpx;
+  padding: var(--space-3, 24rpx);
+}
+
+.pp-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 24rpx);
+}
+
+.pp-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  box-sizing: border-box;
+}
+
+.pp-btn-ghost {
+  color: var(--color-text-secondary, #6b5f52);
+  background: var(--surface-sunken, #fbf5ec);
+}
+
+.pp-btn-primary {
+  color: var(--color-on-accent, #ffffff);
+  background: var(--color-primary, #d93a2b);
+  border: none;
+  padding: 0;
+}
+
+/* 去掉小程序 button 默认边框与圆角覆盖 */
+.pp-btn-primary::after {
+  border: none;
+}

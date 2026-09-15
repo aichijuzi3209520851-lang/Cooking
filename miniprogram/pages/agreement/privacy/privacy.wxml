@@ -7,10 +7,20 @@
     <view class="privacy-lead">
       「筷点吃饭」是一款家庭内部使用的点菜工具。我们深知个人信息对你很重要，因此只收集让这个家能正常点菜所必需的最少信息。
     </view>
+    <view class="privacy-lead">
+      本协议与你在微信中看到的《小程序用户隐私保护指引》内容一致；后者由我们在微信公众平台配置并同步，具有同等效力。
+    </view>
   </view>
 
   <view class="card privacy-card">
     <view class="privacy-h">一、我们收集哪些信息</view>
+
+    <view class="privacy-item">
+      <view class="privacy-item-t">微信身份标识（openid）</view>
+      <view class="privacy-p">
+        你打开小程序时由微信自动提供，用于识别你的身份、把你和你的家庭关联起来。它不包含你的手机号、微信号或真实姓名。
+      </view>
+    </view>
 
     <view class="privacy-item">
       <view class="privacy-item-t">微信头像与昵称</view>
@@ -22,20 +32,33 @@
     <view class="privacy-item">
       <view class="privacy-item-t">菜品图片</view>
       <view class="privacy-p">
-        由掌勺人主动拍照或从相册选择上传，仅用于家庭菜谱展示。不上传时会使用分类占位插画。
+        由你主动拍照或从相册选择上传，仅用于家庭菜谱展示。不上传时会使用分类占位插画。
       </view>
     </view>
 
     <view class="privacy-item">
-      <view class="privacy-item-t">微信身份标识（openid）</view>
+      <view class="privacy-item-t">家庭加入码（来自剪贴板）</view>
       <view class="privacy-p">
-        你打开小程序时由微信自动提供，用于识别你的身份、把你和你的家庭关联起来。它不包含你的手机号、微信号或真实姓名。
+        仅当你主动点击「粘贴」时，我们才读取剪贴板内容，用于快速填入家人分享的家庭加入码。我们不会在后台持续读取剪贴板，也不会保存你复制的其他内容。
       </view>
     </view>
   </view>
 
   <view class="card privacy-card">
-    <view class="privacy-h">二、我们如何使用这些信息</view>
+    <view class="privacy-h">二、我们会申请哪些系统权限</view>
+    <view class="privacy-p">
+      以下权限均由你主动触发，我们不会在后台静默调用；你可以随时在系统设置中关闭，关闭后对应功能将不可用。
+    </view>
+    <view class="privacy-p">· <text class="privacy-strong">相册 / 摄像头</text>：在你上传菜品图片时申请，仅用于选取或拍摄这一张图。</view>
+    <view class="privacy-p">· <text class="privacy-strong">剪贴板</text>：在你点击「粘贴家庭加入码」时申请，仅读取一次。</view>
+    <view class="privacy-p">· <text class="privacy-strong">头像昵称填写能力</text>：在你点击头像或昵称时申请，由微信提供，我们不接触你的微信密码等任何其他信息。</view>
+    <view class="privacy-p privacy-note">
+      说明：上述能力属于微信定义的隐私接口。若你未阅读并同意隐私协议，微信会拦截这些接口，对应功能（上传菜品图、粘贴加入码、设置头像）将暂时不可用。
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">三、我们如何使用这些信息</view>
     <view class="privacy-p">
       上述信息只用于一个目的：让你和家人能在同一个家里点菜、看到彼此点了什么。
     </view>
@@ -45,37 +68,50 @@
   </view>
 
   <view class="card privacy-card">
-    <view class="privacy-h">三、我们不会做什么</view>
+    <view class="privacy-h">四、信息的存储与保护</view>
+    <view class="privacy-p">
+      数据存储于微信云开发（腾讯云）境内节点，传输与存储均通过云平台的安全机制保护。
+    </view>
+    <view class="privacy-p">
+      <text class="privacy-strong">存储期限</text>：账号信息与家庭数据在你使用期间持续保留；当你退出家庭、删除菜品或家庭解散时，对应数据会被同步删除，我们不做额外留存。
+    </view>
+    <view class="privacy-p">
+      <text class="privacy-strong">第三方共享</text>：我们不会向任何第三方出售或共享你的个人信息。仅微信云开发作为技术服务提供方承载数据存储，其使用受微信云开发服务协议约束。
+    </view>
+  </view>
+
+  <view class="card privacy-card">
+    <view class="privacy-h">五、我们不会做什么</view>
     <view class="privacy-p">· 不收集手机号、身份证号等任何证件信息</view>
     <view class="privacy-p">· 不获取你的地理位置、通讯录、相册全部内容或聊天记录</view>
-    <view class="privacy-p">· 不向任何第三方提供、出售或共享你的个人信息</view>
     <view class="privacy-p">· 不用于广告投放或用户画像</view>
     <view class="privacy-p">· 本小程序不含支付功能，不会收集任何支付信息</view>
   </view>
 
   <view class="card privacy-card">
-    <view class="privacy-h">四、你可以随时管理自己的信息</view>
+    <view class="privacy-h">六、你可以随时管理自己的信息</view>
     <view class="privacy-p">· 在「我的」页轻触头像或昵称，可随时更换或删除</view>
     <view class="privacy-p">· 在「我的 → 家庭管理」可退出当前家庭，退出后你在本家庭的点菜记录会一并清理</view>
     <view class="privacy-p">· 当家庭最后一名成员退出时，该家庭及其全部数据（含菜品图片）会被自动删除</view>
+    <view class="privacy-p">· <text class="privacy-strong">撤回同意</text>：你可在微信中删除本小程序（微信下拉 → 最近 → 最近使用的小程序中移除），这将同时清空你的隐私协议授权状态；再次使用时可重新选择是否同意。你也可以在小程序的授权弹窗中选择「暂不使用」</view>
   </view>
 
   <view class="card privacy-card">
-    <view class="privacy-h">五、关于未成年人</view>
+    <view class="privacy-h">七、关于未成年人</view>
     <view class="privacy-p">
       本小程序面向家庭日常使用。若你是未成年人，建议在家人陪同下阅读本协议并使用。
     </view>
   </view>
 
   <view class="card privacy-card">
-    <view class="privacy-h">六、协议的更新</view>
+    <view class="privacy-h">八、协议的更新</view>
     <view class="privacy-p">
-      如果我们调整了信息收集方式，会更新本协议并修改顶部日期。继续使用即视为同意更新后的内容。
+      如果我们调整了信息收集方式，会更新本协议并修改顶部日期。若涉及新增收集的信息类型，我们会重新征得你的同意后再使用。
     </view>
   </view>
 
   <view class="privacy-footer safe-bottom">
-    <view class="caption">如对本协议有疑问，可通过小程序「我的 → 关于」中的信息与我们联系。</view>
+    <view class="caption">如对本协议有疑问，或需要查询、更正、删除你的个人信息，可通过小程序「我的 → 关于」中的信息与我们联系。</view>
   </view>
 
 </view>

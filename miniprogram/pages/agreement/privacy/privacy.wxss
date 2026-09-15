@@ -57,6 +57,23 @@
   color: var(--color-text-secondary);
 }
 
+/* 需要用户注意的关键词（权限名、存储期限、撤回同意等） */
+.privacy-strong {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* 补充说明块：用于解释隐私接口被拦截等平台机制 */
+.privacy-note {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  font-size: 25rpx;
+  line-height: 1.7;
+  color: var(--color-text-tertiary);
+  background: var(--surface-sunken);
+  border-radius: 16rpx;
+}
+
 .privacy-footer {
   padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-lg);
   text-align: center;

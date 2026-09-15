@@ -1,0 +1,33 @@
+<!--components/privacy-popup/privacy-popup.wxml-->
+<!--未授权时展示；同意按钮必须使用 open-type="agreePrivacyAuthorization"，
+    由 bindagreeprivacyauthorization 回调驱动 resolve，微信才认定为有效同意。-->
+<view wx:if="{{visible}}" class="pp-mask" catchtouchmove="onCatchMove">
+  <view class="pp-dialog">
+
+    <view class="pp-title">用户隐私保护提示</view>
+
+    <view class="pp-body">
+      <view class="pp-p">
+        感谢你使用「筷点吃饭」。在开始使用前，请先阅读并同意
+      </view>
+      <view class="pp-p pp-center">
+        <text class="pp-link" bindtap="onOpenContract">{{contractName}}</text>
+      </view>
+      <view class="pp-p pp-tip">
+        我们只会在你主动上传菜品图片、粘贴家庭加入码或设置头像昵称时，向微信申请对应能力，且仅用于家庭点菜场景。
+      </view>
+    </view>
+
+    <view class="pp-actions">
+      <view class="pp-btn pp-btn-ghost" bindtap="onDisagree">暂不使用</view>
+      <!--id 与 privacy.agree('privacy-agree-btn') 保持一致-->
+      <button
+        id="privacy-agree-btn"
+        class="pp-btn pp-btn-primary"
+        open-type="agreePrivacyAuthorization"
+        bindagreeprivacyauthorization="onAgree"
+      >同意并继续</button>
+    </view>
+
+  </view>
+</view>

@@ -2,6 +2,7 @@
   "navigationBarTitleText": "点菜汇总",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "empty-state": "/components/empty-state/empty-state"
+    "empty-state": "/components/empty-state/empty-state",
+    "privacy-popup": "/components/privacy-popup/privacy-popup"
   }
 }
