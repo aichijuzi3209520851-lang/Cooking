@@ -59,14 +59,20 @@
       <text>{{logging ? '登录中...' : '微信快捷登录'}}</text>
     </button>
 
-    <view class="login-safe-note">登录后即可创建或加入家庭</view>
-
-    <view class="login-agreement">
-      登录即表示同意<navigator
-        class="login-agreement-link"
-        url="/pages/agreement/privacy/privacy"
-        hover-class="none"
-      >《隐私协议》</navigator>
+    <!-- 隐私协议：默认不勾选，须用户主动确认后才可登录
+         （《个人信息保护法》第 14 条要求同意须「自愿、明确作出」，不允许默认同意） -->
+    <view class="login-agree-row" bindtap="onToggleAgree">
+      <view class="login-checkbox {{agreed ? 'is-checked' : ''}} {{agreeWarn ? 'is-warn' : ''}}">
+        <view class="login-checkbox-tick"></view>
+      </view>
+      <view class="login-agree-text">我已阅读并同意<navigator
+          class="login-agreement-link"
+          url="/pages/agreement/privacy/privacy"
+          hover-class="none"
+          catchtap="onNoop"
+        >《隐私协议》</navigator></view>
     </view>
+
+    <view class="login-safe-note">登录后即可创建或加入家庭</view>
   </view>
 </view>

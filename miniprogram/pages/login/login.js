@@ -1,4 +1,5 @@
 const theme = require('../../utils/theme.js');
+const { showError } = require('../../utils/util.js');
 const app = getApp();
 
 Page({
@@ -8,7 +9,9 @@ Page({
     loginError: '',
     logging: false,
     px: 0, // 重力视差偏移（-1 ~ 1），装饰层与品牌区反向轻微位移
-    py: 0
+    py: 0,
+    agreed: false, // 是否已勾选同意《隐私协议》——默认不勾选，须用户主动确认
+    agreeWarn: false // 未勾选就点登录时的高亮提示态
   },
 
   async onShow() {
@@ -24,6 +27,7 @@ Page({
 
   onUnload() {
     this.stopParallax();
+    if (this._warnTimer) clearTimeout(this._warnTimer);
   },
 
   // ============ 重力视差（登录页氛围装饰） ============
@@ -95,10 +99,36 @@ Page({
   },
 
   /**
+   * 切换《隐私协议》勾选状态。
+   *
+   * 采用「用户主动勾选」而非「登录即表示同意」：
+   * 《个人信息保护法》第 14 条要求同意须由个人「自愿、明确作出」，
+   * 默认勾选或"继续使用即视为同意"属默示同意，不构成有效同意；
+   * 微信平台亦要求以明显方式提示用户阅读隐私政策。故默认不勾选。
+   */
+  onToggleAgree() {
+    this.setData({ agreed: !this.data.agreed, agreeWarn: false });
+    wx.vibrateShort({ type: 'light', fail() {} });
+  },
+
+  // 协议链接点击：阻止冒泡，避免顺带切换整行的勾选状态
+  onNoop() {},
+
+  /**
    * 用户主动点击「微信快捷登录」才执行登录确认与跳转。
    */
   async onLoginTap() {
     if (this.data.logging) return;
+
+    // 未勾选隐私协议则拦截登录（须用户明确同意后才可继续）
+    if (!this.data.agreed) {
+      wx.vibrateShort({ type: 'light', fail() {} });
+      showError('请先阅读并同意《隐私协议》');
+      this.setData({ agreeWarn: true });
+      if (this._warnTimer) clearTimeout(this._warnTimer);
+      this._warnTimer = setTimeout(() => this.setData({ agreeWarn: false }), 1600);
+      return;
+    }
 
     this.setData({ logging: true });
     try {

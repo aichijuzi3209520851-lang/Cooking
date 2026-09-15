@@ -283,20 +283,57 @@
   box-shadow: var(--shadow-card);
 }
 
-/* 主说明：告知登录后会发生什么（层级高于下方法律声明） */
-.login-safe-note {
-  margin-top: 26rpx;
-  color: var(--color-text-secondary);
-  font-size: 24rpx;
-  line-height: 1.5;
+/* 隐私协议勾选行：整行可点，勾选框在左。默认不勾选，未勾选不可登录。 */
+.login-agree-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  margin-top: 24rpx;
+  padding: 8rpx 0; /* 撑开可点区域，整行都能触发勾选 */
 }
 
-/* 法律声明：弱化到最低层级，与上方说明拉开字号/颜色差 */
-.login-agreement {
-  margin-top: 10rpx;
-  text-align: center;
-  color: var(--color-text-tertiary);
-  font-size: 22rpx;
+.login-checkbox {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 2rpx solid var(--color-border-strong);
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.login-checkbox.is-checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* 未勾选就点登录 → 描边转红，视线聚焦到待办项 */
+.login-checkbox.is-warn {
+  border-color: var(--color-primary-red);
+}
+
+/* 勾形用两条边旋转而成，避免额外引入图标资源 */
+.login-checkbox-tick {
+  width: 10rpx;
+  height: 18rpx;
+  margin-top: -5rpx;
+  border-right: 3rpx solid var(--color-on-accent);
+  border-bottom: 3rpx solid var(--color-on-accent);
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease;
+}
+
+.login-checkbox.is-checked .login-checkbox-tick {
+  transform: rotate(45deg) scale(1);
+}
+
+.login-agree-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
@@ -304,6 +341,14 @@
   display: inline;
   color: var(--color-accent);
   font-weight: 500;
+}
+
+/* 辅助说明：置于最下，弱于勾选行，不与必须操作的项争夺注意力 */
+.login-safe-note {
+  margin-top: 12rpx;
+  color: var(--color-text-tertiary);
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 .login-error {
