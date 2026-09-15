@@ -185,9 +185,16 @@ async function cancelVote(data, openid) {
   return { familyId, dishId, date: today }
 }
 
-// 掌勺撤菜
+// 否决原因：预设短语或自定义文本，统一规范到订阅消息 thing 字段上限（20 字符）
+const REASON_MAX = 20
+function normalizeReason(reason) {
+  const text = typeof reason === 'string' ? reason.trim() : ''
+  return text ? text.slice(0, REASON_MAX) : '今天不做这道菜'
+}
+
+// 掌勺撤菜（一票否决）：仅清当日投票，菜品保留、家人可再点；可附原因并通知投过票的人
 async function chefCancel(data, openid) {
-  const { familyId, dishId } = data
+  const { familyId, dishId, reason } = data
   if (!familyId || !dishId) {
     throw new ApiError('INVALID_PARAM', '参数不完整')
   }
@@ -215,6 +222,8 @@ async function chefCancel(data, openid) {
       .remove()
   }
 
+  const normalizedReason = normalizeReason(reason)
+
   // 通知受影响用户（await 确保函数返回前通知已发出，失败不影响主流程结果）
   if (affectedUserIds.length > 0) {
     await safeCallNotify({
@@ -222,14 +231,88 @@ async function chefCancel(data, openid) {
       familyId,
       dishId,
       dishName: dishData.name,
-      affectedUserIds
+      affectedUserIds,
+      reason: normalizedReason
     })
   }
 
   return {
     familyId,
     dishId,
-    affectedCount: affectedUserIds.length
+    affectedCount: affectedUserIds.length,
+    reason: normalizedReason
+  }
+}
+
+// 提交今日菜单（NOTIFY-002）
+// 汇总当日全部投票 → 幂等写入 menu_submissions（每人每天一条）→ 通知掌勺的
+// 通知失败不阻塞提交结果（与点菜通知同一策略）
+async function submitMenu(data, openid) {
+  const { familyId } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+
+  await requireMember(db, familyId, openid)
+
+  const today = getTodayStr()
+
+  // 1. 汇总当日投票：按菜品去重
+  const votesRes = await db.collection('daily_votes')
+    .where({ familyId, date: today })
+    .get()
+  const votes = votesRes.data || []
+  if (votes.length === 0) {
+    throw new ApiError('NO_VOTE_TODAY', '今天还没有人点菜')
+  }
+
+  const dishIds = [...new Set(votes.map(v => v.dishId))]
+  const dishMap = await getDishMap(db, _, dishIds)
+  const dishNames = dishIds.map(id => (dishMap[id] && dishMap[id].name) || '已删除菜品')
+
+  // 2. 幂等 upsert 提交记录（重复提交＝更新，避免刷出多条）
+  const now = new Date()
+  const submitId = `s_${today}_${familyId}_${openid}`
+  const userRes = await db.collection('users').doc(openid).get().catch(() => null)
+  const userName = (userRes && userRes.data && userRes.data.nickname) || '家人'
+
+  const record = {
+    familyId,
+    userId: openid,
+    userName,
+    date: today,
+    dishIds,
+    dishCount: dishIds.length,
+    updatedAt: now
+  }
+
+  try {
+    await db.collection('menu_submissions').add({
+      data: { _id: submitId, ...record, createdAt: now }
+    })
+  } catch (e) {
+    const dup = await db.collection('menu_submissions').doc(submitId).get().catch(() => null)
+    if (dup && dup.data) {
+      await db.collection('menu_submissions').doc(submitId).update({ data: record })
+    } else {
+      throw e
+    }
+  }
+
+  // 3. 通知掌勺的（失败只记日志，不影响提交结果）
+  await safeCallNotify({
+    action: 'sendMenuSubmitNotify',
+    familyId,
+    submitterId: openid,
+    userName,
+    dishNames,
+    dishCount: dishIds.length
+  })
+
+  return {
+    date: today,
+    dishCount: dishIds.length,
+    dishNames
   }
 }
 
@@ -482,6 +565,9 @@ exports.main = async (event, context) => {
         break
       case 'chefCancel':
         data = await chefCancel(event, openid)
+        break
+      case 'submitMenu':
+        data = await submitMenu(event, openid)
         break
       case 'decideMenu':
         data = await decideMenu(event, openid)
