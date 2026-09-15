@@ -19,17 +19,25 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 
 ---
 
-## 2. 必须声明的 3 项（对照本项目实际调用）
+## 2. 必须声明的 4 项（对照本项目实际调用）
 
 | # | 需声明的信息类型 | 对应接口 / 组件 | 本项目调用位置 | 用途 |
 |:--|:---|:---|:---|:---|
-| 1 | **收集你的昵称、头像** | `<button open-type="chooseAvatar">` | `pages/profile/profile.wxml` | 显示「这道菜是谁点的」 |
+| 1 | **收集你的昵称、头像** | `<button open-type="chooseAvatar">` | `pages/profile/profile.wxml` | 显示「这道菜是谁点的」与家庭成员列表 |
 | 2 | **收集你选中的照片或视频信息** | `wx.chooseMedia` | `pages/dishes/edit/edit.js` | 上传菜品图片 |
 | 3 | **读取你的剪切板** | `wx.setClipboardData` / `wx.getClipboardData` | `pages/family/manage/manage.js`（复制家庭码）<br>`pages/family/join/join.js`（粘贴家庭码） | 分享 / 填入家庭加入码 |
+| 4 | **加速传感器** | `wx.startAccelerometer` | `pages/login/login.js` | 登录页装饰图标的轻微视差跟随 |
 
 > ⚠️ 第 3 项容易漏配：**读写剪贴板属于同一个声明项**（「读取你的剪切板」），复制和粘贴都要靠它。
+>
+> ⚠️ 第 4 项最易被忽略（仅用于登录页装饰视差）。若不愿为纯装饰效果申请传感器权限，
+> 可移除 `pages/login/login.js` 中 `startParallax()` / `stopParallax()` 的调用后再去掉本项，
+> 视觉影响极小，但能少一项声明、降低审核说明成本。
 
-**本项目不需要声明**：位置信息、手机号、麦克风、摄像头、通讯录、微信运动、相册写入权限等（均未使用）。
+**本项目不需要声明**：位置信息、手机号、麦克风、摄像头、通讯录、微信运动、相册（仅写入）权限、
+选中的文件、蓝牙、日历（仅写入）权限、磁场/方向/陀螺仪传感器等（均未使用）。
+
+`wx.getSystemInfoSync`（`utils/theme.js`，仅读取系统深浅色外观）不属于隐私接口，无需声明。
 
 ---
 
@@ -37,7 +45,7 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 
 微信公众平台 → **设置** → **服务内容声明** → **用户隐私保护指引**
 
-1. 点击「修改」，按上表勾选 3 项信息类型；
+1. 点击「修改」，按上表勾选 4 项信息类型；
 2. 每项填写**使用目的**（可直接用上表「用途」列）；
 3. 填写**开发者对信息的存储**：建议选择「固定存储期限」并填写 `家庭解散或用户退出家庭后即删除`；
 4. 填写**联系方式**邮箱（用于用户行使查阅、复制、更正、删除权利）；
