@@ -35,17 +35,15 @@
   color: var(--color-text-secondary);
 }
 
-/* 今日米饭聚合（RICE-001） */
+/* 今日米饭聚合（RICE-001）：辅助信息，扁平化为轻量 chip，不与主操作抢注意力 */
 .rice-line {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
   display: inline-block;
-  padding: var(--space-1) var(--space-3);
+  padding: 6rpx var(--space-3);
   border-radius: var(--radius-pill);
-  background: var(--surface-card);
-  box-shadow: var(--elev-1);
+  background: var(--surface-sunken);
   font-size: var(--text-caption);
-  color: var(--color-num-strong);
-  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 /* ===== 汇总卡片 ===== */
@@ -210,19 +208,19 @@
   margin-top: 6rpx;
 }
 
-/* 掌勺操作行：定菜 + 撤下 */
+/* 掌勺操作行：主操作（定菜）撑满左侧，破坏性操作（撤下）靠右且不抢焦点 */
 .chef-actions {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1rpx solid var(--hairline);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: var(--space-3);
 }
 
-/* 拍板按钮：与全局按钮同高（72rpx） */
+/* 拍板按钮：主操作，撑满剩余宽度（与全局按钮同高 72rpx） */
 .decide-btn {
+  flex: 1;
   height: 72rpx;
   line-height: 68rpx;
   padding: 0 var(--space-4);
@@ -231,6 +229,7 @@
   color: var(--color-accent-deep);
   font-size: var(--text-caption);
   font-weight: var(--weight-semibold);
+  text-align: center;
   box-sizing: border-box;
   transition: transform var(--dur-fast) var(--ease-out);
 }
@@ -247,8 +246,9 @@
   transform: scale(0.97);
 }
 
-/* chef 撤下按钮：文字按钮，弱化处理，不与拍板抢焦点 */
+/* chef 撤下按钮：破坏性操作，弱化为文字按钮，固定宽度不参与伸缩 */
 .chef-cancel-btn {
+  flex-shrink: 0;
   padding: var(--space-2) var(--space-1);
   text-align: center;
   font-size: var(--text-caption);
@@ -260,33 +260,11 @@
   opacity: 0.6;
 }
 
-/* ===== 底部统计 ===== */
-.bottom-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-6) 0 var(--space-3);
-}
-
-.bottom-stats-text {
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-}
-
-.bottom-stats-num {
-  font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-}
-
-.bottom-stats-dot {
-  margin: 0 var(--space-3);
-  color: var(--color-text-tertiary);
-}
-
 /* ===== 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知掌勺的 ===== */
+/* 统计信息已上移到顶部英雄区，底部只保留提交操作与安全区留白 */
 .submit-bar {
-  padding: var(--space-4) var(--space-4) 0;
+  padding: var(--space-6) var(--space-4) var(--space-3);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 }
 
 .submit-btn {

@@ -1,11 +1,14 @@
 <!--pages/summary/summary.wxml-->
 <view class="container summary-page {{themeClass}}">
 
-  <!-- 顶部英雄区：与点菜页保持同一视觉语言 -->
+  <!-- 顶部英雄区：与点菜页保持同一视觉语言
+       主标题用「日期」而非「点菜汇总」——导航栏已经是「点菜汇总」，同名会重复 -->
   <view class="summary-hero">
     <view class="header">
-      <view class="header-title">点菜汇总</view>
-      <view class="header-sub">{{dateText}}</view>
+      <view class="header-title">{{dateText}}</view>
+      <view class="header-sub" wx:if="{{hasFamily && summaryList.length > 0}}">
+        共 {{stats.dishCount}} 道菜 · {{stats.voterCount}} 人参与
+      </view>
       <view class="rice-line" wx:if="{{riceLine}}">{{riceLine}}</view>
     </view>
   </view>
@@ -114,24 +117,13 @@
       </view>
 
       <!-- 提交今日菜单（NOTIFY-002）：汇总今日点菜，通知掌勺的 -->
-      <view class="submit-bar">
+      <view class="submit-bar safe-bottom">
         <view
           class="submit-btn {{stats.dishCount > 0 ? '' : 'is-disabled'}}"
           bindtap="onSubmitMenu"
           hover-class="submit-btn-hover"
         >{{submitted ? '重新提交给掌勺的' : '提交今日菜单'}}</view>
         <view class="submit-hint">提交后掌勺的会收到一条通知</view>
-      </view>
-
-      <!-- 底部统计 -->
-      <view class="bottom-stats safe-bottom">
-        <text class="bottom-stats-text">
-          共 <text class="bottom-stats-num">{{stats.dishCount}}</text> 道菜
-        </text>
-        <text class="bottom-stats-dot">·</text>
-        <text class="bottom-stats-text">
-          <text class="bottom-stats-num">{{stats.voterCount}}</text> 人参与
-        </text>
       </view>
     </block>
 

@@ -239,11 +239,13 @@ Page({
       const res = await riceApi.get(familyId);
       const list = (res && res.reports) || [];
       const unreported = Math.max(0, ((res && res.memberCount) || 0) - list.length);
+      const total = (res && res.total) || 0;
       let line = '';
       if (list.length > 0) {
-        line = `今晚米饭共 ${(res && res.total) || 0} 碗`;
+        // total 为 0 时不说「共 0 碗」（读起来别扭），改为「没人要米饭」
+        line = total > 0 ? `今晚米饭 ${total} 碗` : '今晚没人要米饭';
         if (unreported > 0) {
-          line += `，${unreported} 人没报`;
+          line += ` · ${unreported} 人未报`;
         }
       }
       this.setData({ riceLine: line });
