@@ -15,6 +15,26 @@ function emojiOf(category) {
 }
 
 /**
+ * 把 createdAt 归一化为毫秒时间戳，用于跨端比较排序。
+ * 云函数返回的 Date 经 wx.cloud.callFunction 序列化后可能是
+ * Date / ISO 字符串 / 时间戳 / { $date } 等多种形态，统一兜底；解析失败返回 0。
+ */
+function toMs(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return value;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'string') {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? 0 : t;
+  }
+  if (typeof value === 'object' && value.$date) {
+    const t = Date.parse(value.$date);
+    return Number.isNaN(t) ? 0 : t;
+  }
+  return 0;
+}
+
+/**
  * 归一化 vote.todayList 返回值，始终返回 { date, groups[] }
  */
 function normalizeTodayList(voteData) {
@@ -39,6 +59,7 @@ function normalizeGroup(group) {
     imageUrl: typeof g.imageUrl === 'string' ? g.imageUrl : '',
     isHidden: !!g.isHidden,
     decided: !!g.decided,
+    createdAt: g.createdAt || '',
     voters: Array.isArray(g.voters)
       ? g.voters.filter(v => v && typeof v.openid === 'string')
       : []
@@ -57,7 +78,8 @@ function normalizeDish(dish) {
     category: typeof d.category === 'string' ? d.category : '',
     imageUrl: typeof d.imageUrl === 'string' ? d.imageUrl : '',
     isHidden: !!d.isHidden,
-    cookCount: typeof d.cookCount === 'number' ? d.cookCount : 0
+    cookCount: typeof d.cookCount === 'number' ? d.cookCount : 0,
+    createdAt: d.createdAt || ''
   };
 }
 
@@ -65,8 +87,8 @@ function normalizeDish(dish) {
  * 菜单页数据合并：
  * 菜品库列表 + 今日投票 groups，按 dishId 关联，
  * 有投票但不在菜品库的 group（隐藏/已删除菜品）追加在末尾，
- * 排序：票数降序，同票按 cookCount 降序。
- * 返回展示数组，每项含 dishId/name/category/imageUrl/isHidden/cookCount/categoryEmoji/voters
+ * 排序：票数降序，同票按菜品 createdAt 降序（新菜靠前），再以 dishId 兜底保证顺序确定。
+ * 返回展示数组，每项含 dishId/name/category/imageUrl/isHidden/cookCount/createdAt/categoryEmoji/voters
  */
 function buildMenuList(dishList, groups, category = '') {
   const groupMap = {};
@@ -97,6 +119,7 @@ function buildMenuList(dishList, groups, category = '') {
         imageUrl: norm.imageUrl,
         isHidden: norm.isHidden,
         cookCount: 0,
+        createdAt: norm.createdAt,
         categoryEmoji: emojiOf(norm.category),
         voters: norm.voters
       });
@@ -122,6 +145,7 @@ function buildSummaryList(groups) {
       categoryEmoji: emojiOf(norm.category),
       isHidden: norm.isHidden,
       decided: norm.decided,
+      createdAt: norm.createdAt,
       voters: norm.voters.map(v => ({
         openid: v.openid,
         nickname: (typeof v.nickname === 'string' && v.nickname) ? v.nickname : '微信用户',
@@ -155,13 +179,20 @@ function calcVoteStats(list) {
   };
 }
 
-// 票数降序，同票按 cookCount 降序
+// 票数降序 → 同票按菜品创建时间降序（新菜靠前） → 再按 dishId 兜底，保证顺序完全确定
+//
+// 说明：不再用 cookCount 做同票次级排序。cookCount 是「历史累计被点次数」，
+// 取消/撤菜/隐藏均不扣减，用它排序会让「被误点又取消」的菜长期占前排，语义错配。
+// cookCount 现降为独立展示指标（菜品库列表页「已被点 N 次」）。
 function sortByVotes(list) {
   list.sort((a, b) => {
     const va = (a.voters || []).length;
     const vb = (b.voters || []).length;
     if (vb !== va) return vb - va;
-    return (b.cookCount || 0) - (a.cookCount || 0);
+    const ta = toMs(a.createdAt);
+    const tb = toMs(b.createdAt);
+    if (tb !== ta) return tb - ta;
+    return String(a.dishId || '').localeCompare(String(b.dishId || ''));
   });
 }
 
@@ -187,6 +218,7 @@ function mergePreservingOrder(prevList, newList) {
 
 module.exports = {
   emojiOf,
+  toMs,
   normalizeTodayList,
   normalizeGroup,
   normalizeDish,

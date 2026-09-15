@@ -276,6 +276,8 @@ async function todayList(data, openid) {
         imageUrl: dish.imageUrl || '',
         isHidden: !!dish.isHidden,
         decided: false,
+        // 菜品入库时间：前端同票排序的次级依据（见 utils/dto.js sortByVotes）
+        createdAt: dish.createdAt || '',
         voters: []
       }
     }

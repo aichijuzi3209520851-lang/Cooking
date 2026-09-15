@@ -3,7 +3,7 @@
 //   W-B-01 normalizeTodayList：非对象 / date 非字符串 / groups 非数组
 //   W-B-02 normalizeGroup：null 兜底 / 非法 voter 过滤 / isHidden 真值转换
 //   W-B-03 normalizeDish：_id 与 dishId 双来源 / 类型兜底
-//   W-B-04 buildMenuList：分类过滤 / 已删除菜品追加 / 同票 cookCount 排序
+//   W-B-04 buildMenuList：分类过滤 / 已删除菜品追加 / 同票 createdAt 排序
 //   W-B-05 buildSummaryList：无票过滤 / 昵称兜底 / 排序
 //   W-B-06 calcVoteStats：dishCount 只计有票项 / voterCount 跨菜去重
 //   W-B-07 mergePreservingOrder：保序 / 删除 / 追加 / 非法项忽略 / 重复 dishId 后者生效
@@ -53,11 +53,11 @@ test('W-B-03 normalizeDish：_id 优先、dishId 兜底、非法字段兜底', (
 
   const empty = dto.normalizeDish(null)
   assert.deepEqual({ ...empty }, {
-    dishId: '', name: '', category: '', imageUrl: '', isHidden: false, cookCount: 0
+    dishId: '', name: '', category: '', imageUrl: '', isHidden: false, cookCount: 0, createdAt: ''
   })
 })
 
-test('W-B-04 buildMenuList：菜品关联投票、已删除菜品按分类追加、同票 cookCount 降序', () => {
+test('W-B-04 buildMenuList：菜品关联投票、已删除菜品按分类追加、同票按 createdAt 排序', () => {
   const dishList = [
     { _id: 'd_meat', name: '红烧肉', category: 'meat', cookCount: 5 },
     { _id: 'd_veg', name: '青菜', category: 'veg', cookCount: 9 }
@@ -82,12 +82,31 @@ test('W-B-04 buildMenuList：菜品关联投票、已删除菜品按分类追加
   assert.equal(all[2].categoryEmoji, '🍲') // 蛋汤（soup）
   assert.equal(all[3].categoryEmoji, '🥬') // 青菜（veg）
 
-  // 同票按 cookCount 降序：让 d_ghost 保留（voters 1）与 d_veg（voters 0）比较走 cookCount 分支
+  // 同票时按菜品 createdAt 降序（新菜靠前）：两者均 1 票，d_new 更新 → 排前
   const tied = dto.buildMenuList(
-    [{ _id: 'd_veg', name: '青菜', category: 'veg', cookCount: 9 }],
-    [{ dishId: 'd_ghost2', dishName: 'g', category: 'veg', voters: [{ openid: 'u9' }] }]
+    [
+      { _id: 'd_old', name: '老菜', category: 'veg', createdAt: '2026-09-01T00:00:00.000Z' },
+      { _id: 'd_new', name: '新菜', category: 'veg', createdAt: '2026-09-10T00:00:00.000Z' }
+    ],
+    [
+      { dishId: 'd_old', dishName: '老菜', category: 'veg', voters: [{ openid: 'u8' }] },
+      { dishId: 'd_new', dishName: '新菜', category: 'veg', voters: [{ openid: 'u9' }] }
+    ]
   )
-  assert.deepEqual(tied.map(d => d.dishId), ['d_ghost2', 'd_veg'])
+  assert.deepEqual(tied.map(d => d.dishId), ['d_new', 'd_old'])
+
+  // createdAt 缺失时退回 dishId 兜底，保证同票顺序完全确定（不会抖动）
+  const fallback = dto.buildMenuList(
+    [
+      { _id: 'd_z', name: 'Z', category: 'veg' },
+      { _id: 'd_a', name: 'A', category: 'veg' }
+    ],
+    [
+      { dishId: 'd_z', dishName: 'Z', category: 'veg', voters: [{ openid: 'u1' }] },
+      { dishId: 'd_a', dishName: 'A', category: 'veg', voters: [{ openid: 'u2' }] }
+    ]
+  )
+  assert.deepEqual(fallback.map(d => d.dishId), ['d_a', 'd_z'])
 })
 
 test('W-B-05 buildSummaryList：无票项过滤、昵称兜底、票数降序', () => {

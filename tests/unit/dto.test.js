@@ -99,7 +99,7 @@ test('buildMenuList：按 dishId 关联投票（API-001/API-002）', () => {
   // 菜品库无票的菜 voters 为空数组
   assert.deepEqual(dto.buildMenuList([{ _id: 'd9', name: '汤', category: 'soup' }], []), [{
     dishId: 'd9', name: '汤', category: 'soup', imageUrl: '', isHidden: false,
-    cookCount: 0, categoryEmoji: '🍲', voters: []
+    cookCount: 0, createdAt: '', categoryEmoji: '🍲', voters: []
   }]);
 });
 
@@ -124,17 +124,45 @@ test('buildMenuList：分类筛选不追加其他分类的投票分组', () => {
   assert.deepEqual(list.map(item => item.dishId), ['m1']);
 });
 
-test('buildMenuList：同票按 cookCount 降序', () => {
+test('buildMenuList：同票按菜品 createdAt 降序（新菜靠前）', () => {
   const dishList = [
-    { _id: 'a', name: 'A', category: 'meat', cookCount: 1 },
-    { _id: 'b', name: 'B', category: 'meat', cookCount: 9 }
+    { _id: 'old', name: '老菜', category: 'meat', createdAt: '2026-09-01T00:00:00.000Z' },
+    { _id: 'new', name: '新菜', category: 'meat', createdAt: '2026-09-10T00:00:00.000Z' }
+  ];
+  const groups = [
+    makeGroup({ dishId: 'old', voters: [{ openid: 'u1' }] }),
+    makeGroup({ dishId: 'new', voters: [{ openid: 'u2' }] })
+  ];
+  const list = dto.buildMenuList(dishList, groups);
+  assert.deepEqual(list.map(i => i.dishId), ['new', 'old']);
+});
+
+test('buildMenuList：同票且 createdAt 相同时按 dishId 兜底，顺序确定', () => {
+  const ts = '2026-09-10T00:00:00.000Z';
+  const dishList = [
+    { _id: 'b', name: 'B', category: 'meat', createdAt: ts },
+    { _id: 'a', name: 'A', category: 'meat', createdAt: ts }
   ];
   const groups = [
     makeGroup({ dishId: 'a', voters: [{ openid: 'u1' }] }),
     makeGroup({ dishId: 'b', voters: [{ openid: 'u2' }] })
   ];
   const list = dto.buildMenuList(dishList, groups);
-  assert.equal(list[0].dishId, 'b');
+  assert.deepEqual(list.map(i => i.dishId), ['a', 'b']);
+});
+
+test('buildMenuList：cookCount 不再参与同票排序', () => {
+  const dishList = [
+    { _id: 'a', name: 'A', category: 'meat', cookCount: 1, createdAt: '2026-09-10T00:00:00.000Z' },
+    { _id: 'b', name: 'B', category: 'meat', cookCount: 99, createdAt: '2026-09-01T00:00:00.000Z' }
+  ];
+  const groups = [
+    makeGroup({ dishId: 'a', voters: [{ openid: 'u1' }] }),
+    makeGroup({ dishId: 'b', voters: [{ openid: 'u2' }] })
+  ];
+  const list = dto.buildMenuList(dishList, groups);
+  // b 的 cookCount 远高于 a，但同票时只按 createdAt 排（a 更新，靠前）
+  assert.deepEqual(list.map(i => i.dishId), ['a', 'b']);
 });
 
 test('buildSummaryList：过滤无票项、按票数降序、voterCount 正确', () => {
