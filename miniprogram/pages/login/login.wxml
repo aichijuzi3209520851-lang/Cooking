@@ -27,8 +27,6 @@
   </view>
 
   <view class="login-panel">
-    <view class="login-panel-title">登录，开始安排今天</view>
-
     <view wx:if="{{status === 'failed'}}" class="login-error">
       <text class="login-error-icon">!</text>
       <text class="login-error-text">{{loginError}}</text>

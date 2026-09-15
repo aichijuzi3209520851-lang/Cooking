@@ -234,9 +234,10 @@
   letter-spacing: 1rpx;
 }
 
-/* ===== 登录操作区：标题 → 按钮 → 说明 → 法律声明，四级层级递降 =====
+/* ===== 登录操作区：按钮 → 说明 → 法律声明（标题已移除） =====
    不留卡片底色：让内容直接落在页面渐变与漂浮装饰之上，避免白色方块割裂氛围背景。
-   注意：内边距、宽度、纵向间距全部与「卡片形态」时保持一致，确保布局不位移。 */
+   注意：内边距、宽度、纵向间距保持原值 —— .login-brand 为 flex:1 吸收高度变化，
+   因此按钮及下方文案的绝对位置不变。 */
 .login-panel {
   width: 100%;
   box-sizing: border-box;
@@ -244,13 +245,6 @@
   text-align: center;
   position: relative;
   z-index: 1;
-}
-
-.login-panel-title {
-  color: var(--color-text-primary);
-  font-size: 36rpx;
-  font-weight: 700;
-  line-height: 1.4;
 }
 
 .login-button {
