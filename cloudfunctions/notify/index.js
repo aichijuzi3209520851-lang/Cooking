@@ -50,7 +50,11 @@ async function filterNotifyEnabled(userIds) {
 }
 
 // 向单个用户发送订阅消息（结果不包含完整用户列表）
-async function sendToOne(touser, templateId, title, thing1, thing2) {
+//
+// 字段数据驱动：模板由微信后台定义、字段名与数量不可自定义，
+// 因此本函数接收「组装好的 data 对象」（如 { thing1: { value } }）。
+// 模板字段变化时只需改各业务函数的组装处，无需改这里。
+async function sendOne(touser, templateId, data) {
   try {
     await cloud.openapi.subscribeMessage.send({
       touser,
@@ -58,16 +62,28 @@ async function sendToOne(touser, templateId, title, thing1, thing2) {
       page: JUMP_PAGE,
       miniprogramState: getMiniprogramState(),
       lang: 'zh_CN',
-      data: {
-        thing1: { value: thing1 },
-        thing2: { value: thing2 }
-      }
+      data
     })
     return { touser, success: true }
   } catch (err) {
-    console.error(`发送订阅消息失败（用户已脱敏）`, err.errMsg || err.message)
+    console.error('发送订阅消息失败（用户已脱敏）', err.errMsg || err.message)
     return { touser, success: false, error: err.errMsg || err.message }
   }
+}
+
+// 订阅消息 thing 字段上限 20 字符，超长会被微信拒发 → 统一截断
+const THING_MAX = 20
+function thing(value, fallback) {
+  const text = ((typeof value === 'string' ? value.trim() : '') || fallback || '')
+  return { value: text.slice(0, THING_MAX) }
+}
+
+// 多道菜概要：受 thing 20 字符限制，只能给「首菜等 N 道菜」这样的摘要
+function summarizeDishes(dishNames) {
+  const list = (dishNames || []).filter(n => typeof n === 'string' && n.trim())
+  if (list.length === 0) return '今日菜单'
+  if (list.length === 1) return list[0].slice(0, THING_MAX)
+  return `${list[0]}等${list.length}道菜`
 }
 
 // ============ 业务处理函数 ============
@@ -104,10 +120,12 @@ async function sendVoteNotify(data) {
     return { notified: 0, total: 0 }
   }
 
-  const thing2 = voterName ? `${voterName} 点的` : '有家庭成员点的'
   const results = []
   for (const openid of notifyUsers) {
-    results.push(await sendToOne(openid, templateId, '有人想吃菜啦', dishName, thing2))
+    results.push(await sendOne(openid, templateId, {
+      thing1: thing(dishName, '有菜品被点'),
+      thing2: thing(voterName ? `${voterName} 点的` : '有家庭成员点的')
+    }))
   }
 
   return {
@@ -146,9 +164,17 @@ async function sendCancelNotify(data) {
     return { notified: 0, total: 0 }
   }
 
+  // 否决原因（NOTIFY-002）：掌勺选填，缺省为「今天不做这道菜」
+  const reason = (typeof data.reason === 'string' && data.reason.trim())
+    ? data.reason.trim().slice(0, THING_MAX)
+    : '今天不做这道菜'
+
   const results = []
   for (const openid of notifyUsers) {
-    results.push(await sendToOne(openid, templateId, '菜品变动', dishName, '已被掌勺的撤下'))
+    results.push(await sendOne(openid, templateId, {
+      thing1: thing(dishName, '有菜品'),
+      thing2: thing(reason)
+    }))
   }
 
   return {
@@ -183,10 +209,57 @@ async function sendMenuDecidedNotify(data) {
   }
 
   const notifyUsers = await filterNotifyEnabled(memberIds)
-  const thing2 = decided ? '已加入今晚菜单' : '已移出今晚菜单'
   const results = []
   for (const openid of notifyUsers) {
-    results.push(await sendToOne(openid, templateId, '今晚菜单定了', dishName, thing2))
+    results.push(await sendOne(openid, templateId, {
+      thing1: thing(dishName, '今晚菜单'),
+      thing2: thing(decided ? '已加入今晚菜单' : '已移出今晚菜单')
+    }))
+  }
+
+  return {
+    notified: results.filter(r => r.success).length,
+    total: notifyUsers.length
+  }
+}
+
+// 菜单提交通知（NOTIFY-002）：等饭的提交今日菜单后，通知家庭内所有掌勺的
+//
+// 模板复用策略：优先复用「拍板」模板（NOTIFY_MENU_TEMPLATE_ID），
+// 避免占用本就有限的订阅消息模板名额；thing1=菜品概要，thing2=提交人+数量。
+async function sendMenuSubmitNotify(data) {
+  const { familyId, userName, dishNames, dishCount } = data
+
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '参数不完整')
+  }
+  const templateId = getTemplateIds().menu
+  if (!templateId) {
+    throw new ApiError('NOTIFY_TEMPLATE_MISSING', '未配置菜单通知模板（NOTIFY_MENU_TEMPLATE_ID）')
+  }
+
+  // 收件人：家庭内所有 chef（提交者若同为 chef 也接收，便于自我确认）
+  const chefsRes = await db.collection('family_members')
+    .where({ familyId, role: 'chef' })
+    .get()
+  const chefIds = [...new Set((chefsRes.data || []).map(c => c.userId))]
+  if (chefIds.length === 0) {
+    return { notified: 0, total: 0 }
+  }
+
+  const notifyUsers = await filterNotifyEnabled(chefIds)
+  if (notifyUsers.length === 0) {
+    return { notified: 0, total: 0 }
+  }
+
+  const count = typeof dishCount === 'number' ? dishCount : (dishNames || []).length
+  const summary = summarizeDishes(dishNames)
+  const results = []
+  for (const openid of notifyUsers) {
+    results.push(await sendOne(openid, templateId, {
+      thing1: thing(summary, '今日菜单已提交'),
+      thing2: thing(userName ? `${userName} 提交 ${count} 道` : `共 ${count} 道菜`)
+    }))
   }
 
   return {
@@ -221,6 +294,9 @@ exports.main = async (event, context) => {
         break
       case 'sendMenuDecidedNotify':
         data = await sendMenuDecidedNotify(event)
+        break
+      case 'sendMenuSubmitNotify':
+        data = await sendMenuSubmitNotify(event)
         break
       default:
         return {
