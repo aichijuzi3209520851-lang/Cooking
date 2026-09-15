@@ -170,17 +170,17 @@ async function cancelVote(data, openid) {
 
   const today = getTodayStr()
 
-  // 查找本人的投票记录
-  const voteRes = await db.collection('daily_votes')
-    .where({ familyId, dishId, userId: openid, date: today })
-    .get()
+  // 直接用确定性 _id 定位（与 addVote 对称），不再依赖 where 查询；
+  // 并发重复取消时 doc().remove() 返回 deleted=0 而非抛错，天然幂等
+  const voteId = `v_${today}_${familyId}_${dishId}_${openid}`
+  const voteRes = await db.collection('daily_votes').doc(voteId).get().catch(() => null)
 
-  if (!voteRes.data || voteRes.data.length === 0) {
+  if (!voteRes || !voteRes.data) {
     throw new ApiError('VOTE_NOT_FOUND', '未找到您的点菜记录')
   }
 
   // 删除本人投票（cookCount 为累计语义，取消不扣减）
-  await db.collection('daily_votes').doc(voteRes.data[0]._id).remove()
+  await db.collection('daily_votes').doc(voteId).remove()
 
   return { familyId, dishId, date: today }
 }
