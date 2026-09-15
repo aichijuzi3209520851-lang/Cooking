@@ -1,6 +1,7 @@
 // pages/dishes/edit/edit.js
 const theme = require('../../../utils/theme.js');
 const { dishApi } = require('../../../utils/api.js');
+const privacy = require('../../../utils/privacy.js');
 const {
   getCategoryList,
   guardChefPage,
@@ -90,6 +91,8 @@ Page({
   // 选择图片（STORAGE-001：校验大小与扩展名，不能只相信选择器）
   async onChooseImage() {
     if (this.data.uploading) return;
+    // 失败阶段标记：区分「选图 / 上传」两类失败，避免所有错误都压成一句无法排查的提示
+    let stage = 'choose';
     try {
       const chooseRes = await wx.chooseMedia({
         count: 1,
@@ -127,6 +130,7 @@ Page({
       }
 
       // 上传到云存储：路径包含家庭ID与openid（配合存储安全规则）
+      stage = 'upload';
       this.setData({ uploading: true });
       wx.showLoading({ title: '上传中...', mask: true });
 
@@ -154,12 +158,25 @@ Page({
       });
       wx.hideLoading();
     } catch (err) {
-      console.error('选择/上传图片失败', err);
+      console.error(`[dish-edit] 图片处理失败（阶段：${stage}）`, err);
       this.setData({ uploading: false });
       wx.hideLoading();
-      if (err && err.errMsg && err.errMsg.indexOf('cancel') === -1) {
-        showError('图片上传失败');
+
+      const errMsg = String((err && (err.errMsg || err.message)) || '');
+      // 用户主动取消选择，不算错误
+      if (errMsg.indexOf('cancel') > -1) return;
+
+      // 场景一：微信隐私接口被拦截（后台未声明「收集你选中的照片或视频信息」）
+      if (privacy.isPrivacyBlockedError(err)) {
+        showError('需先同意隐私协议；若仍失败，请在微信公众平台声明「选中的照片或视频信息」');
+        return;
       }
+      // 场景二：云存储写入被拒（安全规则未放行 dishes/ 路径，或路径不含本人 openid）
+      if (/(permission|denied|403|unauthorized|forbidden)/i.test(errMsg)) {
+        showError('上传被拒绝：请检查云存储安全规则是否放行 dishes/ 路径');
+        return;
+      }
+      showError(stage === 'upload' ? '图片上传失败，请重试' : '图片选择失败，请重试');
     }
   },
 

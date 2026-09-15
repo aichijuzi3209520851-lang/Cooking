@@ -137,11 +137,31 @@ function disagree() {
   emit();
 }
 
+/**
+ * 判断某个错误是否属于「隐私接口被微信平台拦截」。
+ *
+ * 触发场景：
+ *   - 微信公众平台未在《用户隐私保护指引》声明该信息类型
+ *     → errno 112 / "api scope is not declared in the privacy agreement"
+ *   - 提审时勾选了「未采集隐私」或未声明，接口权限被平台回收
+ *     → "appid privacy api banned"
+ *   - 用户在官方隐私弹窗中拒绝：errno 103（拒绝）/ 104（未同意）
+ *
+ * 集中在此判断，便于 chooseMedia / getClipboardData / chooseAvatar 等多处复用。
+ */
+function isPrivacyBlockedError(err) {
+  if (!err) return false;
+  if (err.errno === 112 || err.errno === 103 || err.errno === 104) return true;
+  const msg = String(err.errMsg || err.message || '');
+  return /privacy|scope is not declared|api banned/i.test(msg);
+}
+
 module.exports = {
   init,
   subscribe,
   openContract,
   agree,
   disagree,
+  isPrivacyBlockedError,
   state
 };
