@@ -234,11 +234,12 @@
   letter-spacing: 1rpx;
 }
 
-/* ===== 登录卡片：内容居中，层级只有 标题 → 按钮 → 一行说明 ===== */
+/* ===== 登录卡片：标题 → 按钮 → 说明 → 法律声明，四级层级递降 ===== */
 .login-panel {
   width: 100%;
   box-sizing: border-box;
-  padding: 44rpx 44rpx 40rpx;
+  /* 下侧略收窄：末行是法律声明，紧跟卡片边缘，避免底部拖出大片留白 */
+  padding: 40rpx 44rpx 34rpx;
   border-radius: 40rpx;
   background: var(--color-card);
   border: 1rpx solid var(--color-border);
@@ -250,24 +251,28 @@
 
 .login-panel-title {
   color: var(--color-text-primary);
-  font-size: 40rpx;
-  font-weight: 800;
-  line-height: 1.35;
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .login-button {
   width: 100%;
+  box-sizing: border-box;
   height: 96rpx;
+  padding: 0; /* 覆盖原生 button 默认左右内边距，避免文字偏移与宽度溢出 */
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 40rpx;
+  margin-top: 36rpx;
   border: none;
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: var(--color-on-accent);
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  line-height: 1; /* 覆盖原生 button 默认 line-height（2.55…），避免垂直居中偏移 */
   box-shadow: var(--shadow-accent);
 }
 
@@ -287,24 +292,27 @@
   box-shadow: var(--shadow-card);
 }
 
-/* 唯一保留的微文案：告知登录后发生什么 */
+/* 主说明：告知登录后会发生什么（层级高于下方法律声明） */
 .login-safe-note {
-  margin-top: 24rpx;
+  margin-top: 26rpx;
   color: var(--color-text-secondary);
   font-size: 24rpx;
+  line-height: 1.5;
 }
 
+/* 法律声明：弱化到最低层级，与上方说明拉开字号/颜色差 */
 .login-agreement {
-  margin-top: 16rpx;
+  margin-top: 10rpx;
   text-align: center;
   color: var(--color-text-tertiary);
-  font-size: 24rpx;
-  line-height: 1.6;
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 .login-agreement-link {
   display: inline;
   color: var(--color-accent);
+  font-weight: 500;
 }
 
 .login-error {
