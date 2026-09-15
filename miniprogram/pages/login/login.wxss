@@ -234,16 +234,13 @@
   letter-spacing: 1rpx;
 }
 
-/* ===== 登录卡片：标题 → 按钮 → 说明 → 法律声明，四级层级递降 ===== */
+/* ===== 登录操作区：标题 → 按钮 → 说明 → 法律声明，四级层级递降 =====
+   不留卡片底色：让内容直接落在页面渐变与漂浮装饰之上，避免白色方块割裂氛围背景。
+   注意：内边距、宽度、纵向间距全部与「卡片形态」时保持一致，确保布局不位移。 */
 .login-panel {
   width: 100%;
   box-sizing: border-box;
-  /* 下侧略收窄：末行是法律声明，紧跟卡片边缘，避免底部拖出大片留白 */
   padding: 40rpx 44rpx 34rpx;
-  border-radius: 40rpx;
-  background: var(--color-card);
-  border: 1rpx solid var(--color-border);
-  box-shadow: var(--shadow-float);
   text-align: center;
   position: relative;
   z-index: 1;
