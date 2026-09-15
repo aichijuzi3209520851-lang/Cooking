@@ -224,7 +224,7 @@ Page({
 
   // 隐私协议
   onPrivacy() {
-    wx.navigateTo({ url: '/pages/agreement/privacy' });
+    wx.navigateTo({ url: '/pages/agreement/privacy/privacy' });
   },
 
   // 关于
