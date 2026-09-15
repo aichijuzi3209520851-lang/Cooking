@@ -40,6 +40,7 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
+    page: 1,
     hasMore: true,
     // 今日米饭（RICE-001）：mine 为 null 表示未报
     rice: {
@@ -84,7 +85,7 @@ Page({
     });
 
     this.setToday();
-    this.loadData(true, true);
+    this.loadData(true, true, true); // withRice：进入页面刷新米饭
     this.setupWatcher();
     this.scheduleMidnightRefresh();
   },
@@ -121,7 +122,7 @@ Page({
     this._midnightTimer = setTimeout(() => {
       this.setToday();
       this.setupWatcher();
-      this.loadData(true, true);
+      this.loadData(true, true, true); // 跨午夜需刷新米饭（新的一天）
       this.scheduleMidnightRefresh();
     }, Math.max(delay, 1000));
   },
@@ -201,9 +202,11 @@ Page({
   // 同一时间只允许一个加载请求；期间的变更通过 _pendingReload 合并。
   // sort=true 仅用于页面进入/下拉刷新/跨午夜（重新排序），
   // 投票操作与 watcher 驱动的刷新保持现有顺序，避免卡片跳位。
-  async loadData(reset, sort = false) {
+  // withRice=true 才会一并刷新米饭（低频数据，不跟随高频刷新路径）。
+  async loadData(reset, sort = false, withRice = false) {
     if (this._loading) {
       this._pendingReload = true;
+      if (withRice) this._pendingRice = true;
       return;
     }
     this._loading = true;
@@ -218,7 +221,7 @@ Page({
     const category = this.data.selectedCategory;
     const page = reset ? 1 : this.data.page;
     this.setData({ loading: true });
-    this.loadRice();
+    if (withRice) this.loadRice();
 
     try {
       const [voteData, dishResult] = await Promise.all([
@@ -263,19 +266,25 @@ Page({
       wx.stopPullDownRefresh();
       if (this._pendingReload) {
         this._pendingReload = false;
-        this.loadData(true);
+        const pendingRice = !!this._pendingRice;
+        this._pendingRice = false;
+        this.loadData(true, false, pendingRice);
       }
     }
   },
 
-  // 今日米饭（RICE-001）：独立加载，失败不影响菜品主流程
+  // 今日米饭（RICE-001）：独立加载，失败不影响菜品主流程。
+  // 仅由「进入页面 / 下拉刷新 / 跨午夜」触发（withRice 参数），
+  // 避免 watcher 高频刷新与分页加载把米饭也带上（既浪费请求，又会覆盖在途意图）。
   async loadRice() {
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) return;
     try {
       const res = await riceApi.get(familyId);
+      // 有在途/待发意图时不覆盖本地基准，否则会把用户刚点出的值拉回旧值（RICE-002）
+      if (this._riceInFlight || this._riceIntent !== undefined) return;
       this._riceRaw = res;
-      this._riceCommitted = res && res.mine !== null && res.mine !== undefined ? res.mine : null;
+      this._riceBase = (res && res.mine !== null && res.mine !== undefined) ? res.mine : null;
       this.setData({ rice: this.deriveRiceView(res) });
     } catch (err) {
       console.warn('加载米饭数据失败', err);
@@ -319,25 +328,59 @@ Page({
   },
 
   // 饭量步进（±0.5 碗；未报时 + 直接报 1 碗、- 报 0 碗）
-  // 同步乐观更新 + fire-and-forget API（E2E 调用链不 await async，用 async 会导致锁不释放）
+  //
+  // 并发模型（RICE-002）：
+  //   _riceBase     服务端已确认值（仅 loadRice 成功时更新）
+  //   _riceIntent   用户最新意图值（步进基准，不被在途响应拉回）
+  //   _riceInFlight 是否有请求在途 —— 保证同一时刻只有一个 setRice
+  //   _riceDirty    在途期间又产生新意图，当前请求完成后补发最新值
+  //
+  // 本方法保持「同步返回」：wxml 绑定与 E2E 调用链不受影响，
+  // 网络请求由 _flushRice 串行驱动（不再为适配测试而放弃 await）。
   onRiceStep(e) {
     const delta = Number(e.currentTarget.dataset.delta);
-    const current = this._riceCommitted;
+    const base = this._riceIntent !== undefined ? this._riceIntent : this._riceBase;
     let next;
-    if (current === null) {
+    if (base === null || base === undefined) {
       next = delta > 0 ? 1 : 0;
     } else {
-      next = Math.min(RICE_BOWLS_MAX, Math.max(0, Math.round((current + delta) * 2) / 2));
+      next = Math.min(RICE_BOWLS_MAX, Math.max(0, Math.round((base + delta) * 2) / 2));
     }
-    if (next === current) return;
+    if (next === base) return;
 
+    this._riceIntent = next;
     this.optimisticRiceMine(next);
-    this._riceCommitted = next;
     wx.vibrateShort({ type: 'light' });
-    riceApi.set(app.globalData.currentFamilyId, next).catch((err) => {
+    this._flushRice();
+  },
+
+  // 串行上报：在途时只标记 dirty，完成后自动补发最新意图
+  async _flushRice() {
+    if (this._riceInFlight) {
+      this._riceDirty = true;
+      return;
+    }
+    this._riceInFlight = true;
+    try {
+      while (this._riceIntent !== undefined) {
+        const target = this._riceIntent;
+        this._riceDirty = false;
+        await riceApi.set(app.globalData.currentFamilyId, target);
+        this._riceBase = target;
+        if (!this._riceDirty) {
+          this._riceIntent = undefined;
+          break;
+        }
+      }
+      this._riceInFlight = false;
+    } catch (err) {
+      // 失败：清空意图并回落服务端真值，避免本地与服务端长期不一致
+      this._riceInFlight = false;
+      this._riceDirty = false;
+      this._riceIntent = undefined;
       showApiError(err, '饭量上报失败');
-      this.loadRice();
-    });
+      await this.loadRice();
+    }
   },
 
   // 分类切换
@@ -364,6 +407,8 @@ Page({
       console.error('点菜失败', err);
       showApiError(err, '点菜失败');
       this.optimisticUpdate(dish.dishId, false);
+      // 网络异常时服务端可能已写入成功，重拉一次对齐真值，避免本地长期不一致
+      if (err && err.errorCode === 'NETWORK_ERROR') this.loadData(true);
     }
   },
 
@@ -382,6 +427,7 @@ Page({
       console.error('取消点菜失败', err);
       showApiError(err, '取消失败');
       this.optimisticUpdate(dish.dishId, true);
+      if (err && err.errorCode === 'NETWORK_ERROR') this.loadData(true);
     }
   },
 
@@ -389,28 +435,32 @@ Page({
   optimisticUpdate(dishId, isAdd) {
     const userId = this.data.currentUserId;
     const userInfo = app.globalData.userInfo || {};
-    const dishes = this.data.dishes.map(d => {
-      if (d.dishId === dishId) {
-        let voters = [...(d.voters || [])];
-        if (isAdd) {
-          if (!voters.find(v => v.openid === userId)) {
-            voters.push({
-              openid: userId,
-              nickname: userInfo.nickname || '我',
-              avatarUrl: userInfo.avatarUrl || ''
-            });
-          }
-        } else {
-          voters = voters.filter(v => v.openid !== userId);
-        }
-        return { ...d, voters };
-      }
-      return d;
-    });
+    const dishes = this.data.dishes || [];
+    const idx = dishes.findIndex(d => d.dishId === dishId);
+    if (idx < 0) return;
 
-    const stats = dto.calcVoteStats(dishes);
+    const current = dishes[idx];
+    let voters = [...(current.voters || [])];
+    if (isAdd) {
+      if (!voters.find(v => v.openid === userId)) {
+        voters.push({
+          openid: userId,
+          nickname: userInfo.nickname || '我',
+          avatarUrl: userInfo.avatarUrl || ''
+        });
+      }
+    } else {
+      voters = voters.filter(v => v.openid !== userId);
+    }
+
+    // PERF-002：只回传被改动那一项的最新投票者 + 轻量 stats，
+    // 不再把整份列表（最多 50 条完整对象）跨线程重传一遍。
+    const nextDishes = dishes.slice();
+    nextDishes[idx] = { ...current, voters };
+    const stats = dto.calcVoteStats(nextDishes);
+
     this.setData({
-      dishes,
+      [`dishes[${idx}].voters`]: voters,
       stats
     });
     refreshSummaryBadge(stats.dishCount);
@@ -460,6 +510,6 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.loadData(true, true);
+    this.loadData(true, true, true);
   }
 });
