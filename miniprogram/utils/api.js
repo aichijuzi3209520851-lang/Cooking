@@ -92,13 +92,13 @@ familyApi.transferCreator = (familyId, userId) =>
 const voteApi = {
   add: (familyId, dishId) => call('vote', { action: 'add', familyId, dishId }),
   cancel: (familyId, dishId) => call('vote', { action: 'cancel', familyId, dishId }),
-  // reason：掌勺否决原因（预设短语或自定义，服务端截断至 20 字）
+  // reason：金牌大厨否决原因（预设短语或自定义，服务端截断至 20 字）
   chefCancel: (familyId, dishId, reason) =>
     call('vote', { action: 'chefCancel', familyId, dishId, reason }, true),
   todayList: (familyId) => call('vote', { action: 'todayList', familyId }),
   decideMenu: (familyId, dishId, decided) =>
     call('vote', { action: 'decideMenu', familyId, dishId, decided }, true),
-  // 提交今日菜单（NOTIFY-002）：汇总当日投票并通知掌勺的
+  // 提交今日菜单（NOTIFY-002）：汇总当日投票并通知金牌大厨
   submitMenu: (familyId) => call('vote', { action: 'submitMenu', familyId }, true)
 };
 

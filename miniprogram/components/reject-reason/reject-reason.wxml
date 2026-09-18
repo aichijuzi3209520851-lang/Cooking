@@ -1,5 +1,5 @@
 <!--components/reject-reason/reject-reason.wxml-->
-<!--掌勺「一票否决」原因选择：预设选项优先，避免打字-->
+<!--金牌大厨「一票否决」原因选择：预设选项优先，避免打字-->
 <view wx:if="{{visible}}" class="rr-mask" catchtouchmove="noop">
   <view class="rr-panel">
 

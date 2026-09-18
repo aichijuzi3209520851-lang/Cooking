@@ -40,7 +40,7 @@ async function requireChef(db, familyId, userId) {
     throw new ApiError('NOT_MEMBER', '您不是该家庭的成员')
   }
   if (member.role !== 'chef') {
-    throw new ApiError('PERMISSION_DENIED', '需要掌勺权限')
+    throw new ApiError('PERMISSION_DENIED', '需要金牌大厨权限')
   }
   return member
 }

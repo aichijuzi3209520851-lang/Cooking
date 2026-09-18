@@ -359,7 +359,7 @@ test('W-C-V2 cancel：无记录 / 正常取消后可重投 / 被移除成员取�
   assert.equal((await run(voteFn, { action: 'cancel', familyId, dishId })).success, true)
   assert.equal((await run(voteFn, { action: 'add', familyId, dishId })).success, true, '取消后应可重新投票')
 
-  // 掌勺移除该成员后，其取消操作应被拒（NOT_MEMBER）
+  // 金牌大厨移除该成员后，其取消操作应被拒（NOT_MEMBER）
   as('chef')
   await run(familyFn, { action: 'removeMember', familyId, userId: 'member' })
   as('member')
@@ -447,7 +447,7 @@ test('W-C-N2 notify：模板未配置 → NOTIFY_TEMPLATE_MISSING（fail closed�
   }
 })
 
-test('W-C-N3 notify：notifyEnabled=false 的掌勺被过滤，true 的收到消息', async () => {
+test('W-C-N3 notify：notifyEnabled=false 的金牌大厨被过滤，true 的收到消息', async () => {
   env.resetDb()
   as('chefOn')
   await seedUser('chefOn')
@@ -461,7 +461,7 @@ test('W-C-N3 notify：notifyEnabled=false 的掌勺被过滤，true 的收到消
   await seedUser('member')
   await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
   await run(loginFn, { action: 'setNotifyStatus', status: 'accepted' })
-  // member 升为掌勺（由创建者改角色）
+  // member 升为金牌大厨（由创建者改角色）
   as('chefOn')
   await run(familyFn, { action: 'updateMemberRole', familyId: fam.data.familyId, userId: 'member', role: 'chef' })
 
@@ -470,10 +470,10 @@ test('W-C-N3 notify：notifyEnabled=false 的掌勺被过滤，true 的收到消
     familyId: fam.data.familyId, dishId: dish.data.dishId, dishName: '菜', voterName: '成员'
   })
   assert.equal(res.success, true)
-  assert.equal(res.data.total, 1, '仅开启通知的掌勺进入发送名单')
-  assert.equal(res.data.notified, 1, '开启通知的掌勺应收到消息')
+  assert.equal(res.data.total, 1, '仅开启通知的金牌大厨进入发送名单')
+  assert.equal(res.data.notified, 1, '开启通知的金牌大厨应收到消息')
   assert.equal(env.sent.length, 1)
-  assert.equal(env.sent[0].touser, 'member', '关闭通知的掌勺不应收到')
+  assert.equal(env.sent[0].touser, 'member', '关闭通知的金牌大厨不应收到')
 })
 
 // ============ dailyReset ============

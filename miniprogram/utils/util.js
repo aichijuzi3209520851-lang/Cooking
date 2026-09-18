@@ -87,7 +87,7 @@ function getCategoryList() {
  * 获取角色名称
  */
 function getRoleName(role) {
-  return role === 'chef' ? '掌勺的' : '等饭的';
+  return role === 'chef' ? '金牌大厨' : '干饭能手';
 }
 
 /**
@@ -203,7 +203,7 @@ function previewImage(url, urls) {
 }
 
 /**
- * 页面守卫：菜品管理类页面仅掌勺可用（UI-001）
+ * 页面守卫：菜品管理类页面仅金牌大厨可用（UI-001）
  * 返回 true 表示放行；否则提示并返回上一页
  */
 function guardChefPage() {
@@ -214,7 +214,7 @@ function guardChefPage() {
     return false;
   }
   if (app.globalData.currentRole !== 'chef') {
-    showError('掌勺的才能管理菜品哦');
+    showError('金牌大厨才能管理菜品哦');
     setTimeout(() => wx.navigateBack({ fail() { wx.reLaunch({ url: '/pages/menu/menu' }); } }), 600);
     return false;
   }

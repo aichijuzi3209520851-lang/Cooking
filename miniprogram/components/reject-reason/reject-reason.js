@@ -1,5 +1,5 @@
 // components/reject-reason/reject-reason.js
-// 掌勺「一票否决」原因选择弹窗（NOTIFY-002）
+// 金牌大厨「一票否决」原因选择弹窗（NOTIFY-002）
 //
 // 用法：
 //   <reject-reason visible="{{showReject}}" dish-name="{{rejectDishName}}"

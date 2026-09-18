@@ -73,7 +73,7 @@ async function listDishes(data, openid) {
   if (includeHidden === true) {
     // 查看隐藏菜品是 chef 专属能力
     if (member.role !== 'chef') {
-      throw new ApiError('PERMISSION_DENIED', '需要掌勺权限')
+      throw new ApiError('PERMISSION_DENIED', '需要金牌大厨权限')
     }
   } else {
     where.isHidden = false

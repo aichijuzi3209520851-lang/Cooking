@@ -1,5 +1,5 @@
 // 云函数：vote
-// 点菜投票：点菜、取消、掌勺撤菜、当日列表、历史记录
+// 点菜投票：点菜、取消、金牌大厨撤菜、当日列表、历史记录
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
 const { getOpenid, requireMember, requireChef, requireDishInFamily } = require('./shared/auth')
@@ -192,7 +192,7 @@ function normalizeReason(reason) {
   return text ? text.slice(0, REASON_MAX) : '今天不做这道菜'
 }
 
-// 掌勺撤菜（一票否决）：仅清当日投票，菜品保留、家人可再点；可附原因并通知投过票的人
+// 金牌大厨撤菜（一票否决）：仅清当日投票，菜品保留、家人可再点；可附原因并通知投过票的人
 async function chefCancel(data, openid) {
   const { familyId, dishId, reason } = data
   if (!familyId || !dishId) {
@@ -245,7 +245,7 @@ async function chefCancel(data, openid) {
 }
 
 // 提交今日菜单（NOTIFY-002）
-// 汇总当日全部投票 → 幂等写入 menu_submissions（每人每天一条）→ 通知掌勺的
+// 汇总当日全部投票 → 幂等写入 menu_submissions（每人每天一条）→ 通知金牌大厨
 // 通知失败不阻塞提交结果（与点菜通知同一策略）
 async function submitMenu(data, openid) {
   const { familyId } = data
@@ -299,7 +299,7 @@ async function submitMenu(data, openid) {
     }
   }
 
-  // 3. 通知掌勺的（失败只记日志，不影响提交结果）
+  // 3. 通知金牌大厨（失败只记日志，不影响提交结果）
   await safeCallNotify({
     action: 'sendMenuSubmitNotify',
     familyId,
@@ -347,7 +347,7 @@ async function todayList(data, openid) {
     getUserMap(db, _, userIds)
   ])
 
-  // 按菜品分组（decided：掌勺是否拍板加入今晚菜单）
+  // 按菜品分组（decided：金牌大厨是否拍板加入今晚菜单）
   const groupMap = {}
   for (const v of votes) {
     if (!groupMap[v.dishId]) {
@@ -420,7 +420,7 @@ async function decideMenu(data, openid) {
   return { familyId, dishId, decided: decided === true }
 }
 
-// 今日米饭：本人饭量上报（每人每天一条，可反复修改；掌勺与等饭的均可报）
+// 今日米饭：本人饭量上报（每人每天一条，可反复修改；金牌大厨与干饭能手均可报）
 async function setRice(data, openid) {
   const { familyId, bowls } = data
   if (!familyId) {

@@ -50,7 +50,7 @@ Page({
 
   async onShow() {
     theme.applyTheme(this);
-    // 页面守卫（UI-001）：菜品管理仅掌勺可用，防止非常规路径误入
+    // 页面守卫（UI-001）：菜品管理仅金牌大厨可用，防止非常规路径误入
     await app.waitForLogin();
     if (!guardChefPage()) return;
   },

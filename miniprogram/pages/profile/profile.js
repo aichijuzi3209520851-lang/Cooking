@@ -165,7 +165,7 @@ Page({
     }
 
     const currentRole = this.data.currentRole;
-    const itemList = ['掌勺的 🍳', '等饭的 🍚'];
+    const itemList = ['金牌大厨 🍳', '干饭能手 🍚'];
 
     wx.showActionSheet({
       itemList,

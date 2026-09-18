@@ -238,13 +238,13 @@ async function t02b_select_role() {
     roleSet = cur === 'chef'
     if (!roleSet) await sleep(500)
   }
-  record('S2-3 选择掌勺身份生效', roleSet)
+  record('S2-3 选择金牌大厨身份生效', roleSet)
 }
 
 async function t03_add_dish() {
   await reLaunch('/pages/menu/menu')
   const d = await waitForData((s) => s.data.hasFamily === true, 15000, '菜单页（测试家庭）')
-  assert(d.data.isChef === true, '测试家庭中应为掌勺（有 FAB 入口）')
+  assert(d.data.isChef === true, '测试家庭中应为金牌大厨（有 FAB 入口）')
   // 走真实保存链路：编辑页数据 → onSave（等价于点保存按钮）
   await reLaunch('/pages/dishes/edit/edit')
   await sleep(1000)
@@ -334,7 +334,7 @@ async function t06_veto_semantics() {
   await sleep(1200)
   const after = await currentPageData()
   const gone = !(after.data.summaryList || []).find((x) => x.dishId === dishId)
-  record('S6 掌勺撤菜：汇总移除（今日不做语义）', !!gone)
+  record('S6 金牌大厨撤菜：汇总移除（今日不做语义）', !!gone)
   await reLaunch('/pages/menu/menu')
   const menu = await waitForData((s) => {
     const hit = (s.data.dishes || []).find((x) => x.dishId === dishId)

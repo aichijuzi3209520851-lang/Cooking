@@ -93,7 +93,7 @@
             </view>
           </view>
 
-          <!-- 掌勺操作：拍板今晚菜单 + 撤下 -->
+          <!-- 金牌大厨操作：拍板今晚菜单 + 撤下 -->
           <view class="chef-actions" wx:if="{{isChef}}">
             <view
               class="decide-btn {{item.decided ? 'decide-btn-on' : ''}}"
@@ -116,14 +116,14 @@
         </view>
       </view>
 
-      <!-- 提交今日菜单（NOTIFY-002）：汇总今日点菜，通知掌勺的 -->
+      <!-- 提交今日菜单（NOTIFY-002）：汇总今日点菜，通知金牌大厨 -->
       <view class="submit-bar safe-bottom">
         <view
           class="submit-btn {{stats.dishCount > 0 ? '' : 'is-disabled'}}"
           bindtap="onSubmitMenu"
           hover-class="submit-btn-hover"
-        >{{submitted ? '重新提交给掌勺的' : '提交今日菜单'}}</view>
-        <view class="submit-hint">提交后掌勺的会收到一条通知</view>
+        >{{submitted ? '重新提交给金牌大厨' : '提交今日菜单'}}</view>
+        <view class="submit-hint">提交后金牌大厨会收到一条通知</view>
       </view>
     </block>
 

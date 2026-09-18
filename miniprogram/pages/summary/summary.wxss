@@ -131,7 +131,7 @@
   white-space: nowrap;
 }
 
-/* 拍板标识：掌勺定的今晚菜单 */
+/* 拍板标识：金牌大厨定的今晚菜单 */
 .decided-chip {
   flex-shrink: 0;
   padding: 4rpx var(--space-2);
@@ -208,7 +208,7 @@
   margin-top: 6rpx;
 }
 
-/* 掌勺操作行：主操作（定菜）撑满左侧，破坏性操作（撤下）靠右且不抢焦点 */
+/* 金牌大厨操作行：主操作（定菜）撑满左侧，破坏性操作（撤下）靠右且不抢焦点 */
 .chef-actions {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
@@ -260,7 +260,7 @@
   opacity: 0.6;
 }
 
-/* ===== 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知掌勺的 ===== */
+/* ===== 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知金牌大厨 ===== */
 /* 统计信息已上移到顶部英雄区，底部只保留提交操作与安全区留白 */
 .submit-bar {
   padding: var(--space-6) var(--space-4) var(--space-3);

@@ -3,7 +3,7 @@
   <view class="join-header">
     <view class="title-md join-title">{{fromInvite ? '收到邀请' : '加入家庭'}}</view>
     <view class="caption join-tip">
-      {{fromInvite ? '正在通过邀请加入这个家庭，请稍候…' : '请输入掌勺的分享的6位家庭码'}}
+      {{fromInvite ? '正在通过邀请加入这个家庭，请稍候…' : '请输入金牌大厨分享的6位家庭码'}}
     </view>
   </view>
 

@@ -468,7 +468,7 @@ Page({
     refreshSummaryBadge(stats.dishCount);
   },
 
-  // 掌勺一票否决（NOTIFY-002）：先选原因，再执行否决并通知投过票的家人
+  // 金牌大厨一票否决（NOTIFY-002）：先选原因，再执行否决并通知投过票的家人
   onChefCancel(e) {
     const dish = e.detail.dish;
     if (!dish || !dish.dishId) return;

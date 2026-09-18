@@ -254,7 +254,7 @@ Page({
     }
   },
 
-  // 拍板/移出今晚菜单（PRODUCT-002，仅掌勺）
+  // 拍板/移出今晚菜单（PRODUCT-002，仅金牌大厨）
   async onDecideMenu(e) {
     const dishId = e.currentTarget.dataset.id;
     const decided = e.currentTarget.dataset.decided === 1 || e.currentTarget.dataset.decided === '1';
@@ -272,7 +272,7 @@ Page({
     }
   },
 
-  // 掌勺撤下（弹窗薄壳）：确认后执行撤菜逻辑
+  // 金牌大厨撤下（弹窗薄壳）：确认后执行撤菜逻辑
   onChefCancel(e) {
     const dishId = e.currentTarget.dataset.id;
     const dishName = e.currentTarget.dataset.name;
@@ -302,7 +302,7 @@ Page({
     return this.doChefCancel(dishId, dishName, reason);
   },
 
-  // 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知掌勺的
+  // 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知金牌大厨
   async onSubmitMenu() {
     if (this._submitting) return;
 
@@ -314,7 +314,7 @@ Page({
 
     const confirmed = await showConfirm(
       '提交今日菜单',
-      `把今日 ${dishCount} 道菜提交给掌勺的，并发送通知。`
+      `把今日 ${dishCount} 道菜提交给金牌大厨，并发送通知。`
     );
     if (!confirmed) return;
 
@@ -322,7 +322,7 @@ Page({
     try {
       const res = await voteApi.submitMenu(app.globalData.currentFamilyId);
       this.setData({ submitted: true });
-      showSuccess('已提交给掌勺的');
+      showSuccess('已提交给金牌大厨');
       return res;
     } catch (err) {
       showApiError(err, '提交失败');

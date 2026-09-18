@@ -279,11 +279,11 @@ L3（可选）：`login.json` 加 `"navigationStyle": "custom"`，顶部留白�
 
 | # | 问题 | 严重度 | 位置 |
 |---|------|--------|------|
-| F1 | 「设为掌勺/设为等饭/移除」按钮热区仅约 54rpx（27px），且是高危操作（移除成员） | 🟠 P1 | `manage.wxss:173-178` |
+| F1 | 「设为金牌大厨/设为干饭能手/移除」按钮热区仅约 54rpx（27px），且是高危操作（移除成员） | 🟠 P1 | `manage.wxss:173-178` |
 | F2 | 移除按钮背景硬编码 `rgba(255,59,48,0.1)`，绕过令牌体系（应基于 `--color-primary-red`） | 🟡 P2 | `manage.wxss:185-188` |
 | F3 | 家庭码 56rpx + `letter-spacing:16rpx` 居中：末字符后仍有字距，视觉偏左 8rpx | 🟡 P2 | `manage.wxss:39-45` |
 | F4 | 家庭码区域可点复制但无按压反馈 | 🟡 P2 | `manage.wxml:12` |
-| F5 | 角色徽章内联 emoji（`🍳 掌勺的`）与 profile 页 `roleEmoji` 两种来源，改文案要改多处 | ⚪ P3 | `manage.wxml:8,33` |
+| F5 | 角色徽章内联 emoji（`🍳 金牌大厨`）与 profile 页 `roleEmoji` 两种来源，改文案要改多处 | ⚪ P3 | `manage.wxml:8,33` |
 
 **修复**
 

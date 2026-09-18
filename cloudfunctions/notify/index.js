@@ -164,7 +164,7 @@ async function sendCancelNotify(data) {
     return { notified: 0, total: 0 }
   }
 
-  // 否决原因（NOTIFY-002）：掌勺选填，缺省为「今天不做这道菜」
+  // 否决原因（NOTIFY-002）：金牌大厨选填，缺省为「今天不做这道菜」
   const reason = (typeof data.reason === 'string' && data.reason.trim())
     ? data.reason.trim().slice(0, THING_MAX)
     : '今天不做这道菜'
@@ -223,7 +223,7 @@ async function sendMenuDecidedNotify(data) {
   }
 }
 
-// 菜单提交通知（NOTIFY-002）：等饭的提交今日菜单后，通知家庭内所有掌勺的
+// 菜单提交通知（NOTIFY-002）：干饭能手提交今日菜单后，通知家庭内所有金牌大厨
 //
 // 模板复用策略：优先复用「拍板」模板（NOTIFY_MENU_TEMPLATE_ID），
 // 避免占用本就有限的订阅消息模板名额；thing1=菜品概要，thing2=提交人+数量。

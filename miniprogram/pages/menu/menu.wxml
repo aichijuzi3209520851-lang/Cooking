@@ -23,7 +23,7 @@
     </view>
   </view>
 
-  <!-- 今日米饭（RICE-001）：全员饭量上报，掌勺一眼看总碗数 -->
+  <!-- 今日米饭（RICE-001）：全员饭量上报，金牌大厨一眼看总碗数 -->
   <view class="rice-card" wx:if="{{hasFamily}}">
     <view class="rice-head">
       <text class="rice-title">今日米饭</text>
@@ -64,7 +64,7 @@
       wx:else
       icon="🍽️"
       image="/images/empty/empty-dishes.svg"
-      title="掌勺的还没添加菜品"
+      title="金牌大厨还没添加菜品"
       description="耐心等待一下吧"
     />
   </block>

@@ -5,7 +5,7 @@
     <view class="family-card-header">
       <view class="family-name">{{currentFamily.name}}</view>
       <view class="badge {{currentRole === 'chef' ? 'badge-chef' : 'badge-eater'}}">
-        {{currentRole === 'chef' ? '掌勺的' : '等饭的'}}
+        {{currentRole === 'chef' ? '金牌大厨' : '干饭能手'}}
       </view>
     </view>
 
@@ -36,7 +36,7 @@
         <view class="family-list-info">
           <view class="family-list-name">{{item.name}}</view>
           <view class="caption family-list-role">
-            {{item.role === 'chef' ? '掌勺的' : '等饭的'}}
+            {{item.role === 'chef' ? '金牌大厨' : '干饭能手'}}
           </view>
         </view>
         <view class="family-list-check" wx:if="{{item.familyId === currentFamily.familyId}}">✓</view>
@@ -81,7 +81,7 @@
             data-role="{{item.role}}"
             catchtap="onToggleRole"
           >
-            {{item.role === 'chef' ? '设为等饭' : '设为掌勺'}}
+            {{item.role === 'chef' ? '设为干饭能手' : '设为金牌大厨'}}
           </view>
           <view
             class="member-action-btn member-action-remove"

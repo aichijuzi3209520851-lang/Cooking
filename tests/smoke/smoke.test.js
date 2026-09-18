@@ -66,10 +66,10 @@ test('冒烟：登录 → 建家 → 记住加入码 → 唯一成员离开（�
   assert.equal(wrong.errorCode, 'JOIN_CODE_INVALID')
 })
 
-test('冒烟：完整家庭链路——建家 → 家人加入 → 掌勺加菜 → 家人点菜 → 通知掌勺 → 汇总 → 离开再换回来', async () => {
+test('冒烟：完整家庭链路——建家 → 家人加入 → 金牌大厨加菜 → 家人点菜 → 通知金牌大厨 → 汇总 → 离开再换回来', async () => {
   env.resetDb()
 
-  // 掌勺登录 + 建家
+  // 金牌大厨登录 + 建家
   as('owner')
   assert.equal((await loginFn.main({ action: 'login' })).success, true)
   const fam = await familyFn.main({ action: 'create', name: '我家' })
@@ -83,21 +83,21 @@ test('冒烟：完整家庭链路——建家 → 家人加入 → 掌勺加菜 
   assert.equal(joined.success, true)
   assert.equal(joined.data.alreadyJoined, false)
 
-  // 掌勺加菜（eater 加菜应被拒）
+  // 金牌大厨加菜（eater 加菜应被拒）
   as('owner')
   const dish = await dishFn.main({ action: 'add', familyId, name: '红烧肉', category: 'meat' })
-  assert.equal(dish.success, true, '掌勺加菜应成功')
+  assert.equal(dish.success, true, '金牌大厨加菜应成功')
   as('member')
   const denied = await dishFn.main({ action: 'add', familyId, name: '拍黄瓜', category: 'cold' })
   assert.equal(denied.success, false, 'eater 加菜应被拒绝')
   assert.equal(denied.errorCode, 'PERMISSION_DENIED')
 
-  // 掌勺开启通知
+  // 金牌大厨开启通知
   as('owner')
   const st = await loginFn.main({ action: 'setNotifyStatus', status: 'accepted' })
   assert.equal(st.data.notifyEnabled, true)
 
-  // 家人点菜 → 触发第一票通知到掌勺
+  // 家人点菜 → 触发第一票通知到金牌大厨
   as('member')
   const voted = await voteFn.main({ action: 'add', familyId, dishId: dish.data.dishId })
   assert.equal(voted.success, true, '点菜应成功')
@@ -110,7 +110,7 @@ test('冒烟：完整家庭链路——建家 → 家人加入 → 掌勺加菜 
   assert.equal(dup.success, false)
   assert.equal(dup.errorCode, 'VOTE_ALREADY_EXISTS')
 
-  // 汇总：掌勺看到菜与投票人
+  // 汇总：金牌大厨看到菜与投票人
   as('owner')
   const today = await voteFn.main({ action: 'todayList', familyId })
   assert.equal(today.success, true)
@@ -169,7 +169,7 @@ test('冒烟：今日米饭饭量上报 + 聚合 + 幂等改值 + 离开/解散�
   assert.equal(rice.data.total, 0, '未报时 total 应为 0')
   assert.equal(rice.data.memberCount, 2)
 
-  // 掌勺报 2 碗
+  // 金牌大厨报 2 碗
   as('owner')
   const s1 = await voteFn.main({ action: 'setRice', familyId, bowls: 2 })
   assert.equal(s1.success, true, 'setRice 应成功')
@@ -185,10 +185,10 @@ test('冒烟：今日米饭饭量上报 + 聚合 + 幂等改值 + 离开/解散�
   as('owner')
   rice = await voteFn.main({ action: 'getRice', familyId })
   assert.equal(rice.data.total, 3.5, '全家共 3.5 碗')
-  assert.equal(rice.data.mine, 2, '掌勺自己 2 碗')
+  assert.equal(rice.data.mine, 2, '金牌大厨自己 2 碗')
   assert.equal(rice.data.reports.length, 2)
 
-  // 幂等改值：掌勺改为 3 碗（覆盖更新）
+  // 幂等改值：金牌大厨改为 3 碗（覆盖更新）
   as('owner')
   const s3 = await voteFn.main({ action: 'setRice', familyId, bowls: 3 })
   assert.equal(s3.success, true)
@@ -212,6 +212,6 @@ test('冒烟：今日米饭饭量上报 + 聚合 + 幂等改值 + 离开/解散�
   await familyFn.main({ action: 'leave', familyId })
   as('owner')
   rice = await voteFn.main({ action: 'getRice', familyId })
-  assert.equal(rice.data.reports.length, 1, '离开后只剩掌勺的饭量')
+  assert.equal(rice.data.reports.length, 1, '离开后只剩金牌大厨饭量')
   assert.equal(rice.data.reports[0].bowls, 3)
 })

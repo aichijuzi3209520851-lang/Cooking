@@ -3,7 +3,7 @@
   <view class="create-header">
     <view class="create-emoji">🏠</view>
     <view class="title-md create-title">创建你的家庭</view>
-    <view class="caption create-tip">创建后你将默认成为掌勺的</view>
+    <view class="caption create-tip">创建后你将默认成为金牌大厨</view>
   </view>
 
   <view class="create-form">

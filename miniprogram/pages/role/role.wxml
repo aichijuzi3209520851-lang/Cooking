@@ -6,7 +6,7 @@
   </view>
 
   <view class="role-cards">
-    <!-- 掌勺的 -->
+    <!-- 金牌大厨 -->
     <view
       class="role-card {{selectedRole === 'chef' ? 'role-card-selected' : ''}}"
       data-role="chef"
@@ -14,7 +14,7 @@
     >
       <view class="role-emoji">🍳</view>
       <view class="role-info">
-        <view class="title-sm role-name">掌勺的</view>
+        <view class="title-sm role-name">金牌大厨</view>
         <view class="caption role-desc">管理菜品库，决定今天做什么</view>
       </view>
       <view class="role-check" wx:if="{{selectedRole === 'chef'}}">
@@ -22,7 +22,7 @@
       </view>
     </view>
 
-    <!-- 等饭的 -->
+    <!-- 干饭能手 -->
     <view
       class="role-card {{selectedRole === 'eater' ? 'role-card-selected' : ''}}"
       data-role="eater"
@@ -30,7 +30,7 @@
     >
       <view class="role-emoji">🍚</view>
       <view class="role-info">
-        <view class="title-sm role-name">等饭的</view>
+        <view class="title-sm role-name">干饭能手</view>
         <view class="caption role-desc">点菜就完事了，等开饭！</view>
       </view>
       <view class="role-check" wx:if="{{selectedRole === 'eater'}}">

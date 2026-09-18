@@ -808,13 +808,13 @@ page {
   line-height: 1.4;
 }
 
-/* 掌勺的：品牌强调色（家庭里的活跃角色） */
+/* 金牌大厨：品牌强调色（家庭里的活跃角色） */
 .badge-chef {
   background: var(--color-accent-soft);
   color: var(--color-accent-deep);
 }
 
-/* 等饭的：中性安静样式，与掌勺形成层级 */
+/* 干饭能手：中性安静样式，与金牌大厨形成层级 */
 .badge-eater {
   background: var(--surface-sunken);
   color: var(--color-text-secondary);
