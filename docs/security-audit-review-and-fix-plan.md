@@ -85,12 +85,12 @@ exports.main = async (event) => {
 - 规则（`database.md:70`）只放行 `dishes/` 前缀，但头像路径是 `avatars/{openid}/avatar-*.{ext}`（`profile.js:119`）→ **按文档配规则，头像上传必然失败**；
 - README:764 Q4 反而建议改用"所有用户可读，仅创建者可写"预设 → **等价于任何登录用户可向任意路径写入**，把自定义规则的安全收益全部丢弃。
 
-**修复**：
+**修复**（⚠️ 官方规则语法：路径变量为 `resource.path`，**只支持正则 `.test()`，不支持 `startsWith`/`indexOf`/字符串拼接**；早先给出的 `path.startsWith(...)` 写法语法非法，会导致规则求值失败、全部上传被拒，2026-09 已修正）：
 
 ```json
 {
   "read": true,
-  "write": "(path.startsWith('dishes/') || path.startsWith('avatars/')) && path.indexOf('/' + auth.openid + '/') >= 0"
+  "write": "(/^dishes\\//.test(resource.path) || /^avatars\\//.test(resource.path)) && (resource.openid == auth.openid || resource.openid == auth.uid)"
 }
 ```
 

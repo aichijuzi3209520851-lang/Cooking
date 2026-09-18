@@ -696,3 +696,106 @@ test('W-C-D7 delete：仅家庭创建者可执行（普通成员提权为 chef �
   as('creator')
   assert.equal((await run(dishFn, { action: 'delete', familyId, dishId })).success, true)
 })
+
+// ============ 内容安全（UGC 审核，W-C-S*）============
+
+test('W-C-S1 文本违规：家庭名 / 菜品名被内容安全拦截', async () => {
+  env.resetDb()
+  as('u0')
+  await seedUser('u0')
+
+  // 默认放行可正常创建
+  const fam = await run(familyFn, { action: 'create', name: '我家' })
+  assert.equal(fam.success, true)
+
+  // 文本命中违规 → 拒绝创建
+  env.securityResult = 'risky'
+  const badFamily = await run(familyFn, { action: 'create', name: '违规家庭名' })
+  assert.equal(badFamily.errorCode, 'CONTENT_RISKY', '违规家庭名应被拦截')
+
+  const badDish = await run(dishFn, {
+    action: 'add',
+    familyId: fam.data.familyId,
+    name: '违规菜品',
+    category: 'meat'
+  })
+  assert.equal(badDish.errorCode, 'CONTENT_RISKY', '违规菜品名应被拦截')
+
+  // 确认确实调用了平台内容安全 API（不是跳过）
+  const textChecks = env.securityChecks.filter(c => c.type === 'text')
+  assert.ok(textChecks.length >= 2, '应产生文本安全检测调用')
+  assert.ok(textChecks.every(c => c.message.version === 2 && c.message.openid), '检测参数应带 version 与 openid')
+
+  env.securityResult = 'pass'
+})
+
+test('W-C-S2 图片违规：菜品图被内容安全拦截，未变更时不重复送检', async () => {
+  env.resetDb()
+  as('u0')
+  await seedUser('u0')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const familyId = fam.data.familyId
+  const fileID = `cloud://env/dishes/${familyId}/u0/a.png`
+
+  // 图片命中违规 → 拒绝新增（文本放行，确保拦的是图片而不是文本）
+  env.securityResult = (type) => (type === 'image' ? 'risky' : 'pass')
+  const bad = await run(dishFn, { action: 'add', familyId, name: '红烧肉', category: 'meat', imageUrl: fileID })
+  assert.equal(bad.errorCode, 'CONTENT_RISKY', '违规菜品图应被拦截')
+  assert.ok(env.securityChecks.some(c => c.type === 'image'), '应产生图片安全检测调用')
+
+  // 放行后新增成功
+  env.securityResult = 'pass'
+  const ok = await run(dishFn, { action: 'add', familyId, name: '红烧肉', category: 'meat', imageUrl: fileID })
+  assert.equal(ok.success, true)
+
+  // 同名同图重复更新 → 不重复送检
+  env.securityChecks.length = 0
+  const dup = await run(dishFn, { action: 'update', familyId, dishId: ok.data.dishId, name: '红烧肉', imageUrl: fileID })
+  assert.equal(dup.success, true)
+  assert.equal(env.securityChecks.length, 0, '字段未变更时不应重复送检')
+
+  // 变更图片 → 重新送检
+  const changed = await run(dishFn, {
+    action: 'update',
+    familyId,
+    dishId: ok.data.dishId,
+    imageUrl: `cloud://env/dishes/${familyId}/u0/b.png`
+  })
+  assert.equal(changed.success, true)
+  assert.ok(env.securityChecks.some(c => c.type === 'image'), '图片变更应重新检测')
+})
+
+test('W-C-S3 头像违规被拦截，昵称走资料场景', async () => {
+  env.resetDb()
+  as('u1')
+  await seedUser('u1')
+  const fileID = 'cloud://env/avatars/u1/a.png'
+
+  env.securityResult = 'risky'
+  const badAvatar = await run(loginFn, { action: 'updateProfile', avatarUrl: fileID })
+  assert.equal(badAvatar.errorCode, 'CONTENT_RISKY', '违规头像应被拦截')
+  assert.ok(env.securityChecks.some(c => c.type === 'image'), '应产生头像图片检测调用')
+
+  env.securityResult = 'pass'
+  const okNick = await run(loginFn, { action: 'updateProfile', nickname: '小明' })
+  assert.equal(okNick.success, true)
+  const nickCheck = env.securityChecks.filter(c => c.type === 'text').pop()
+  assert.equal(nickCheck.message.scene, 1, '昵称应使用资料场景 scene=1')
+})
+
+test('W-C-S4 审核接口异常：默认放行，严格模式拒绝', async () => {
+  env.resetDb()
+  as('u0')
+  await seedUser('u0')
+
+  // 模拟接口异常（桩抛错）
+  env.securityResult = () => { throw new Error('api down') }
+  const lenient = await run(familyFn, { action: 'create', name: '我家' })
+  assert.equal(lenient.success, true, '默认 fail-open，接口故障不应阻断用户')
+
+  process.env.SEC_CHECK_STRICT = 'true'
+  const strict = await run(familyFn, { action: 'create', name: '另一个家' })
+  assert.equal(strict.errorCode, 'CONTENT_CHECK_FAILED', '严格模式应 fail-closed')
+  delete process.env.SEC_CHECK_STRICT
+  env.securityResult = 'pass'
+})

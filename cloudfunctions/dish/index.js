@@ -6,6 +6,7 @@ const { getOpenid, requireChef, requireCreator, requireMember, requireDishInFami
 const { getTodayStr } = require('./shared/date')
 const { safeDeleteFiles, removeTodayVotes } = require('./shared/db-helpers')
 const { validateImageUrl, VALID_CATEGORIES } = require('./shared/validators')
+const { assertTextSafe, assertImageSafe } = require('./shared/security')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -121,6 +122,10 @@ async function addDish(data, openid) {
 
   await requireChef(db, familyId, openid)
 
+  // 内容安全：菜品名（文本 UGC）+ 菜品图（图片 UGC）均需过平台内容安全 API
+  await assertTextSafe(cloud, name, openid, { label: '菜品名称' })
+  await assertImageSafe(cloud, imageUrl, openid, { label: '菜品图片' })
+
   // 每家庭菜品数量上限（防止刷库导致集合膨胀）
   const countRes = await db.collection('dishes').where({ familyId }).count()
   if (countRes.total >= DISH_LIMIT_PER_FAMILY) {
@@ -181,6 +186,14 @@ async function updateDish(data, openid) {
   }
   if (imageUrl !== undefined) {
     updateData.imageUrl = validateImageUrl(imageUrl, familyId)
+  }
+
+  // 内容安全：仅对实际变更的字段做检测（避免把历史合规内容重复送检）
+  if (updateData.name !== undefined && updateData.name !== oldDish.name) {
+    await assertTextSafe(cloud, updateData.name, openid, { label: '菜品名称' })
+  }
+  if (updateData.imageUrl !== undefined && updateData.imageUrl && updateData.imageUrl !== oldDish.imageUrl) {
+    await assertImageSafe(cloud, updateData.imageUrl, openid, { label: '菜品图片' })
   }
 
   await db.collection('dishes').doc(dishId).update({

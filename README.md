@@ -342,6 +342,7 @@ tcb fn deploy dailyReset -e <环境ID> --force
 | `notify` | `NOTIFY_MENU_TEMPLATE_ID` | 拍板菜单通知模板 ID（可选，未配置时拍板通知跳过） |
 | `notify` | `NOTIFY_MP_STATE` | 订阅消息版本：formal（默认）/ trial（体验版联调）/ develop |
 | `dailyReset` | `ALLOW_MANUAL_RUN` | 仅开发环境设为 `true`，开启手动归档入口 |
+| `dish` / `login` / `family` | `SEC_CHECK_STRICT` | 内容安全严格模式：设为 `true` 时审核接口异常也拒绝写入（默认 `false`，异常放行并记日志）。详见 [docs/deployment/content-security.md](docs/deployment/content-security.md) |
 
 ### 配置定时触发器（dailyReset）
 
@@ -458,6 +459,8 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `DISH_NOT_FOUND` / `DISH_HIDDEN` | 菜品不存在 / 已隐藏 |
 | `VOTE_ALREADY_EXISTS` / `VOTE_NOT_FOUND` | 重复点菜 / 未找到点菜记录 |
 | `DISH_LIMIT` / `FAMILY_LIMIT` | 菜品数量达上限（200 道/家庭）/ 创建家庭数达上限（10 个/账号） |
+| `CONTENT_RISKY` | 文本/图片命中内容安全违规（见 [内容安全](docs/deployment/content-security.md)） |
+| `CONTENT_CHECK_FAILED` | 严格模式下内容安全检测不可用 |
 | `NOTIFY_FORBIDDEN` / `NOTIFY_TEMPLATE_MISSING` | 通知无权限 / 模板未配置 |
 | `ACTION_UNKNOWN` / `INTERNAL_ERROR` | 未知操作 / 服务异常 |
 | `NETWORK_ERROR`（前端） | 网络请求失败 |
@@ -530,6 +533,17 @@ users (1) ──── (N) family_members (N) ──── (1) families
 - 客户端读权限按"本人/本家庭成员"最小化开放（依赖 CloudBase 安全规则 `get()` 跨集合校验，需控制台验证）；
 - 云存储：上传路径分两类——菜品图 `dishes/{familyId}/{openid}/...`、头像 `avatars/{openid}/...`，写规则**同时放行两个前缀**且限定上传者自己的目录；图片替换/删除/家庭解散时由服务端清理文件；
 - 索引清单（`joinCode` 唯一、`family_members` 联合、`daily_votes` 联合等）见部署文档。
+
+### 6. 内容安全（UGC 审核）
+
+后台已声明「包含 UGC + 使用平台建议的内容安全API」，代码侧对全部用户生成内容执行检测：
+
+| 类型 | 字段 | 接口 |
+|:---|:---|:---|
+| 文本 | 家庭名称、菜品名称、昵称 | `security.msgSecCheck` |
+| 图片 | 菜品图片、自定义头像 | `security.imgSecCheck` |
+
+统一封装在 `cloudfunctions/shared/security.js`；命中违规抛 `CONTENT_RISKY` 终止写入；审核接口异常默认 fail-open（记日志放行），可通过 `SEC_CHECK_STRICT=true` 切换为 fail-closed。完整说明见 [docs/deployment/content-security.md](docs/deployment/content-security.md)。
 
 ### 6. 最小化客户端信任
 
@@ -718,7 +732,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | [docs/login-animation-plan.md](docs/login-animation-plan.md) | 登录页漂浮动效方案与实施记录 |
 | [docs/image-asset-generation-brief.md](docs/image-asset-generation-brief.md) | 插画素材生图需求单 |
 | [docs/tabbar-icon-brief.md](docs/tabbar-icon-brief.md) | tabBar 图标生图需求单 |
-| [docs/deployment/](docs/deployment/) | 部署指引与数据库安全规则 |
+| [docs/deployment/](docs/deployment/) | 部署指引、数据库安全规则、隐私指引与内容安全接入说明 |
 
 ---
 
@@ -765,8 +779,10 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 加入码全局唯一但区分大小写，输入时会自动转大写；若仍失败，请创建者核对管理页展示的码。
 
 **Q4：菜品图片 / 头像上传失败？**
-按 [docs/deployment/database.md](docs/deployment/database.md) §4「云存储安全配置」在控制台 → 存储 → 权限设置 → **自定义安全规则**中配置：
-`write` 需**同时**放行 `dishes/` 与 `avatars/` 两个前缀，且路径包含上传者 openid。
+按 [docs/deployment/database.md](docs/deployment/database.md) §4「云存储安全配置」在控制台 → 存储 → 权限设置 → **自定义安全规则**中粘贴 `docs/deployment/security-rules/storage.json` 的规则：
+`write` 需**同时**放行 `dishes/` 与 `avatars/` 两个前缀，且 `resource.openid == auth.openid`（上传者本人）。
+⚠️ 规则语法硬约束：路径变量是 `resource.path`，**只支持正则 `.test()`**——不支持 `startsWith()`/`indexOf()`/字符串拼接；
+语法错误的规则会**保存成功但拒绝一切上传**，症状就是「图片上传失败，请重试」。修改后 1-3 分钟生效。
 
 > ⚠️ **不要**改用"所有用户可读，仅创建者可写"预设——那等于任何登录用户可向任意路径写文件，会丢失安全规则的全部收益。头像与菜品图都靠该自定义规则放行。
 

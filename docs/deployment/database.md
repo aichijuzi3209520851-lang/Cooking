@@ -26,7 +26,10 @@
 
 - 客户端**读**受限于"本人"或"本家庭成员"，通过 `get()` 跨集合校验成员身份（成员文档 `_id` 确定性，可被规则寻址）；
 - 客户端**写**全部关闭（`"write": false`），任何写入必须经云函数服务端校验；
-- 若控制台版本不支持 `get()` 跨集合查询（需验证），退化为：对应集合读写全关 + 前端实时监听改为轮询 todayList（菜单/汇总页已有下拉刷新兜底），并在本文件记录退化方案。
+- ⚠️ **已验证退化（2026-09-16，环境 `lcw-d5gfcge7b41bedd02`）**：该环境**不支持** `get()` 跨集合安全规则。
+  含 `get('database.family_members.m_' + ...)` 的规则经 MCP `managePermissions` 提交返回成功，但平台**静默拒绝**，
+  集合权限回退为 `PRIVATE`（`SecurityRule` 为空）。不含 `get()` 的简单规则（`doc._id == auth.openid`、`false`）可正常生效。
+  已按退化方案执行：相关集合读写全关，仅云函数可访问。
 
 | 集合 | 读规则要点 | 写 |
 |:---|:---|:---|
@@ -40,6 +43,24 @@
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 
 > ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效，需在菜单/汇总页以轮询 todayList 替代（代码中 watcher 异常已有重连与下拉刷新兜底）。
+
+### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-09-16 核对）
+
+| 集合 | 文档规则 | 实际生效 | 说明 |
+|:---|:---|:---|:---|
+| `users` | `doc._id == auth.openid` | `{"read": "doc._id == auth.openid", "write": false}` | ✅ 按文档 |
+| `families` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化：`get()` 被拒 |
+| `family_members` | 本人/同家庭（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
+| `dishes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
+| `daily_votes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 → **前端 watcher 失效** |
+| `vote_history` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
+| `notify_ledger` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
+| `rice_reports` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
+| `menu_submissions` | （文档未列） | `{"read": false, "write": false}` | 与 `rice_reports` 一致，仅云函数 |
+
+**影响**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 因无客户端读权限必然失败。
+代码已有兜底（`onError` 限次重连 → 失败后提示下拉刷新），不会崩溃，但**实时性降级为手动刷新**。
+如需恢复实时监听，可选方案：改由云函数返回数据 + 前端定时轮询 `vote.todayList`（见 §2 退化说明）。
 
 ## 3. 数据库索引清单
 
@@ -66,20 +87,29 @@
 
 ## 4. 云存储安全配置（STORAGE-001）
 
-控制台 → 存储 → 权限设置 → 自定义安全规则：
+控制台 → 存储 → 权限设置 → 自定义安全规则（即 `docs/deployment/security-rules/storage.json`）：
 
 ```json
 {
   "read": true,
-  "write": "(path.startsWith('dishes/') || path.startsWith('avatars/')) && path.indexOf('/' + auth.openid + '/') >= 0"
+  "write": "(/^dishes\\//.test(resource.path) || /^avatars\\//.test(resource.path)) && (resource.openid == auth.openid || resource.openid == auth.uid)"
 }
 ```
+
+> ⚠️ **规则语法硬约束（官方文档已核实，2026-09）**：
+> - 路径变量是 **`resource.path`**，没有裸 `path` 变量；
+> - **不支持 `startsWith()` / `includes()` / `indexOf()` / 字符串 `+` 拼接**，路径匹配只能用正则 `.test()`（正则内不支持 `(...)` 分组，需用 `||` 连接多个正则）；
+> - 违反语法的规则会在控制台**保存成功**，但求值失败 → **所有客户端上传一律被拒**，
+>   症状就是「图片上传失败，请重试」且真实设备无更多提示。
+> - 官方依据：https://docs.cloudbase.net/storage/security-rules
 
 - 上传路径约定（**两个前缀都必须放行，否则对应功能必然失败**）：
   - 菜品图：`dishes/{familyId}/{openid}/{timestamp}.{ext}`（前端已实现，见 `pages/dishes/edit/edit.js`）；
   - 头像：`avatars/{openid}/avatar-{timestamp}.{ext}`（前端已实现，见 `pages/profile/profile.js` `onChooseAvatar`）；
 - `read: true`：菜品图与头像为低敏感内容，公开可读以支持 CDN 展示；若需更严格，可改为成员规则并在控制台验证；
-- `write` 规则限定在两个前缀内且路径必须包含上传者 openid，防止向其他用户/家庭目录写入；**需在控制台验证 `indexOf` 是否可用**，若不支持则退化为 `"write": "path.startsWith('dishes/') || path.startsWith('avatars/')"`，并依赖服务端校验 fileID 归属（dish 云函数已实现：`imageUrl` 必须包含 `/dishes/{familyId}/`）；
+- `write` 规则限定在两个前缀内，且 **`resource.openid == auth.openid`**（文件创建者 = 上传者本人，官方推荐写法；Web 端兜底比对 `auth.uid`），
+  防止向其他用户/家庭目录写入；服务端另有 fileID 归属校验（dish 云函数：`imageUrl` 必须包含 `/dishes/{familyId}/`）；
+- 修改规则后 **1-3 分钟生效**，不要改完立刻重试就下结论；
 - ⚠️ **不要把存储权限改成"所有用户可读，仅创建者可写"预设**：该预设等价于任何登录用户可向任意路径写入文件（刷存储、托管任意内容），会丢失上面自定义规则的全部收益。头像上传失败时应按本条规则排查，而不是放宽权限。
 - 图片生命周期由服务端负责（`dish` 云函数）：
   - 替换图片：保存成功后删除旧 fileID；

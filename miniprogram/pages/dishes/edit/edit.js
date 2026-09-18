@@ -178,11 +178,16 @@ Page({
         return;
       }
       // 场景二：云存储写入被拒（安全规则未放行 dishes/ 路径，或路径不含本人 openid）
-      if (/(permission|denied|403|unauthorized|forbidden)/i.test(errMsg)) {
+      // 关键词覆盖：PERMISSION_DENIED / storage / rule / security 等存储规则拒绝的常见标记
+      if (/(permission|denied|403|unauthorized|forbidden|storage|rule|security)/i.test(errMsg)) {
         showError('上传被拒绝：请检查云存储安全规则是否放行 dishes/ 路径');
         return;
       }
-      showError(stage === 'upload' ? '图片上传失败，请重试' : '图片选择失败，请重试');
+      // 兜底：带上真实错误码，避免「上传失败」无法继续排查
+      const errCode = err && err.errCode !== undefined ? err.errCode : (err && err.code);
+      showError(stage === 'upload'
+        ? `图片上传失败${errCode !== undefined ? '(' + errCode + ')' : ''}，请重试`
+        : `图片选择失败${errCode !== undefined ? '(' + errCode + ')' : ''}，请重试`);
     }
   },
 

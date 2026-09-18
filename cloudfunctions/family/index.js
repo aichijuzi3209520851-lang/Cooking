@@ -6,6 +6,7 @@ const { ApiError } = require('./shared/api-error')
 const { getOpenid, getMember, requireMember } = require('./shared/auth')
 const { getTodayStr } = require('./shared/date')
 const { safeDeleteFiles, removeWhere, removeByIds, removeUserTodayVotes } = require('./shared/db-helpers')
+const { assertTextSafe } = require('./shared/security')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -61,6 +62,9 @@ async function createFamily(data, openid) {
   if (ownedRes.total >= FAMILY_LIMIT_PER_USER) {
     throw new ApiError('FAMILY_LIMIT', `每个账号最多创建 ${FAMILY_LIMIT_PER_USER} 个家庭`)
   }
+
+  // 内容安全：家庭名称为用户自由输入的文本 UGC
+  await assertTextSafe(cloud, name, openid, { label: '家庭名称' })
 
   const joinCode = await generateUniqueJoinCode()
   const now = new Date()

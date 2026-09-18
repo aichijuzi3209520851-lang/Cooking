@@ -56,12 +56,12 @@ README 第 62 行"角色可在家庭内随时切换"是产品设计，但后果�
 
 **修复建议**：
 
-- 写规则改为同时放行两个前缀并校验 openid 段，例如：
+- 写规则改为同时放行两个前缀并限定上传者本人（⚠️ 官方规则语法：路径变量是 `resource.path`，**只支持正则 `.test()`，不支持 `startsWith`/`indexOf`/字符串拼接**，曾因此导致规则求值失败、全部上传被拒）：
 
 ```json
 {
   "read": true,
-  "write": "(path.startsWith('dishes/') || path.startsWith('avatars/')) && path.indexOf('/' + auth.openid + '/') >= 0"
+  "write": "(/^dishes\\//.test(resource.path) || /^avatars\\//.test(resource.path)) && (resource.openid == auth.openid || resource.openid == auth.uid)"
 }
 ```
 

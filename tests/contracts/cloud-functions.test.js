@@ -200,9 +200,24 @@ test('安全规则：rice_reports 已配置为全关', () => {
 });
 
 test('云存储规则：同时放行 dishes/ 与 avatars/ 前缀（STORAGE-001）', () => {
+  // storage.json 是存储规则的唯一事实源（database.md §4 引用它）
+  const rule = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '../../docs/deployment/security-rules/storage.json'), 'utf8')
+  );
+  assert.match(rule.write, /dishes/, '存储规则未放行 dishes 前缀');
+  assert.match(rule.write, /avatars/, '存储规则未放行 avatars 前缀（头像上传会失败）');
+  assert.match(rule.write, /resource\.openid == auth\.openid/, '存储规则未限定上传者本人');
+  // 官方语法硬约束（docs.cloudbase.net/storage/security-rules）：
+  // 路径变量是 resource.path；只支持正则 .test()，不支持 startsWith/indexOf/字符串拼接。
+  // 语法非法的规则会保存成功但求值失败 → 所有客户端上传被拒。
+  assert.match(rule.write, /\.test\(resource\.path\)/, '路径匹配必须使用 resource.path + 正则 .test()');
+  assert.ok(
+    !/path\.startsWith|\.indexOf\(|\.includes\(/.test(rule.write),
+    '存储规则使用了不被官方支持的字符串方法，会导致全部上传被拒'
+  );
   const doc = fs.readFileSync(path.resolve(__dirname, '../../docs/deployment/database.md'), 'utf8');
-  assert.match(doc, /path\.startsWith\('dishes\/'\)/, '存储规则未放行 dishes 前缀');
-  assert.match(doc, /path\.startsWith\('avatars\/'\)/, '存储规则未放行 avatars 前缀（头像上传会失败）');
+  assert.match(doc, /resource\.path/, 'database.md §4 未使用官方 resource.path 变量');
+  assert.ok(!/path\.startsWith\('dishes\/'\)/.test(doc), 'database.md §4 仍保留非法的 path.startsWith 写法');
 });
 
 test('notify：内部密钥 fail closed（SEC-002）', () => {

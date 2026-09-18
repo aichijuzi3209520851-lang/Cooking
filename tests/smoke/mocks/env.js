@@ -152,11 +152,20 @@ const env = module.exports = {
   currentUser: '',
   sent: [],           // 订阅消息发送记录（openapi.subscribeMessage.send）
   deletedFiles: [],   // 云存储删除记录（cloud.deleteFile）
+  securityChecks: [], // 内容安全检测记录（openapi.security.*）
+  // 篡改检测结果用：设为 'pass' | 'risky' 或 (type) => 'pass' | 'risky'
+  securityResult: 'pass',
+  nextSecurityResult(type) {
+    const result = typeof env.securityResult === 'function' ? env.securityResult(type) : env.securityResult
+    return { result: { suggest: result || 'pass' } }
+  },
   functions: {},      // 已加载的云函数 main（供 callFunction 内部互调）
   db: createDb(),
   resetDb() {
     env.db._reset()
     env.sent.length = 0
     env.deletedFiles.length = 0
+    env.securityChecks.length = 0
+    env.securityResult = 'pass'
   }
 }

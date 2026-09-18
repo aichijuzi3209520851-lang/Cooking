@@ -3,6 +3,7 @@
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
 const { validateAvatarUrl } = require('./shared/validators')
+const { assertTextSafe, assertImageSafe } = require('./shared/security')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -161,6 +162,14 @@ async function updateProfile(data, openid) {
         oldUser.avatarUrl !== updateData.avatarUrl) {
       cloud.deleteFile({ fileList: [oldUser.avatarUrl] }).catch(() => null)
     }
+  }
+
+  // 内容安全：昵称（文本 UGC，场景=资料）+ 自定义头像（图片 UGC）
+  if (updateData.nickname !== undefined && updateData.nickname !== oldUser.nickname) {
+    await assertTextSafe(cloud, updateData.nickname, openid, { scene: 1, label: '昵称' })
+  }
+  if (updateData.avatarUrl !== undefined && updateData.avatarUrl && updateData.avatarUrl !== oldUser.avatarUrl) {
+    await assertImageSafe(cloud, updateData.avatarUrl, openid, { scene: 1, label: '头像' })
   }
 
   await db.collection('users').doc(openid).update({ data: updateData })

@@ -1,0 +1,4 @@
+{
+  "read": true,
+  "write": "(/^dishes\\//.test(resource.path) || /^avatars\\//.test(resource.path)) && (resource.openid == auth.openid || resource.openid == auth.uid)"
+}

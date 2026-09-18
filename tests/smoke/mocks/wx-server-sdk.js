@@ -24,10 +24,30 @@ const cloud = {
     env.deletedFiles.push(...(fileList || []))
     return { fileList: (fileList || []).map((f) => ({ fileID: f, status: 0 })) }
   },
+  async getTempFileURL({ fileList }) {
+    // 内容安全检测需要 https 临时链接；桩直接返回固定前缀，保证链路可跑通
+    return {
+      fileList: (fileList || []).map((fileID) => ({
+        fileID,
+        status: 0,
+        tempFileURL: `https://mock.tcb.example/${encodeURIComponent(fileID)}`
+      }))
+    }
+  },
   openapi: {
     subscribeMessage: {
       async send(message) {
         env.sent.push(message)
+      }
+    },
+    security: {
+      async msgSecCheck(message) {
+        env.securityChecks.push({ type: 'text', message })
+        return env.nextSecurityResult('text')
+      },
+      async imgSecCheck(message) {
+        env.securityChecks.push({ type: 'image', message })
+        return env.nextSecurityResult('image')
       }
     }
   }

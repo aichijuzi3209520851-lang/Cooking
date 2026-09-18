@@ -197,3 +197,4 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 - 小程序隐私协议开发指南：https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/PrivacyAuthorize.html
 - 隐私保护指引内容介绍（信息类型 ↔ 接口对照）：https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/miniprogram-intro.html
 - 项目数据库/存储/定时任务配置：`docs/deployment/database.md`
+- 用户生成内容（UGC）内容安全接入：`docs/deployment/content-security.md`
