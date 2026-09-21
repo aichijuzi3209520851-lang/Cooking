@@ -27,7 +27,7 @@
 }
 
 .welcome-title {
-  font-size: 76rpx;
+  font-size: var(--text-display);
   font-weight: 800;
   color: var(--color-text-primary);
   letter-spacing: 2rpx;
@@ -40,7 +40,7 @@
 }
 
 .welcome-subtitle {
-  font-size: 30rpx;
+  font-size: var(--text-body);
   color: var(--color-text-secondary);
   line-height: 1.5;
   letter-spacing: 1rpx;
@@ -58,7 +58,7 @@
 }
 
 .welcome-footer {
-  font-size: 24rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-tertiary);
   margin-top: 24rpx;
   text-align: center;
@@ -74,7 +74,7 @@
 }
 
 .welcome-login-error-text {
-  font-size: 28rpx;
+  font-size: var(--text-body-sm);
   color: var(--color-primary);
   margin-bottom: 32rpx;
   text-align: center;

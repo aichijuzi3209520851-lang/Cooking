@@ -184,7 +184,7 @@
 }
 
 .heat-num {
-  font-size: 56rpx;
+  font-size: var(--text-h1);
   font-weight: var(--weight-black);
   /* 用 num-strong 而非 accent：金色等浅强调色下依然 ≥3:1 */
   color: var(--color-num-strong);
@@ -263,7 +263,7 @@
   border-radius: 46rpx;
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-size: 30rpx;
+  font-size: var(--text-body);
   font-weight: var(--weight-bold);
   box-shadow: var(--shadow-accent);
 }

@@ -24,7 +24,7 @@
 }
 
 .rr-title {
-  font-size: 34rpx;
+  font-size: var(--text-h3);
   font-weight: 600;
   color: var(--color-text-primary, #241b12);
   text-align: center;
@@ -33,7 +33,7 @@
 
 .rr-desc {
   margin-top: 10rpx;
-  font-size: 25rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-tertiary, #a2968a);
   text-align: center;
 }
@@ -50,7 +50,7 @@
   border-radius: 20rpx;
   background: var(--surface-sunken, #fbf5ec);
   color: var(--color-text-primary, #241b12);
-  font-size: 29rpx;
+  font-size: var(--text-body);
 }
 
 .rr-option:active {
@@ -80,7 +80,7 @@
   border-radius: 20rpx;
   background: var(--surface-sunken, #fbf5ec);
   border: 2rpx solid var(--color-border-strong, #dcc9ac);
-  font-size: 28rpx;
+  font-size: var(--text-body);
   color: var(--color-text-primary, #241b12);
 }
 
@@ -96,7 +96,7 @@
   border-radius: 20rpx;
   background: var(--color-accent, #d93a2b);
   color: var(--color-on-accent, #ffffff);
-  font-size: 28rpx;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 
@@ -109,6 +109,6 @@
   height: 88rpx;
   line-height: 88rpx;
   text-align: center;
-  font-size: 29rpx;
+  font-size: var(--text-body);
   color: var(--color-text-secondary, #6b5f52);
 }

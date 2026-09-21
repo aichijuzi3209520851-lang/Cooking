@@ -96,27 +96,48 @@ page {
   --radius-pill: 999rpx;
 
   /* ============================================================
-   * 3c. 字阶：5 档 + 行高，杜绝「随手定字号」
+   * 3c. 字阶（方案 A「暖食 · 内容感」）
+   *
+   * 为什么重排：旧阶梯 body 30 / body-sm 28 / caption 24 / mini 22 四档挤在
+   * 8rpx 区间内，真机上肉眼分不出层级；同时缺「区块标题」档，导致「今日推荐」
+   * 这种区块标题只能用 30rpx 的正文规格硬顶，和卡片标题（34）几乎齐平。
+   *
+   * 现阶梯（改动前先看这里，别再随手定字号）：
+   *   display 68 → 品牌主标题（首页 hero）
+   *   h1      52 → 内页页面主标题
+   *   h2      40 → 区块标题（今日推荐 / 我的分类 / 设置分组）
+   *   h3      38 → 卡片标题（菜名 / 成员名 / 空状态标题）
+   *   body    30 → 正文
+   *   body-sm 26 → 次要正文（推荐理由 / 成员名）
+   *   caption 24 → 辅助说明
+   *   mini    22 → 角标 / 时间戳：**仅限真正的极小信息**，
+   *              不要再用它承载「季节气候提示」这类有意义的文案（真机 11pt 看不清）
    * ============================================================ */
   --font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 
-  --text-display: 64rpx;   /* 欢迎页大标题 */
-  --text-h1: 52rpx;        /* 页面主标题 */
+  --text-display: 68rpx;   /* 品牌主标题（首页 hero） */
+  --text-h1: 52rpx;        /* 内页页面主标题 */
   --text-h2: 40rpx;        /* 区块标题 */
-  --text-h3: 34rpx;        /* 卡片标题 / 大数字 */
+  --text-h3: 38rpx;        /* 卡片标题（菜名） */
   --text-body: 30rpx;      /* 正文 */
-  --text-body-sm: 28rpx;   /* 次要正文 / 按钮 */
+  --text-body-sm: 26rpx;   /* 次要正文 */
   --text-caption: 24rpx;   /* 辅助说明 */
   --text-mini: 22rpx;      /* 角标 / 时间戳 */
+
+  /* 专用档：季节气候提示（原为 mini 22rpx，用于承载推荐依据太小） */
+  --text-season: 28rpx;
+  /* 专用档：数字锚点（统计条、票数等需要一眼抓住的数值） */
+  --text-num: 42rpx;
 
   --lh-tight: 1.2;   /* 标题 */
   --lh-normal: 1.5;  /* 正文 */
   --lh-loose: 1.6;   /* 多行说明 */
 
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
-  --weight-black: 800;
+  /* 字重：只用这四档，同级元素必须一致（旧代码里同级标题 700/800 混用） */
+  --weight-medium: 500;    /* 次要强调 */
+  --weight-semibold: 600;  /* 正文强调 / 按钮 */
+  --weight-bold: 700;      /* 所有标题 */
+  --weight-black: 800;     /* 仅品牌主标题与数字锚点 */
 
   /* ============================================================
    * 3d. 阴影层级：明度差 + 投影双重表达；深色模式降级为发丝描边
@@ -526,8 +547,10 @@ page {
   margin-bottom: 0;
 }
 
+/* 区块标题：方案 A 起固定走 h2（40rpx），与卡片标题（h3 38）拉开层级，
+   且必须比正文（body 30）明显大 —— 旧版这里用 h3 且 h3 只有 34rpx，区块感不足 */
 .section-title {
-  font-size: var(--text-h3);
+  font-size: var(--text-h2);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   line-height: var(--lh-tight);

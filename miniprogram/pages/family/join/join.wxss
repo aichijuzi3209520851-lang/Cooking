@@ -20,7 +20,7 @@
 }
 
 .join-tip {
-  font-size: 28rpx;
+  font-size: var(--text-body-sm);
 }
 
 /* 6位字母数字输入 */
@@ -61,7 +61,7 @@
 }
 
 .code-digit {
-  font-size: 36rpx;
+  font-size: var(--text-num);
   font-weight: 600;
   color: var(--color-text-primary);
 }

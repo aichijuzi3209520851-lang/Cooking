@@ -27,7 +27,7 @@
 }
 
 .pp-title {
-  font-size: 34rpx;
+  font-size: var(--text-h3);
   font-weight: 600;
   color: var(--color-text-primary, #241b12);
   text-align: center;
@@ -39,7 +39,7 @@
 }
 
 .pp-p {
-  font-size: 28rpx;
+  font-size: var(--text-body-sm);
   line-height: 1.7;
   color: var(--color-text-secondary, #6b5f52);
 }
@@ -56,7 +56,7 @@
 
 .pp-tip {
   margin-top: var(--space-3, 24rpx);
-  font-size: 25rpx;
+  font-size: var(--text-caption);
   color: var(--color-text-tertiary, #a2968a);
   background: var(--surface-sunken, #fbf5ec);
   border-radius: 16rpx;
@@ -75,7 +75,7 @@
   line-height: 88rpx;
   text-align: center;
   border-radius: 44rpx;
-  font-size: 30rpx;
+  font-size: var(--text-body);
   box-sizing: border-box;
 }
 
