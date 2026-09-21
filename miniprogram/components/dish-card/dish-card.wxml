@@ -25,8 +25,8 @@
     <view class="dish-name">{{dish.name}}</view>
     <view class="dish-voters">
       <avatar-group
-        wx:if="{{voters.length > 0}}"
-        members="{{voters}}"
+        wx:if="{{voterList.length > 0}}"
+        members="{{voterList}}"
         max="{{5}}"
         size="{{40}}"
       />

@@ -44,6 +44,29 @@ function yesterday() {
   return formatDateCST(Date.now() - 24 * 3600 * 1000);
 }
 
+// 季节图标：给「今日推荐」的季节提示配一个随季节变化的符号。
+// 只用气象学季节（3-5 春 / 6-8 夏 / 9-11 秋 / 12-2 冬），与云函数 season.js 的
+// SEASON_* 口径一致；不参与任何业务逻辑，纯展示。
+const SEASON_EMOJI = {
+  spring: '🌱',
+  summer: '☀️',
+  autumn: '🍂',
+  winter: '❄️'
+};
+
+/**
+ * 按月份取季节图标
+ * @param {number} month 1-12
+ * @returns {string} emoji；非法月份回退到 ❄️（冬季）以外的中性值 🌿
+ */
+function seasonEmojiOf(month) {
+  if (month >= 3 && month <= 5) return SEASON_EMOJI.spring;
+  if (month >= 6 && month <= 8) return SEASON_EMOJI.summer;
+  if (month >= 9 && month <= 11) return SEASON_EMOJI.autumn;
+  if (month === 12 || month === 1 || month === 2) return SEASON_EMOJI.winter;
+  return '🌿';
+}
+
 /**
  * 获取分类名称（家庭可自定义分类，统一走 category.js 的缓存解析）
  */
@@ -252,6 +275,26 @@ function markSummarySeen(dishCount) {
 }
 
 /**
+ * 把可能被运行时对象化的数组还原为数组。
+ *
+ * 背景（重要兼容坑）：个别基础库运行时里，跨组件传递的 Array 型属性会变成
+ * `{ 0: {...}, 1: {...} }` 的对象形态 —— Array.isArray 为 false、length 为 undefined，
+ * 导致组件里所有 `xxx.length > 0` 的 WXML 判断静默失效（按钮态、头像列表不渲染）。
+ * 因此：跨组件传递的数组在「读取侧」必须经过本函数归一化，不要直接用。
+ * 真数组原样返回；数字键对象按键序还原；其余（null/undefined/普通对象）返回空数组。
+ */
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length > 0 && keys.every(k => /^\d+$/.test(k))) {
+      return keys.sort((a, b) => Number(a) - Number(b)).map(k => value[k]);
+    }
+  }
+  return [];
+}
+
+/**
  * 显示确认弹窗
  */
 function showConfirm(title, content) {
@@ -272,6 +315,7 @@ module.exports = {
   formatDateCST,
   today,
   yesterday,
+  seasonEmojiOf,
   getCategoryName,
   getCategoryEmoji,
   getCategoryList,
@@ -281,6 +325,7 @@ module.exports = {
   getAvatarText,
   getConfirmColor,
   previewImage,
+  asArray,
   guardChefPage,
   refreshSummaryBadge,
   markSummarySeen,

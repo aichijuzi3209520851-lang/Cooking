@@ -1,5 +1,5 @@
 // components/dish-card/dish-card.js
-const { previewImage } = require('../../utils/util.js')
+const { previewImage, asArray } = require('../../utils/util.js')
 const category = require('../../utils/category.js')
 
 Component({
@@ -32,7 +32,11 @@ Component({
     showChefCancel: false,
     emoji: '🍽️',
     categoryImage: '',
-    hasImage: false
+    hasImage: false,
+    // 实际生效的投票人列表：优先取 dish.voters，voters 属性作兼容入口。
+    // 部分基础库环境下 Array 型属性的赋值通道不稳定（dish Object 通道始终可靠），
+    // 因此渲染统一走这个由 observer 计算出的字段，WXML 不再直接读属性。
+    voterList: []
   },
 
   observers: {
@@ -55,7 +59,12 @@ Component({
   methods: {
     computeState(dish, voters, currentUserId, userRole) {
       const d = dish || {};
-      const v = voters || [];
+      // 投票人以 dish.voters 优先：菜品列表页传的就是带 voters 的完整菜品对象，
+      // 该通道在所有环境都可靠；独立的 voters 属性仅在缺失时兜底。
+      // 两侧都要过 asArray：个别运行时会把跨组件的数组对象化成 {0:{...}}（见 util.asArray 注释）
+      const dishVoters = asArray(d.voters);
+      const propVoters = asArray(voters);
+      const v = dishVoters.length ? dishVoters : propVoters;
       // 切换菜品时重置裂图标记，新菜品重新尝试加载图片
       if (this._imageDishId !== d.dishId) {
         this._imageDishId = d.dishId;
@@ -75,7 +84,8 @@ Component({
         showChefCancel,
         emoji,
         categoryImage,
-        hasImage
+        hasImage,
+        voterList: v
       });
     },
 

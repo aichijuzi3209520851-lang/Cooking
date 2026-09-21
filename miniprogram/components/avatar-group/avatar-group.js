@@ -1,4 +1,6 @@
 // components/avatar-group/avatar-group.js
+const { asArray } = require('../../utils/util.js')
+
 const GRADIENTS = [
   ['#F0821E', '#D93A2B'],
   ['#E6A23C', '#F0821E'],
@@ -66,7 +68,8 @@ Component({
 
   methods: {
     computeDisplay(members, max, size) {
-      const list = members || [];
+      // members 必须过 asArray：个别运行时会把跨组件的数组属性对象化成 {0:{...}}（见 util.asArray 注释）
+      const list = asArray(members);
       const visibleCount = Math.min(list.length, max);
       const overflow = list.length > max ? list.length - max : 0;
 
