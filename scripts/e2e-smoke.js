@@ -345,10 +345,10 @@ async function t06_veto_semantics() {
   record('S6-2 撤菜后菜品未被隐藏（可再次点选）', true)
 }
 
-async function t06b_rice_step() {
-  await reLaunch('/pages/menu/menu')
-  await sleep(2000)
-  // 直接调 riceApi.get 确认云函数正常
+// 「今日米饭」的前端 UI 已下线（米饭回归「主食」分类下的普通菜品，谁想吃谁点），
+// 但云函数接口 vote.getRice/setRice 与 rice_reports 集合仍保留（dailyReset 会清理、
+// 且契约/冒烟测试覆盖这些接口）。因此这里只校验接口仍可用，不再驱动已删除的步进 UI。
+async function t06b_rice_api() {
   const apiTest = await mini.evaluate(() => new Promise((resolve) => {
     const app = getApp()
     const familyId = app.globalData.currentFamilyId
@@ -359,44 +359,12 @@ async function t06b_rice_step() {
       fail: (e) => resolve({ ok: false, err: e.errMsg })
     })
   }))
-  log('S6.5 riceApi.get：' + JSON.stringify(apiTest))
-  // 等 loadRice 完成（轮询 _riceCommitted 直到有定义）
-  const dl = Date.now() + 8000
-  let ready = false
-  while (Date.now() < dl && !ready) {
-    ready = await mini.evaluate(() => {
-      const pages = getCurrentPages()
-      const page = pages[pages.length - 1]
-      return page._riceCommitted !== undefined
-    })
-    if (!ready) await sleep(500)
-  }
-  log('S6.5 loadRice 就绪：' + ready)
-  // 同一个 evaluate 内执行步进 + 读取，保证页面实例一致
-  const stepResult = await mini.evaluate(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    const before = { mine: page.data.rice.mine, committed: page._riceCommitted }
-    // +0.5 → 1 碗
-    page.onRiceStep({ currentTarget: { dataset: { delta: 0.5 } } })
-    const after1 = { mine: page.data.rice.mine, committed: page._riceCommitted }
-    // +0.5 → 1.5 碗
-    page.onRiceStep({ currentTarget: { dataset: { delta: 0.5 } } })
-    const after2 = { mine: page.data.rice.mine, committed: page._riceCommitted }
-    return { before, after1, after2 }
-  })
-  log('S6.5 步进结果：' + JSON.stringify(stepResult))
-  assert(stepResult.before.mine === null, '初始应为未报')
-  record('S6.5 米饭步进：未报→1.5 碗', stepResult.after2.mine === 1.5, `mine=${stepResult.after2.mine}`)
-  // -0.5 → 1 碗
-  const halfResult = await mini.evaluate(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    page.onRiceStep({ currentTarget: { dataset: { delta: -0.5 } } })
-    return { mine: page.data.rice.mine, committed: page._riceCommitted }
-  })
-  log('S6.6 步进结果：' + JSON.stringify(halfResult))
-  record('S6.6 米饭步进：减 0.5→1 碗', halfResult.mine === 1, `mine=${halfResult.mine}`)
+  log('S6.5 vote.getRice：' + JSON.stringify(apiTest))
+  record(
+    'S6.5 米饭接口保留可用（前端步进 UI 已下线）',
+    apiTest.ok && apiTest.result && apiTest.result.success !== false,
+    JSON.stringify(apiTest.result || apiTest.err)
+  )
 }
 
 async function t07_theme_switch() {
@@ -477,7 +445,7 @@ async function main() {
     await t04_vote_and_summary()
     await t05_decide()
     await t06_veto_semantics()
-    await t06b_rice_step()
+    await t06b_rice_api()
     await t07_theme_switch()
     await t08_history()
   } catch (err) {
