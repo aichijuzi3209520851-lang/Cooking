@@ -90,7 +90,11 @@
   <view class="section">
     <view class="section-header">其他</view>
     <view class="group-card">
-      <view class="list-item" bindtap="onPrivacy">
+      <view class="list-item" bindtap="onHelp">
+        <text class="list-item-label">使用帮助</text>
+        <text class="list-item-arrow">›</text>
+      </view>
+      <view class="list-item list-item-bordered" bindtap="onPrivacy">
         <text class="list-item-label">隐私协议</text>
         <text class="list-item-arrow">›</text>
       </view>

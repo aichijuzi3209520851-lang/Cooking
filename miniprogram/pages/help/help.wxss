@@ -1,0 +1,141 @@
+/* pages/help/help.wxss */
+
+.help-page {
+  padding-top: var(--space-4);
+}
+
+/* ---- 顶部说明：用主题强调色做卡片，和页面内其它卡片拉开层级 ---- */
+.help-intro {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--elev-accent);
+}
+
+.help-intro-title {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  color: var(--color-on-accent);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-2);
+}
+
+.help-intro-desc {
+  font-size: var(--text-body-sm);
+  color: var(--color-on-accent);
+  opacity: 0.88;
+  line-height: var(--lh-loose);
+}
+
+/* ---- 分组说明 ---- */
+.help-group-desc {
+  margin-bottom: var(--space-3);
+  line-height: var(--lh-loose);
+}
+
+/* ---- 步骤卡片：去掉左右内边距，让步骤行自己控制节奏 ---- */
+.help-card {
+  padding: var(--space-1) var(--space-4);
+}
+
+.help-step {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.help-step-last {
+  border-bottom: none;
+}
+
+/* 步骤序号：淡底强调色，比纯实心更克制 */
+.help-step-no {
+  flex: none;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+  line-height: 44rpx;
+  text-align: center;
+  margin-top: 6rpx;
+}
+
+.help-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.help-step-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.help-step-title {
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+}
+
+.help-role {
+  flex: none;
+  font-size: var(--text-mini);
+  font-weight: var(--weight-medium);
+  color: var(--color-gold);
+  background: rgba(230, 162, 60, 0.14);
+  border-radius: var(--radius-pill);
+  padding: 2rpx 12rpx;
+  line-height: var(--lh-normal);
+}
+
+.help-step-desc {
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-loose);
+  margin-top: var(--space-1);
+}
+
+/* ---- 点击路径：凹陷块 + 强调色标签，和正文区分开 ---- */
+.help-path {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.help-path-label {
+  flex: none;
+  font-size: var(--text-mini);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  line-height: var(--lh-loose);
+}
+
+.help-path-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-loose);
+  word-break: break-all;
+}
+
+/* ---- 底部 ---- */
+.help-footer {
+  margin-top: var(--space-6);
+}
+
+.help-footer-hint {
+  margin-top: var(--space-3);
+  text-align: center;
+}

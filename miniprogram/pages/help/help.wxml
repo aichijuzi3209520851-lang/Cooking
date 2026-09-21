@@ -1,0 +1,48 @@
+<!--pages/help/help.wxml-->
+<view class="container help-page {{themeClass}}">
+
+  <!-- 顶部说明 -->
+  <view class="help-intro">
+    <view class="help-intro-title">3 分钟上手「筷点吃饭」</view>
+    <view class="help-intro-desc">下面按真实页面顺序，告诉你先点哪里、再点哪里。带「仅大厨」标记的步骤只有金牌大厨能做。</view>
+  </view>
+
+  <!-- 分组步骤 -->
+  <view class="section" wx:for="{{sections}}" wx:for-item="group" wx:key="key">
+    <view class="section-head">
+      <view class="section-title">{{group.title}}</view>
+      <view class="caption">{{group.steps.length}} 步</view>
+    </view>
+    <view class="caption help-group-desc">{{group.desc}}</view>
+
+    <view class="card help-card">
+      <view
+        class="help-step {{stepIndex === group.steps.length - 1 ? 'help-step-last' : ''}}"
+        wx:for="{{group.steps}}"
+        wx:for-item="step"
+        wx:for-index="stepIndex"
+        wx:key="n"
+      >
+        <view class="help-step-no">{{step.n}}</view>
+        <view class="help-step-body">
+          <view class="help-step-head">
+            <text class="help-step-title">{{step.title}}</text>
+            <text class="help-role" wx:if="{{step.role}}">{{step.role}}</text>
+          </view>
+          <view class="help-step-desc">{{step.desc}}</view>
+          <view class="help-path">
+            <text class="help-path-label">路径</text>
+            <text class="help-path-text">{{step.path}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部快捷入口 -->
+  <view class="help-footer safe-bottom">
+    <button class="btn btn-primary btn-block" bindtap="onGoMenu">去点菜试试</button>
+    <view class="caption help-footer-hint">还有疑问？可在「我的 → 关于」查看版本信息</view>
+  </view>
+
+</view>

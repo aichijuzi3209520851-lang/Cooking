@@ -222,6 +222,11 @@ Page({
     }
   },
 
+  // 使用帮助（HELP-001）
+  onHelp() {
+    wx.navigateTo({ url: '/pages/help/help' });
+  },
+
   // 隐私协议
   onPrivacy() {
     wx.navigateTo({ url: '/pages/agreement/privacy/privacy' });
