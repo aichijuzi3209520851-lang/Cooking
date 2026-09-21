@@ -39,6 +39,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `config.js`：`cloudEnv` + `notifyTemplates`（订阅消息模板 ID 留空时通知功能自动停用）。
 - `components/`：`avatar-group`、`dish-card`、`empty-state`、`privacy-popup`、`reject-reason`。无第三方 UI 库。
 - 分类管理是**独立页面** `pages/dishes/categories/categories`（不是弹层组件）：图标选择需要一屏铺开 5×5 方阵，半屏弹层里只能挤成横向滚动条，用户看不全也不好点。同样受 `guardChefPage()` 保护。
+  图标方阵的原则是**「一个类型一个图标」而非「一种食物一个图标」**（水果只放 🍎 一个，
+  不放苹果/橙子/西瓜一整行）——用户挑的是分类类型的图标，同族食物对分类是同一个东西；
+  新增图标必须同时加进云函数的 `ALLOWED_EMOJI`，且代表一个新的分类类型才加。
 
 ### 后端（cloudfunctions/）
 
