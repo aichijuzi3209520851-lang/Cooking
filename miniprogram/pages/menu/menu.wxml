@@ -23,22 +23,55 @@
     </view>
   </view>
 
-  <!-- 今日米饭（RICE-001）：全员饭量上报，金牌大厨一眼看总碗数 -->
-  <view class="rice-card" wx:if="{{hasFamily}}">
-    <view class="rice-head">
-      <text class="rice-title">今日米饭</text>
-      <text class="rice-total {{rice.hasReport ? '' : 'rice-total-empty'}}">{{rice.totalText}}</text>
+  <!-- 米饭引导：米饭已回归「主食」分类里的普通菜品（谁想吃谁点），
+       这里只在主食里确实没有米饭时提示厨师补一道 -->
+  <view
+    class="rice-tip"
+    wx:if="{{showRiceTip && !libraryEmpty}}"
+    hover-class="rice-tip-press"
+    bindtap="onCreateRiceDish"
+  >
+    <image class="rice-tip-icon" src="/images/category/cat-staple.svg" mode="aspectFit" />
+    <text class="rice-tip-text">主食里还没有米饭，点这里加一道</text>
+    <text class="rice-tip-arrow">›</text>
+  </view>
+
+  <!-- 今日推荐（RECOMMEND-001）：横向卡片，不随推荐条数长高，把纵向空间留给菜品列表 -->
+  <view class="recommend-card" wx:if="{{recommend.show && !libraryEmpty}}">
+    <view class="recommend-head">
+      <text class="recommend-title">今日推荐</text>
+      <text class="recommend-season">{{recommend.seasonTip}}</text>
     </view>
-    <view class="rice-mine">
-      <text class="rice-mine-label">我的</text>
-      <view class="rice-stepper">
-        <view class="rice-step-btn" hover-class="rice-step-press" data-delta="-0.5" bindtap="onRiceStep">－</view>
-        <text class="rice-mine-num">{{rice.mineText}}</text>
-        <view class="rice-step-btn" hover-class="rice-step-press" data-delta="0.5" bindtap="onRiceStep">＋</view>
+
+    <scroll-view wx:if="{{recommend.items.length > 0}}" class="recommend-scroll" scroll-x>
+      <view class="recommend-track">
+        <view
+          class="recommend-item {{item.voted ? 'recommend-item-done' : ''}}"
+          wx:for="{{recommend.items}}"
+          wx:key="dishId"
+          data-index="{{index}}"
+          bindtap="onRecommendTap"
+        >
+          <view class="recommend-thumb">
+            <image
+              wx:if="{{item.imageUrl}}"
+              class="recommend-thumb-img"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+            />
+            <text wx:else class="recommend-thumb-emoji">{{item.emoji}}</text>
+            <view class="recommend-flag">{{item.voted ? '✓' : '＋'}}</view>
+          </view>
+          <text class="recommend-name">{{item.name}}</text>
+          <text class="recommend-reason {{item.seasonal ? 'recommend-reason-seasonal' : ''}}">{{item.reason}}</text>
+        </view>
       </view>
+    </scroll-view>
+
+    <!-- 未到开启门槛：给进度而不是留白，让用户知道推荐会自己来 -->
+    <view wx:else class="recommend-progress">
+      <text class="recommend-progress-text">{{recommend.progressText}}</text>
     </view>
-    <view class="rice-others" wx:if="{{rice.othersText}}">{{rice.othersText}}</view>
-    <view class="rice-unreported" wx:if="{{rice.unreportedCount > 0}}">还有 {{rice.unreportedCount}} 人没报</view>
   </view>
 
   <!-- 无家庭 -->
@@ -78,52 +111,89 @@
     </view>
     <text wx:if="{{isChef}}" class="chef-hint">长按菜品卡片可撤下这道菜</text>
 
-    <!-- 分类筛选 -->
-    <scroll-view class="category-scroll" scroll-x>
-      <view class="category-list">
-        <view
-          wx:for="{{categories}}"
-          wx:key="key"
-          class="category-item {{selectedCategory === item.key ? 'category-active' : ''}}"
-          data-key="{{item.key}}"
-          bindtap="onCategoryTap"
+    <!-- 主体：左侧分类导航（像 Word 的导航窗格）+ 右侧菜品列表，两侧各自独立滚动 -->
+    <view class="menu-body">
+      <view class="category-rail">
+        <scroll-view
+          class="rail-scroll"
+          scroll-y
+          scroll-into-view="{{railIntoView}}"
+          scroll-with-animation
         >
-          <text class="category-name">{{item.name}}</text>
+          <view
+            wx:for="{{categories}}"
+            wx:key="key"
+            id="rail-{{item.key}}"
+            class="rail-item {{selectedCategory === item.key ? 'rail-item-active' : ''}}"
+            data-key="{{item.key}}"
+            bindtap="onCategoryTap"
+          >
+            <text class="rail-emoji">{{item.emoji}}</text>
+            <text class="rail-name">{{item.name}}</text>
+          </view>
+          <view class="rail-pad"></view>
+        </scroll-view>
+
+        <!-- 分类管理入口固定在左栏底部（仅金牌大厨）：不随分类滚动，也不会被悬浮按钮遮挡 -->
+        <view
+          wx:if="{{isChef}}"
+          class="rail-manage-bar"
+          hover-class="rail-manage-press"
+          bindtap="onOpenCategoryManager"
+        >
+          <text class="rail-manage-icon">⚙️</text>
+          <text class="rail-manage-text">分类管理</text>
         </view>
       </view>
-    </scroll-view>
 
-    <!-- 菜品列表 -->
-    <view class="dish-list safe-bottom">
-      <!-- 首屏加载骨架：避免加载中闪现「暂无菜品」空状态 -->
-      <block wx:if="{{loading && dishes.length === 0}}">
-        <view class="skeleton-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
-          <view class="skeleton-thumb skeleton-shimmer"></view>
-          <view class="skeleton-lines">
-            <view class="skeleton-line skeleton-shimmer"></view>
-            <view class="skeleton-line skeleton-line-short skeleton-shimmer"></view>
+      <scroll-view
+        class="dish-panel"
+        scroll-y
+        bindscrolltolower="onLoadMore"
+        refresher-enabled="{{true}}"
+        refresher-triggered="{{refreshing}}"
+        bindrefresherrefresh="onRefresh"
+        enable-back-to-top
+      >
+        <view class="dish-list">
+          <!-- 首屏加载骨架：避免加载中闪现「暂无菜品」空状态 -->
+          <block wx:if="{{loading && dishes.length === 0}}">
+            <view class="skeleton-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+              <view class="skeleton-thumb skeleton-shimmer"></view>
+              <view class="skeleton-lines">
+                <view class="skeleton-line skeleton-shimmer"></view>
+                <view class="skeleton-line skeleton-line-short skeleton-shimmer"></view>
+              </view>
+            </view>
+          </block>
+          <block wx:elif="{{dishes.length > 0}}">
+            <dish-card
+              wx:for="{{dishes}}"
+              wx:key="dishId"
+              dish="{{item}}"
+              voters="{{item.voters}}"
+              current-user-id="{{currentUserId}}"
+              user-role="{{currentRole}}"
+              bind:vote="onVote"
+              bind:cancel="onCancel"
+              bind:chefcancel="onChefCancel"
+            />
+          </block>
+          <empty-state
+            wx:else
+            icon="🔍"
+            title="该分类暂无菜品"
+            description="试试其他分类吧"
+          />
+
+          <view class="panel-footer" wx:if="{{loading && dishes.length > 0}}">
+            <text class="caption">加载中...</text>
+          </view>
+          <view class="panel-footer" wx:elif="{{!hasMore && dishes.length > 0}}">
+            <text class="caption">没有更多了</text>
           </view>
         </view>
-      </block>
-      <block wx:elif="{{dishes.length > 0}}">
-        <dish-card
-          wx:for="{{dishes}}"
-          wx:key="dishId"
-          dish="{{item}}"
-          voters="{{item.voters}}"
-          current-user-id="{{currentUserId}}"
-          user-role="{{currentRole}}"
-          bind:vote="onVote"
-          bind:cancel="onCancel"
-          bind:chefcancel="onChefCancel"
-        />
-      </block>
-      <empty-state
-        wx:else
-        icon="🔍"
-        title="该分类暂无菜品"
-        description="试试其他分类吧"
-      />
+      </scroll-view>
     </view>
   </block>
 

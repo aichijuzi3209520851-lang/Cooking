@@ -11,8 +11,10 @@
     "pages/family/manage/manage",
     "pages/dishes/list/list",
     "pages/dishes/edit/edit",
+    "pages/dishes/categories/categories",
     "pages/history/history",
     "pages/settings/theme/theme",
+    "pages/help/help",
     "pages/agreement/privacy/privacy"
   ],
   "window": {

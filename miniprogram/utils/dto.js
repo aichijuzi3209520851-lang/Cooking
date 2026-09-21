@@ -3,15 +3,15 @@
 //   - vote.todayList 返回 { date, groups[] }，group 字段：dishId/dishName/category/imageUrl/isHidden/voters[]
 //   - voter 字段：openid/nickname/avatarUrl/votedAt
 //   - 展示层统一使用 dishId 作为业务 ID，禁止页面再猜测 _id / list / Array.isArray 等格式
-// 本模块依赖 util.js 的 getCategoryEmoji（纯函数，不依赖 wx），可在 Node 环境直接 require 测试。
+// 分类名/图标统一走 utils/category.js（家庭可自定义分类，不能再用静态 map）。
 
-const { getCategoryEmoji } = require('./util.js');
+const category = require('./category.js');
 
 /**
- * 获取分类 emoji（无匹配时返回默认）——委托给 util.js 单一数据源
+ * 获取分类 emoji（家庭自定义分类由 category.js 缓存解析，未知分类回退默认）
  */
-function emojiOf(category) {
-  return getCategoryEmoji(category);
+function emojiOf(categoryKey) {
+  return category.emojiOf(categoryKey);
 }
 
 /**
@@ -35,15 +35,18 @@ function toMs(value) {
 }
 
 /**
- * 归一化 vote.todayList 返回值，始终返回 { date, groups[] }
+ * 归一化 vote.todayList 返回值，始终返回 { date, groups[], submitCount }
+ * submitCount = 今日已提交菜单的人数，供厨师端「有新提交」角标使用
+ * （NOTIFY-003：点菜不再逐条推送，角标是主要的应用内提示渠道）
  */
 function normalizeTodayList(voteData) {
   if (!voteData || typeof voteData !== 'object') {
-    return { date: '', groups: [] };
+    return { date: '', groups: [], submitCount: 0 };
   }
   return {
     date: typeof voteData.date === 'string' ? voteData.date : '',
-    groups: Array.isArray(voteData.groups) ? voteData.groups : []
+    groups: Array.isArray(voteData.groups) ? voteData.groups : [],
+    submitCount: typeof voteData.submitCount === 'number' ? voteData.submitCount : 0
   };
 }
 

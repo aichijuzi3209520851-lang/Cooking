@@ -39,9 +39,9 @@
         ></image>
         <view wx:else class="dish-thumb-placeholder">
           <image
-            wx:if="{{item.category}}"
+            wx:if="{{item.categoryImage}}"
             class="dish-thumb-cat"
-            src="/images/category/cat-{{item.category}}.svg"
+            src="{{item.categoryImage}}"
             mode="aspectFit"
           />
           <text wx:else class="dish-thumb-emoji">{{item.categoryEmoji}}</text>

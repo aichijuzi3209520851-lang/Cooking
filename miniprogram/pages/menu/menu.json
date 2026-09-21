@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "筷点吃饭",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "usingComponents": {
     "dish-card": "/components/dish-card/dish-card",
     "empty-state": "/components/empty-state/empty-state",

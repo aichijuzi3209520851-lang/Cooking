@@ -1,6 +1,6 @@
 // pages/summary/summary.js
 const theme = require('../../utils/theme.js');
-const { voteApi, riceApi } = require('../../utils/api.js');
+const { voteApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
 const {
   today,
@@ -33,8 +33,6 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
-    // 今日米饭聚合行（RICE-001），空串表示不展示
-    riceLine: ''
   },
 
   onLoad() {
@@ -187,7 +185,10 @@ Page({
 
     try {
       const voteData = await voteApi.todayList(familyId);
-      const { date, groups } = dto.normalizeTodayList(voteData);
+      const { date, groups, submitCount } = dto.normalizeTodayList(voteData);
+      // 徽标口径（NOTIFY-003）：厨师关注「有几人交了菜单」，其他人关注「已点几道菜」。
+      // 这里留存提交人数，供下方 markSummarySeen 与本地重算两处共用。
+      this._submitCount = submitCount;
 
       // 业务日期以服务端为准：跨日时重建 watcher
       if (date && date !== this.data.todayDate) {
@@ -214,10 +215,7 @@ Page({
       });
 
       // 标记汇总已看到（清除 tab 徽标，BADGE-001）
-      markSummarySeen(stats.dishCount);
-
-      // 今日米饭聚合（RICE-001）：独立加载，失败不影响汇总主流程
-      this.loadRice();
+      markSummarySeen(this.data.isChef ? (this._submitCount || 0) : stats.dishCount);
     } catch (err) {
       console.error('加载汇总失败', err);
       showApiError(err, '加载失败');
@@ -231,37 +229,18 @@ Page({
     }
   },
 
-  // 今日米饭聚合（RICE-001）：做饭前看总碗数
-  async loadRice() {
-    const familyId = app.globalData.currentFamilyId;
-    if (!familyId) return;
-    try {
-      const res = await riceApi.get(familyId);
-      const list = (res && res.reports) || [];
-      const unreported = Math.max(0, ((res && res.memberCount) || 0) - list.length);
-      const total = (res && res.total) || 0;
-      let line = '';
-      if (list.length > 0) {
-        // total 为 0 时不说「共 0 碗」（读起来别扭），改为「没人要米饭」
-        line = total > 0 ? `今晚米饭 ${total} 碗` : '今晚没人要米饭';
-        if (unreported > 0) {
-          line += ` · ${unreported} 人未报`;
-        }
-      }
-      this.setData({ riceLine: line });
-    } catch (err) {
-      console.warn('加载米饭数据失败', err);
-    }
-  },
-
   // 拍板/移出今晚菜单（PRODUCT-002，仅金牌大厨）
   async onDecideMenu(e) {
     const dishId = e.currentTarget.dataset.id;
-    const decided = e.currentTarget.dataset.decided === 1 || e.currentTarget.dataset.decided === '1';
     if (!this.data.isChef || this.data.loading) return;
+    // 目标状态 = 与当前相反。以渲染同源的 summaryList 为准，不依赖 dataset 的类型编码：
+    // WXML 绑的是布尔 item.decided，曾与数字 1/'1' 比较，导致恒为 false（点「定为」实际执行「移出」）。
+    const current = this.data.summaryList.find(item => item.dishId === dishId);
+    if (!current) return;
+    const next = !current.decided;
 
     try {
-      const res = await voteApi.decideMenu(app.globalData.currentFamilyId, dishId, decided);
+      const res = await voteApi.decideMenu(app.globalData.currentFamilyId, dishId, next);
       const summaryList = this.data.summaryList.map(item =>
         item.dishId === dishId ? { ...item, decided: res.decided } : item
       );
@@ -347,7 +326,7 @@ Page({
       });
 
       // 标记汇总已看到（清除 tab 徽标，BADGE-001）
-      markSummarySeen(stats.dishCount);
+      markSummarySeen(this.data.isChef ? (this._submitCount || 0) : stats.dishCount);
     } catch (err) {
       console.error('撤下失败', err);
       showApiError(err, '撤下失败');

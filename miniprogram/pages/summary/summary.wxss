@@ -35,17 +35,6 @@
   color: var(--color-text-secondary);
 }
 
-/* 今日米饭聚合（RICE-001）：辅助信息，扁平化为轻量 chip，不与主操作抢注意力 */
-.rice-line {
-  margin-top: var(--space-2);
-  display: inline-block;
-  padding: 6rpx var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--surface-sunken);
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-}
-
 /* ===== 汇总卡片 ===== */
 .summary-list {
   padding-top: var(--space-1);

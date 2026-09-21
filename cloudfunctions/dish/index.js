@@ -5,7 +5,17 @@ const { ApiError } = require('./shared/api-error')
 const { getOpenid, requireChef, requireCreator, requireMember, requireDishInFamily } = require('./shared/auth')
 const { getTodayStr } = require('./shared/date')
 const { safeDeleteFiles, removeTodayVotes } = require('./shared/db-helpers')
-const { validateImageUrl, VALID_CATEGORIES } = require('./shared/validators')
+const { validateImageUrl } = require('./shared/validators')
+const {
+  getFamilyCategories,
+  requireFamilyCategories,
+  isValidCategory,
+  assertCategoryName,
+  buildCustomKey,
+  matchEmoji,
+  ALLOWED_EMOJI,
+  CATEGORY_MAX
+} = require('./shared/categories')
 const { assertTextSafe, assertImageSafe } = require('./shared/security')
 
 cloud.init({
@@ -66,8 +76,11 @@ async function listDishes(data, openid) {
     throw new ApiError('INVALID_PARAM', 'pageSize 参数无效（1-100）')
   }
 
-  // 校验是家庭成员
-  const member = await requireMember(db, familyId, openid)
+  // 校验是家庭成员，同时取家庭分类表（分类过滤合法性按家庭自定义分类判定，UI-002）
+  const [member, categories] = await Promise.all([
+    requireMember(db, familyId, openid),
+    getFamilyCategories(db, familyId)
+  ])
 
   const where = { familyId }
   if (includeHidden === true) {
@@ -78,7 +91,9 @@ async function listDishes(data, openid) {
   } else {
     where.isHidden = false
   }
-  if (category && VALID_CATEGORIES.includes(category)) {
+  // 传入未在本家庭注册的分类 key 时忽略该过滤条件（回退为不过滤），
+  // 避免因分类被删/拼写错误而返回空列表，让用户误以为菜品丢了
+  if (category && isValidCategory(categories, category)) {
     where.category = category
   }
 
@@ -116,11 +131,17 @@ async function addDish(data, openid) {
   if (name.trim().length > NAME_MAX_LENGTH) {
     throw new ApiError('INVALID_PARAM', `菜品名称不能超过 ${NAME_MAX_LENGTH} 个字`)
   }
-  if (!category || !VALID_CATEGORIES.includes(category)) {
+  if (!category || typeof category !== 'string') {
     throw new ApiError('INVALID_PARAM', '菜品分类无效')
   }
 
   await requireChef(db, familyId, openid)
+
+  // 分类必须存在于当前家庭的分类表（家庭可自行增删分类，UI-002）
+  const categories = await requireFamilyCategories(db, familyId)
+  if (!isValidCategory(categories, category)) {
+    throw new ApiError('INVALID_PARAM', '菜品分类无效，请先在分类管理中添加')
+  }
 
   // 内容安全：菜品名（文本 UGC）+ 菜品图（图片 UGC）均需过平台内容安全 API
   await assertTextSafe(cloud, name, openid, { label: '菜品名称' })
@@ -179,8 +200,9 @@ async function updateDish(data, openid) {
     updateData.name = name.trim()
   }
   if (category !== undefined) {
-    if (!VALID_CATEGORIES.includes(category)) {
-      throw new ApiError('INVALID_PARAM', '菜品分类无效')
+    const categories = await requireFamilyCategories(db, familyId)
+    if (!isValidCategory(categories, category)) {
+      throw new ApiError('INVALID_PARAM', '菜品分类无效，请先在分类管理中添加')
     }
     updateData.category = category
   }
@@ -296,6 +318,103 @@ async function toggleHidden(data, openid) {
   return { dishId, isHidden }
 }
 
+// ============ 分类管理（UI-002） ============
+// 分类从「前端硬编码 5 类」升级为「家庭级可配置」：
+// 配置存放在 families.categories，家庭可自行新增（水果/饮料/甜点…）与删除。
+// 校验规则：名称非空且 ≤6 字、家庭内不重名、总数 ≤ CATEGORY_MAX；
+// 删除时要求「该分类下没有菜品」且「至少保留一个分类」，
+// 否则历史菜品的 category 会指向不存在的分类，菜品库出现无法筛出的孤儿分类。
+
+// 分类列表（含各分类菜品数量）：所有家庭成员可读，数量供左侧导航与删除提示使用
+async function listCategories(data, openid) {
+  const { familyId } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+  await requireMember(db, familyId, openid)
+
+  const categories = await getFamilyCategories(db, familyId)
+
+  // 一次聚合拿到各分类菜品数，避免逐类 count（分类最多 24 个）
+  const countMap = {}
+  try {
+    const aggRes = await db.collection('dishes')
+      .aggregate()
+      .match({ familyId })
+      .group({ _id: '$category', count: { $sum: 1 } })
+      .end()
+    for (const row of (aggRes.list || [])) {
+      if (row && typeof row._id === 'string') {
+        countMap[row._id] = row.count || 0
+      }
+    }
+  } catch (e) {
+    // 聚合失败不阻塞分类展示，数量退化为 0（仅影响提示文案）
+    console.warn('[dish] 分类菜品数量聚合失败：', e.message)
+  }
+
+  return {
+    categories: categories.map(c => ({ ...c, dishCount: countMap[c.key] || 0 }))
+  }
+}
+
+// 新增分类（chef）：emoji 按名称自动匹配，也可由前端显式指定（须在白名单内）
+async function addCategory(data, openid) {
+  const { familyId, name } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+
+  await requireChef(db, familyId, openid)
+
+  const categories = await requireFamilyCategories(db, familyId)
+  if (categories.length >= CATEGORY_MAX) {
+    throw new ApiError('CATEGORY_LIMIT', `分类数量已达上限（${CATEGORY_MAX} 个）`)
+  }
+  const safeName = assertCategoryName(categories, name)
+  const emoji = ALLOWED_EMOJI.indexOf(data.emoji) > -1 ? data.emoji : matchEmoji(safeName)
+
+  const next = categories.concat([{ key: buildCustomKey(), name: safeName, emoji }])
+
+  await db.collection('families').doc(familyId).update({
+    data: { categories: next }
+  })
+
+  return { categories: next }
+}
+
+// 删除分类（chef）：内置与自定义一视同仁，但要求分类下无菜品、且至少保留一个分类
+async function removeCategory(data, openid) {
+  const { familyId, categoryKey } = data
+  if (!familyId || !categoryKey) {
+    throw new ApiError('INVALID_PARAM', '参数不完整')
+  }
+
+  await requireChef(db, familyId, openid)
+
+  const categories = await requireFamilyCategories(db, familyId)
+  if (!categories.some(c => c.key === categoryKey)) {
+    throw new ApiError('CATEGORY_NOT_FOUND', '分类不存在')
+  }
+  if (categories.length <= 1) {
+    throw new ApiError('CATEGORY_LAST_ONE', '至少要保留一个分类')
+  }
+
+  const used = await db.collection('dishes')
+    .where({ familyId, category: categoryKey })
+    .count()
+  if (used && used.total > 0) {
+    throw new ApiError('CATEGORY_IN_USE', `该分类下还有 ${used.total} 道菜，请先移走`)
+  }
+
+  const next = categories.filter(c => c.key !== categoryKey)
+  await db.collection('families').doc(familyId).update({
+    data: { categories: next }
+  })
+
+  return { categories: next }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -319,6 +438,15 @@ exports.main = async (event, context) => {
         break
       case 'toggleHidden':
         data = await toggleHidden(event, openid)
+        break
+      case 'categories':
+        data = await listCategories(event, openid)
+        break
+      case 'addCategory':
+        data = await addCategory(event, openid)
+        break
+      case 'removeCategory':
+        data = await removeCategory(event, openid)
         break
       default:
         return {

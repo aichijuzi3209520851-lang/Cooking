@@ -9,7 +9,6 @@
       <view class="header-sub" wx:if="{{hasFamily && summaryList.length > 0}}">
         共 {{stats.dishCount}} 道菜 · {{stats.voterCount}} 人参与
       </view>
-      <view class="rice-line" wx:if="{{riceLine}}">{{riceLine}}</view>
     </view>
   </view>
 

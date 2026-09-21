@@ -30,3 +30,7 @@ desktop.ini
 *.tmp
 .env
 .env.*
+
+# ---- 本地验证产物 / 微信开发者工具测试配置 ----
+.check/
+minitest/

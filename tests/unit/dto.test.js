@@ -27,20 +27,30 @@ test('normalizeTodayList：合法结构原样归一化', () => {
 });
 
 test('normalizeTodayList：非对象/缺字段返回空结构，不做 Array.isArray 猜测', () => {
-  assert.deepEqual(dto.normalizeTodayList(undefined), { date: '', groups: [] });
-  assert.deepEqual(dto.normalizeTodayList(null), { date: '', groups: [] });
-  assert.deepEqual(dto.normalizeTodayList('x'), { date: '', groups: [] });
+  const empty = { date: '', groups: [], submitCount: 0 };
+  assert.deepEqual(dto.normalizeTodayList(undefined), empty);
+  assert.deepEqual(dto.normalizeTodayList(null), empty);
+  assert.deepEqual(dto.normalizeTodayList('x'), empty);
   // 旧契约 list 数组：不再兼容猜测，统一返回空
-  assert.deepEqual(dto.normalizeTodayList([makeGroup()]), { date: '', groups: [] });
-  assert.deepEqual(dto.normalizeTodayList({ list: [] }), { date: '', groups: [] });
-  assert.deepEqual(dto.normalizeTodayList({}), { date: '', groups: [] });
+  assert.deepEqual(dto.normalizeTodayList([makeGroup()]), empty);
+  assert.deepEqual(dto.normalizeTodayList({ list: [] }), empty);
+  assert.deepEqual(dto.normalizeTodayList({}), empty);
 });
 
 test('normalizeTodayList：groups 非数组返回空', () => {
   assert.deepEqual(dto.normalizeTodayList({ date: '2026-08-15', groups: 'x' }), {
     date: '2026-08-15',
-    groups: []
+    groups: [],
+    submitCount: 0
   });
+});
+
+test('normalizeTodayList：透传 submitCount（NOTIFY-003），非法值回退 0', () => {
+  assert.equal(dto.normalizeTodayList({ date: 'd', groups: [], submitCount: 3 }).submitCount, 3);
+  assert.equal(dto.normalizeTodayList({ date: 'd', groups: [], submitCount: 0 }).submitCount, 0);
+  // 老版本云函数不返回该字段时不能变成 undefined，否则徽标会显示 NaN
+  assert.equal(dto.normalizeTodayList({ date: 'd', groups: [] }).submitCount, 0);
+  assert.equal(dto.normalizeTodayList({ date: 'd', groups: [], submitCount: 'x' }).submitCount, 0);
 });
 
 test('normalizeGroup：缺失字段补默认值，非法 voter 被过滤', () => {

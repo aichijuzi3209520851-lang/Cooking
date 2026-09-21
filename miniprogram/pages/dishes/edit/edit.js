@@ -1,6 +1,7 @@
 // pages/dishes/edit/edit.js
 const theme = require('../../../utils/theme.js');
-const { dishApi } = require('../../../utils/api.js');
+const { dishApi, categoryApi } = require('../../../utils/api.js');
+const category = require('../../../utils/category.js');
 const privacy = require('../../../utils/privacy.js');
 const {
   getCategoryList,
@@ -21,7 +22,8 @@ Page({
     isEdit: false,
     dishName: '',
     canSave: false,
-    category: 'meat',
+    // 分类由家庭配置决定，加载完成前留空（避免默认写死某个分类）
+    category: '',
     imageUrl: '',
     uploading: false,
     saving: false,
@@ -53,6 +55,31 @@ Page({
     // 页面守卫（UI-001）：菜品管理仅金牌大厨可用，防止非常规路径误入
     await app.waitForLogin();
     if (!guardChefPage()) return;
+    this.loadCategories();
+  },
+
+  // 分类来自家庭配置（UI-002）：先用缓存渲染，再拉云端纠偏
+  async loadCategories() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+
+    const cached = category.getCategories(familyId);
+    if (cached.length > 0) this.setData({ categoryList: cached });
+
+    try {
+      const res = await categoryApi.list(familyId);
+      const list = category.setFamilyCategories(familyId, (res && res.categories) || []);
+      // 编辑已有菜品时优先沿用它的分类；若该分类已被删除则回落到第一个可用分类，
+      // 否则保存会被服务端拒绝，而用户在界面上看不出原因
+      const preferred = this._preferredCategory || this.data.category;
+      const next = list.some(c => c.key === preferred)
+        ? preferred
+        : (list.length > 0 ? list[0].key : '');
+      this.setData({ categoryList: list, category: next });
+    } catch (err) {
+      // 分类拉取失败不阻塞编辑：沿用缓存 / 默认分类，保存时服务端仍会兜底校验
+      console.warn('加载分类失败', err);
+    }
   },
 
   onUnload() {
@@ -62,9 +89,11 @@ Page({
 
   // 填充表单
   fillForm(dish) {
+    // 记录菜品原有分类：分类表加载完成后优先沿用它
+    this._preferredCategory = dish.category || '';
     this.setData({
       dishName: dish.name || '',
-      category: dish.category || 'meat',
+      category: dish.category || '',
       imageUrl: dish.imageUrl || '',
       canSave: !!(dish.name || '').trim()
     });
@@ -85,6 +114,8 @@ Page({
   onCategoryTap(e) {
     const key = e.currentTarget.dataset.key;
     if (!key || key === this.data.category) return;
+    // 用户已手动选择：之后分类表刷新不再用「菜品原有分类」兜底，避免覆盖用户选择
+    this._preferredCategory = '';
     this.setData({ category: key });
   },
 

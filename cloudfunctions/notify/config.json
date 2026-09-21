@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "openapi": [
+      "subscribeMessage.send"
+    ]
+  },
+  "triggers": [
+    {
+      "name": "menuDigestNoon",
+      "type": "timer",
+      "config": "0 0 11 * * * *"
+    },
+    {
+      "name": "menuDigestEvening",
+      "type": "timer",
+      "config": "0 0 17 * * * *"
+    }
+  ]
+}

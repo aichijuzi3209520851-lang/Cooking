@@ -2,16 +2,27 @@
  * 布局原则：
  *   - 页边距 32rpx（--space-4），卡片内边距 32rpx，卡片间距 24rpx
  *   - 区块之间用「卡片 → 淡染条 → 胶囊 → 卡片」交替，避免一片白导致层级塌陷
+ *
+ * 结构（自上而下，页面整体定高不滚动）：
+ *   hero（签名色淡染） → 米饭引导条（按需） → 今日推荐 → 统计条 → [ 左分类导航 | 右菜品列表 ]
+ *   上半部按内容自然排布且不可压缩（flex-shrink:0），
+ *   .menu-body 用 flex:1 吃掉剩余高度，内部左右两栏各自 scroll-view 独立滚动
+ *   —— 即 Word「导航窗格」式布局：左栏固定可见，右栏单独滚动。
  */
+
 .menu-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   padding-top: 0;
-  padding-bottom: var(--space-6);
-  min-height: 100vh;
+  padding-bottom: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* ===== 英雄区：主题签名色淡染，负边距做全出血 ===== */
 .menu-hero {
+  flex-shrink: 0;
   margin: 0 calc(var(--space-4) * -1) var(--space-4);
   padding: var(--space-3) var(--space-4) var(--space-4);
   background: linear-gradient(160deg, var(--tint-1) 0%, var(--tint-2) 55%, var(--tint-3) 100%);
@@ -98,10 +109,55 @@
   line-height: 1;
 }
 
-/* ===== 今日米饭（RICE-001）
-   白卡片 + 米黄凹陷行，与下方的纯白菜品卡形成「信息块 vs 列表项」区分 ===== */
-.rice-card {
-  padding: var(--space-4);
+/* ===== 米饭引导条（原「今日米饭」日报卡下线后的一次性引导）
+   极淡一条，不抢推荐与菜品列表的注意力 ===== */
+.rice-tip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
+  border: 1rpx solid var(--color-border);
+  box-sizing: border-box;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.rice-tip-press {
+  opacity: 0.75;
+}
+
+/* 用主食分类插画（红碗白米饭 + 热气）而非 emoji：小尺寸下更清晰，
+   也与「加进主食分类」后菜品占位图同款，前后视觉一致 */
+.rice-tip-icon {
+  width: 56rpx;
+  height: 56rpx;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+  display: block;
+}
+
+.rice-tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.rice-tip-arrow {
+  font-size: 34rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ===== 今日推荐（RECOMMEND-001）
+   横向卡片：推荐条数变化时卡片区高度恒定，避免挤占下方列表的可视面积 ===== */
+.recommend-card {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   margin-bottom: var(--space-3);
   border-radius: var(--radius-lg);
   background: var(--surface-card);
@@ -109,96 +165,152 @@
   box-sizing: border-box;
 }
 
-.rice-head {
+.recommend-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
+  gap: var(--space-2);
 }
 
-.rice-title {
+.recommend-title {
+  flex-shrink: 0;
   font-size: var(--text-body);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 
-.rice-total {
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
-  color: var(--color-num-strong);
-}
-
-.rice-total-empty {
-  font-weight: var(--weight-medium);
+.recommend-season {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: var(--text-mini);
   color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 我的饭量：米黄凹陷行收纳步进器 */
-.rice-mine {
+.recommend-scroll {
+  white-space: nowrap;
+  margin-top: var(--space-3);
+}
+
+.recommend-track {
+  display: inline-flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.recommend-item {
+  width: 220rpx;
+  flex-shrink: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  box-sizing: border-box;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+
+.recommend-item:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* 今天已经点过：整卡降饱和，只作提示不再可点 */
+.recommend-item-done {
+  opacity: 0.6;
+}
+
+.recommend-thumb {
+  position: relative;
+  width: 100%;
+  height: 112rpx;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-cream);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+}
+
+.recommend-thumb-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.recommend-thumb-emoji {
+  font-size: 52rpx;
+  line-height: 1;
+}
+
+/* 右上角状态钮：＋ 待点 / ✓ 已点 */
+.recommend-flag {
+  position: absolute;
+  right: 8rpx;
+  top: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 28rpx;
+  font-weight: var(--weight-bold);
+  box-shadow: var(--elev-1);
+}
+
+.recommend-item-done .recommend-flag {
+  background: var(--surface-card);
+  color: var(--color-text-tertiary);
+  border: 1rpx solid var(--color-border);
+}
+
+.recommend-name {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommend-reason {
+  display: block;
+  margin-top: 6rpx;
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 时令理由用强调色，与「常点」理由区分开 */
+.recommend-reason-seasonal {
+  color: var(--color-accent-deep);
+}
+
+.recommend-progress {
   margin-top: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--color-cream);
 }
 
-.rice-mine-label {
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-}
-
-.rice-stepper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.rice-step-btn {
-  width: 64rpx;
-  height: 64rpx;
-  line-height: 60rpx;
-  text-align: center;
-  border-radius: 50%;
-  background: var(--surface-card);
-  border: 1rpx solid var(--color-border);
-  color: var(--color-text-primary);
-  font-size: 34rpx;
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.rice-step-btn:active {
-  transform: scale(0.92);
-}
-
-.rice-step-press {
-  opacity: 0.6;
-}
-
-.rice-mine-num {
-  display: inline-block;
-  min-width: 120rpx;
-  text-align: center;
-  font-size: var(--text-h3);
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-}
-
-.rice-others {
-  margin-top: var(--space-3);
-  font-size: var(--text-caption);
-  line-height: var(--lh-loose);
-  color: var(--color-text-secondary);
-}
-
-.rice-unreported {
-  margin-top: var(--space-1);
+.recommend-progress-text {
   font-size: var(--text-mini);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
 /* ===== 统计条：极淡主题染条，不做卡片，避免与菜品卡同质化 ===== */
 .stats-bar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   padding: var(--space-2) var(--space-4);
@@ -227,6 +339,7 @@
 
 /* chef 长按撤下提示 */
 .chef-hint {
+  flex-shrink: 0;
   display: block;
   font-size: var(--text-mini);
   color: var(--color-text-tertiary);
@@ -234,58 +347,143 @@
   margin: calc(var(--space-2) * -1) 0 var(--space-3);
 }
 
-/* ===== 分类筛选（胶囊） ===== */
-.category-scroll {
-  white-space: nowrap;
+/* ============================================================
+ * 主体：左分类导航 + 右菜品列表（导航窗格式布局）
+ * 两栏各自独立滚动，互不带动；左栏贴屏幕左缘，右栏内容自带页边距
+ * ============================================================ */
+.menu-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  /* 全出血：让左栏贴住屏幕左缘（抵消 .container 的左右内边距） */
   margin: 0 calc(var(--space-4) * -1);
-  padding: 0 var(--space-4);
-  margin-bottom: var(--space-4);
-  /* 两端渐隐，提示右侧还有更多分类 */
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24rpx, #000 calc(100% - 24rpx), transparent 100%);
 }
 
-.category-list {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding-bottom: var(--space-1);
+/* ---- 左侧分类导航（导航窗格） ---- */
+/* 竖排 flex：分类列表可滚动，管理入口固定在底部（不随分类滚走、不被悬浮按钮遮挡） */
+.category-rail {
+  width: 168rpx;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-sunken);
+  border-top-right-radius: var(--radius-md);
+  box-sizing: border-box;
 }
 
-.category-item {
-  display: inline-flex;
+.rail-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.rail-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 14rpx var(--space-4);
-  border-radius: var(--radius-pill);
+  justify-content: center;
+  min-height: 116rpx;
+  padding: var(--space-2) var(--space-1);
+  box-sizing: border-box;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.rail-item:active {
   background: var(--surface-card);
-  box-shadow: var(--elev-1);
-  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
-.category-item:active {
+.rail-emoji {
+  font-size: 34rpx;
+  line-height: 1;
+  margin-bottom: 8rpx;
   opacity: 0.7;
-  transform: scale(0.96);
 }
 
-.category-name {
-  font-size: var(--text-body-sm);
+.rail-name {
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
   font-weight: var(--weight-medium);
-  line-height: 1.3;
+  line-height: 1.25;
+  text-align: center;
+  word-break: break-all;
 }
 
-.category-active {
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
-  box-shadow: var(--elev-accent);
+/* 选中态：白底浮起 + 左缘强调竖条（对应 Word 导航窗格的「当前章节」） */
+.rail-item-active {
+  background: var(--surface-card);
+  box-shadow: var(--elev-1);
 }
 
-.category-active .category-name {
-  color: var(--color-on-accent);
-  font-weight: var(--weight-semibold);
+.rail-item-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 48rpx;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: var(--color-accent);
 }
 
-/* ===== 菜品列表 ===== */
+.rail-item-active .rail-emoji {
+  opacity: 1;
+}
+
+.rail-item-active .rail-name {
+  color: var(--color-accent-deep);
+  font-weight: var(--weight-bold);
+}
+
+/* 分类管理入口：固定在左栏底部，弱化处理不与分类争夺注意力 */
+.rail-manage-bar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) 0;
+  border-top: 1rpx solid var(--hairline);
+  background: var(--surface-card);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.rail-manage-press {
+  opacity: 0.7;
+}
+
+.rail-manage-icon {
+  font-size: 30rpx;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.rail-manage-text {
+  margin-top: 6rpx;
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+  line-height: 1.2;
+}
+
+.rail-pad {
+  height: var(--space-4);
+}
+
+/* ---- 右侧菜品列表 ---- */
+.dish-panel {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
 .dish-list {
-  padding-top: var(--space-1);
+  padding: var(--space-1) var(--space-4) calc(env(safe-area-inset-bottom) + 180rpx);
+}
+
+.panel-footer {
+  padding: var(--space-4) 0;
+  text-align: center;
 }
 
 /* ===== 首屏加载骨架（形状与 dish-card 对齐，避免加载完成时跳动） ===== */

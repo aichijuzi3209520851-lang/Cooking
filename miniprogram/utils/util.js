@@ -1,5 +1,7 @@
 // utils/util.js - 通用工具函数
 
+const category = require('./category.js');
+
 /**
  * 格式化日期为 YYYY-MM-DD（按设备本地时区）
  * 说明：本函数保留「本地时区」语义，仅用于已知本地时刻 → 本地日期的展示场景
@@ -43,44 +45,24 @@ function yesterday() {
 }
 
 /**
- * 获取分类名称
+ * 获取分类名称（家庭可自定义分类，统一走 category.js 的缓存解析）
  */
-function getCategoryName(category) {
-  const map = {
-    meat: '荤菜',
-    veg: '素菜',
-    soup: '汤品',
-    staple: '主食',
-    cold: '凉菜'
-  };
-  return map[category] || '其他';
+function getCategoryName(categoryKey) {
+  return category.nameOf(categoryKey);
 }
 
 /**
  * 获取分类emoji
  */
-function getCategoryEmoji(category) {
-  const map = {
-    meat: '🍖',
-    veg: '🥬',
-    soup: '🍲',
-    staple: '🍚',
-    cold: '🥗'
-  };
-  return map[category] || '🍽️';
+function getCategoryEmoji(categoryKey) {
+  return category.emojiOf(categoryKey);
 }
 
 /**
- * 获取分类列表
+ * 获取分类列表（当前家庭已同步的分类；未同步时回退内置默认分类）
  */
 function getCategoryList() {
-  return [
-    { key: 'meat', name: '荤菜', emoji: '🍖' },
-    { key: 'veg', name: '素菜', emoji: '🥬' },
-    { key: 'soup', name: '汤品', emoji: '🍲' },
-    { key: 'staple', name: '主食', emoji: '🍚' },
-    { key: 'cold', name: '凉菜', emoji: '🥗' }
-  ];
+  return category.getCategories();
 }
 
 /**

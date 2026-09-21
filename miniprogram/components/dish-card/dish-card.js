@@ -1,22 +1,6 @@
 // components/dish-card/dish-card.js
 const { previewImage } = require('../../utils/util.js')
-
-const CATEGORY_EMOJI = {
-  meat: '🍖',
-  veg: '🥬',
-  soup: '🍲',
-  staple: '🍚',
-  cold: '🥗'
-};
-
-// 无图菜品的分类占位插画（未知分类回退 emoji）
-const CATEGORY_IMAGE = {
-  meat: '/images/category/cat-meat.svg',
-  veg: '/images/category/cat-veg.svg',
-  soup: '/images/category/cat-soup.svg',
-  staple: '/images/category/cat-staple.svg',
-  cold: '/images/category/cat-cold.svg'
-};
+const category = require('../../utils/category.js')
 
 Component({
   options: {
@@ -81,8 +65,9 @@ Component({
         return item && item.openid === currentUserId;
       });
       const showChefCancel = userRole === 'chef' && v.length > 0;
-      const emoji = CATEGORY_EMOJI[d.category] || '🍽️';
-      const categoryImage = CATEGORY_IMAGE[d.category] || '';
+      // 分类名/图标走家庭分类缓存解析：自定义分类没有内置插画，自动回退 emoji
+      const emoji = category.emojiOf(d.category);
+      const categoryImage = category.imageOf(d.category);
       const hasImage = !!d.imageUrl && !this._imageFailed;
 
       this.setData({

@@ -88,6 +88,15 @@ const dishApi = {
 familyApi.transferCreator = (familyId, userId) =>
   call('family', { action: 'transferCreator', familyId, userId }, true);
 
+// 菜品分类（家庭级可配置，UI-002）：分类表存放在 families.categories
+const categoryApi = {
+  list: (familyId) => call('dish', { action: 'categories', familyId }),
+  add: (familyId, name, emoji) =>
+    call('dish', { action: 'addCategory', familyId, name, emoji }, true),
+  remove: (familyId, categoryKey) =>
+    call('dish', { action: 'removeCategory', familyId, categoryKey }, true)
+};
+
 // 点菜相关
 const voteApi = {
   add: (familyId, dishId) => call('vote', { action: 'add', familyId, dishId }),
@@ -107,10 +116,9 @@ const historyApi = {
   list: (familyId, date) => call('vote', { action: 'history', familyId, date })
 };
 
-// 今日米饭饭量（RICE-001，走 vote 云函数）
-const riceApi = {
-  get: (familyId) => call('vote', { action: 'getRice', familyId }),
-  set: (familyId, bowls) => call('vote', { action: 'setRice', familyId, bowls })
+// 今日推荐（RECOMMEND-001）：综合家庭点菜频率与季节节气时令
+const recommendApi = {
+  today: (familyId) => call('vote', { action: 'recommend', familyId })
 };
 
 // 通知相关（授权状态持久化走 login 云函数）
@@ -129,9 +137,10 @@ module.exports = {
   login,
   familyApi,
   dishApi,
+  categoryApi,
   voteApi,
+  recommendApi,
   historyApi,
-  riceApi,
   notifyApi,
   userApi
 };

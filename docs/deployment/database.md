@@ -82,7 +82,7 @@
 | `rice_reports` | `date` + `_id` | dailyReset 分页清理 |
 | `menu_submissions` | `familyId` + `date` | 查询当日提交情况（NOTIFY-002） |
 | `menu_submissions` | `date` + `_id` | dailyReset 分页清理 |
-| `vote_history` | `familyId` + `date` + `createdAt` | 历史查询 |
+| `vote_history` | `familyId` + `date` + `createdAt` | 历史查询；今日推荐的频率聚合（按 `familyId` + `date >= 起点` 过滤后按菜品分组统计被点天数） |
 | `notify_ledger` | `date` | dailyReset 清理 |
 
 ## 4. 云存储安全配置（STORAGE-001）
@@ -127,18 +127,45 @@
 | `notify` | `NOTIFY_INTERNAL_KEY` | **是** | 云函数间调用内部密钥（强随机值）。**缺失时 notify 拒绝一切调用（fail closed）** |
 | `notify` | `NOTIFY_VOTE_TEMPLATE_ID` | 是（上线） | 点菜通知订阅消息模板 ID |
 | `notify` | `NOTIFY_CANCEL_TEMPLATE_ID` | 是（上线） | 撤菜通知订阅消息模板 ID |
+| `notify` | `NOTIFY_MENU_TEMPLATE_ID` | 否 | 拍板菜单 / 菜单提交通知模板 ID（未配置时这两类通知直接跳过，不影响其余通知） |
+| `notify` | `NOTIFY_MP_STATE` | 否 | 订阅消息跳转版本：`formal`（默认）/ `trial`（体验版联调，正式版收不到消息时改这里）/ `develop` |
 | `vote` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；缺失时跳过通知并记录日志（不阻塞投票主流程） |
+| `dish` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；隐藏/删除菜品清票时通知被影响成员，缺失时跳过 |
 | `dailyReset` | `ALLOW_MANUAL_RUN` | 否 | 设为 `true` 才允许 `manualDate` 手动触发入口（仅开发环境开启） |
+| `dish` / `login` / `family` | `SEC_CHECK_STRICT` | 否 | 内容安全严格模式：`true` 时审核接口异常也拒绝写入（默认 `false`，异常放行并记日志）。详见 [content-security.md](content-security.md) |
+
+> ⚠️ `NOTIFY_INTERNAL_KEY` 必须让 3 个函数（`notify` / `vote` / `dish`）使用**同一个值**，
+> 否则 `notify` 会因密钥不匹配拒绝调用（vote / dish 侧表现为「跳过通知并记日志」，不阻塞主流程）。
 
 ## 6. 定时触发器（DATA-003）
 
 控制台 → 云函数 → `dailyReset` → 触发器 → 新建：
 
+- 触发器名称：`dailyResetTimer`（与 `cloudfunctions/dailyReset/config.json` 的声明一致）
 - 触发周期：自定义
-- Cron 表达式：`0 0 * * * * *`（每日 0 点，东八区）
+- Cron 表达式：`0 0 0 * * * *`（每日 0 点，东八区）
 - 入参：留空（默认归档"昨天"）
 
+> ⚠️ **7 段 cron 的格式是 `秒 分 时 日 月 星期 年`**，每日 0 点必须写成 `0 0 0 * * * *`（秒=0、分=0、时=0）。
+> 若写成 `0 0 * * * * *`（时位是 `*`），实际含义是**每小时整点执行一次**：会导致 `isHidden` 每小时被重置（隐藏菜品功能失效），
+> 并白烧 24 倍调用配额。本文档早期版本误写为 `0 0 * * * * *`，已于 2026-09-18 修正；
+> 当时环境 `lcw-d5gfcge7b41bedd02` 的线上触发器确实是小时级（`0 0 * * * * *`），已同步改为每日 0 点。
+
 未配置触发器时小程序功能仍可用，但历史页无数据、`isHidden` 不会自动恢复。
+
+### 6.2 notify 饭点触发器（NOTIFY-003）
+
+控制台 → 云函数 → `notify` → 触发器 → 新建两个（名称与 cron 同时声明在 `cloudfunctions/notify/config.json`）：
+
+| 触发器名称 | Cron（7 段） | 说明 |
+|:---|:---|:---|
+| `menuDigestNoon` | `0 0 11 * * * *` | 午饭前汇总 |
+| `menuDigestEvening` | `0 0 17 * * * *` | 晚饭前汇总 |
+
+作用：把「当天已提交但尚未汇总」的菜单按家庭合并成**一条**订阅消息发给金牌大厨（`notify.sendMenuDigest`），
+发完回写 `menu_submissions.notifiedAt` 防止重复；没有任何新提交的时间点一条都不发。
+
+未配置时不会报错，只是厨师收不到自动汇总 —— 需自行打开小程序查看（汇总 tab 仍有「有几人交了菜单」的角标提示）。
 
 ## 7. 订阅消息（NOTIFY-001）
 
@@ -148,6 +175,11 @@
 2. 将模板 ID 配置为上述 `NOTIFY_VOTE_TEMPLATE_ID` / `NOTIFY_CANCEL_TEMPLATE_ID`；
 3. 将模板 ID 同步填入 `miniprogram/config.js` 的 `notifyTemplates`（客户端授权请求需要）；
 4. 用户在小程序"我的 → 通知设置"完成 `wx.requestSubscribeMessage` 授权后，服务端 `users.notifyStatus` 记录授权结果。
+
+> ⚠️ **一次性订阅的额度是「用户的授权次数」，不是花钱买的条数**（NOTIFY-003）：
+> 用户点一次「允许」，服务端只能发**一条**。因此**点菜与提交菜单都不再即时推送**，
+> 改由 §6.2 的饭点触发器合并成一条发出；只有「撤菜」「厨师拍板」这类低频重要动作用即时推送。
+> 逐条推送会快速耗光授权，用户被反复弹授权窗后会直接点「拒绝」，功能就彻底失效了。
 
 ## 8. 云函数部署与共享模块同步（ENG-001）
 

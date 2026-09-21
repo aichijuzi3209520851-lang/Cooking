@@ -1,0 +1,68 @@
+<!--pages/dishes/categories/categories.wxml-->
+<view class="container cate-page {{themeClass}}">
+
+  <!-- 现有分类 -->
+  <view class="section-head">
+    <text class="section-title">我的分类</text>
+    <text class="cate-count">{{categories.length}} / {{maxCount}}</text>
+  </view>
+
+  <view class="card cate-list-card">
+    <view class="cate-row" wx:for="{{categories}}" wx:key="key">
+      <view class="cate-row-emoji">{{item.emoji}}</view>
+      <view class="cate-row-info">
+        <text class="cate-row-name">{{item.name}}</text>
+        <text class="cate-row-meta">{{item.dishCount > 0 ? item.dishCount + ' 道菜' : '暂无菜品'}}</text>
+      </view>
+      <view
+        class="cate-del {{item.dishCount > 0 || categories.length <= 1 ? 'cate-del-off' : ''}}"
+        hover-class="cate-del-press"
+        data-key="{{item.key}}"
+        data-name="{{item.name}}"
+        data-count="{{item.dishCount}}"
+        bindtap="onRemoveTap"
+      >删除</view>
+    </view>
+  </view>
+  <text class="cate-hint">有菜品的分类不能删除，且至少要保留 1 个分类</text>
+
+  <!-- 新增分类 -->
+  <view class="section-head cate-add-head">
+    <text class="section-title">新增分类</text>
+  </view>
+
+  <view class="card">
+    <view class="cate-input-row">
+      <view class="cate-preview">{{draftEmoji}}</view>
+      <input
+        class="input cate-input"
+        placeholder="新分类名，如：水果"
+        placeholder-class="input-placeholder"
+        value="{{draftName}}"
+        maxlength="{{maxNameLen}}"
+        bindinput="onNameInput"
+        confirm-type="done"
+        bindconfirm="onAddTap"
+      />
+      <view
+        class="btn btn-md btn-primary cate-add-btn {{canAdd && !submitting ? '' : 'btn-disabled'}}"
+        bindtap="onAddTap"
+      >{{submitting ? '处理中' : '添加'}}</view>
+    </view>
+
+    <view class="cate-picker-label">选择图标</view>
+    <!-- 5×5 方阵：一屏铺开整块比较，不用左右滑 -->
+    <view class="cate-picker">
+      <view
+        wx:for="{{emojiPicker}}"
+        wx:key="*this"
+        class="cate-picker-item {{draftEmoji === item ? 'cate-picker-active' : ''}}"
+        data-emoji="{{item}}"
+        bindtap="onEmojiTap"
+      >{{item}}</view>
+    </view>
+
+    <text class="cate-tip">{{tip}}</text>
+  </view>
+
+</view>

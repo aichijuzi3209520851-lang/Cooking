@@ -1,7 +1,13 @@
 // pages/menu/menu.js
 const theme = require('../../utils/theme.js');
-const { dishApi, voteApi, riceApi } = require('../../utils/api.js');
+const {
+  dishApi,
+  voteApi,
+  categoryApi,
+  recommendApi
+} = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
+const category = require('../../utils/category.js');
 const {
   today,
   showApiError,
@@ -10,25 +16,16 @@ const {
 } = require('../../utils/util.js');
 const app = getApp();
 
-const CATEGORIES = [
-  { key: 'all', name: '全部' },
-  { key: 'meat', name: '荤菜' },
-  { key: 'veg', name: '素菜' },
-  { key: 'soup', name: '汤品' },
-  { key: 'staple', name: '主食' },
-  { key: 'cold', name: '凉菜' }
-];
-
 const PAGE_SIZE = 50;
 const WATCH_RETRY_LIMIT = 3;
-const RICE_BOWLS_MAX = 5;
 
 Page({
   data: {
     themeClass: '',
     dishes: [],
     selectedCategory: 'all',
-    categories: CATEGORIES,
+    // 左侧分类导航：第一项恒为「全部」，其余来自家庭可配置分类表（UI-002）
+    categories: category.withAll(category.getCategories()),
     stats: { dishCount: 0, voterCount: 0 },
     currentFamily: null,
     currentRole: '',
@@ -39,21 +36,25 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
+    refreshing: false,
     page: 1,
     hasMore: true,
+    // 左侧导航选中项自动滚入视野（分类多时避免选中项在可视区外）
+    railIntoView: '',
+    // 今日推荐（RECOMMEND-001）
+    recommend: {
+      show: false,
+      ready: false,
+      items: [],
+      seasonTip: '',
+      progressText: ''
+    },
     // 一票否决原因弹窗（NOTIFY-002）
     showReject: false,
     rejectDishName: '',
-    // 今日米饭（RICE-001）：mine 为 null 表示未报
-    rice: {
-      mine: null,
-      mineText: '未报',
-      total: 0,
-      hasReport: false,
-      totalText: '还没有人报',
-      othersText: '',
-      unreportedCount: 0
-    },
+    // 米饭引导：撤掉「今日米饭」日报卡后，米饭回归普通菜品（放主食分类，想吃的人自己点）。
+    // 主食分类下还没有「米饭」时提示厨师补一道，避免全家的报饭量习惯突然断掉。
+    showRiceTip: false
   },
 
   onLoad() {
@@ -87,7 +88,12 @@ Page({
     });
 
     this.setToday();
-    this.loadData(true, true, true); // withRice：进入页面刷新米饭
+    // 先用本地缓存渲染左侧导航（避免首帧分类栏空白），再拉云端分类表纠偏
+    this.syncCachedCategories();
+    this.loadCategories();
+    this.loadData(true, true);
+    this.loadRecommend();
+    this.checkRiceDish();
     this.setupWatcher();
     this.scheduleMidnightRefresh();
   },
@@ -124,7 +130,8 @@ Page({
     this._midnightTimer = setTimeout(() => {
       this.setToday();
       this.setupWatcher();
-      this.loadData(true, true, true); // 跨午夜需刷新米饭（新的一天）
+      this.loadData(true, true);
+      this.loadRecommend();            // 推荐依据的是「今天」，跨日需重算
       this.scheduleMidnightRefresh();
     }, Math.max(delay, 1000));
   },
@@ -199,16 +206,168 @@ Page({
     }
   },
 
+  // ============ 分类导航（UI-002） ============
+
+  // 用本地缓存先渲染，避免首帧左侧栏空白
+  syncCachedCategories() {
+    const list = category.getCategories(app.globalData.currentFamilyId);
+    this.setData({ categories: category.withAll(list) });
+  },
+
+  async loadCategories() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+    try {
+      const res = await categoryApi.list(familyId);
+      this.applyCategories((res && res.categories) || []);
+    } catch (err) {
+      // 分类拉取失败不阻塞点菜主流程：继续沿用缓存 / 默认分类
+      console.warn('加载分类失败', err);
+    }
+  },
+
+  // 落地分类表：写缓存 → 更新导航与管理面板 → 必要时修正选中项
+  applyCategories(rawList) {
+    const familyId = app.globalData.currentFamilyId;
+    const list = category.setFamilyCategories(familyId, rawList);
+
+    // 分类名/图标可能刚被改过，重算已渲染菜品上的分类图标
+    const dishes = (this.data.dishes || []).map(d => ({
+      ...d,
+      categoryEmoji: category.emojiOf(d.category)
+    }));
+
+    // 当前选中的分类若已被删除，自动回到「全部」，否则列表会一直空着让人困惑
+    const stillExists = this.data.selectedCategory === 'all' ||
+      list.some(c => c.key === this.data.selectedCategory);
+
+    const patch = {
+      categories: category.withAll(list),
+      dishes
+    };
+
+    if (!stillExists) {
+      patch.selectedCategory = 'all';
+      patch.page = 1;
+      patch.hasMore = true;
+      patch.railIntoView = 'rail-all';
+    }
+
+    this.setData(patch);
+    if (!stillExists) this.loadData(true, true);
+  },
+
+  // 分类切换
+  onCategoryTap(e) {
+    const key = e.currentTarget.dataset.key;
+    if (!key || key === this.data.selectedCategory) return;
+    this.setData({
+      selectedCategory: key,
+      // 让选中项自动滚进视野（分类多时尤其需要）
+      railIntoView: `rail-${key}`
+    });
+    this.loadData(true, true);
+  },
+
+  // 分类管理已独立成整页：图标方阵在半屏弹层里铺不开（只能挤成横向滚动条，用户既看不全也不好点）
+  onOpenCategoryManager() {
+    if (!this.data.isChef) return;
+    wx.navigateTo({ url: '/pages/dishes/categories/categories' });
+  },
+
+  // ============ 今日推荐（RECOMMEND-001） ============
+
+  async loadRecommend() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+    try {
+      const res = await recommendApi.today(familyId);
+      this.applyRecommend(res);
+    } catch (err) {
+      // 推荐是增益功能：失败时静默隐藏，不影响点菜主流程
+      console.warn('加载推荐失败', err);
+      this.setData({ 'recommend.show': false });
+    }
+  },
+
+  applyRecommend(res) {
+    const data = res || {};
+    const season = data.season || {};
+    const progress = data.progress || {};
+
+    const votedSet = {};
+    (data.todayDishIds || []).forEach(id => {
+      if (id) votedSet[id] = true;
+    });
+
+    const items = (data.items || []).map(item => ({
+      dishId: item.dishId,
+      name: item.name,
+      imageUrl: item.imageUrl,
+      emoji: category.emojiOf(item.category),
+      reason: item.reason || '',
+      seasonal: !!item.seasonal,
+      voted: !!votedSet[item.dishId]
+    }));
+
+    // 未到门槛时给出「还差多少」的进度，而不是干巴巴地不显示
+    let progressText = '';
+    if (!data.ready) {
+      const dishCount = progress.dishCount || 0;
+      const minDishes = progress.minDishes || 0;
+      if (dishCount < minDishes) {
+        progressText = `菜品再多攒一些就能推荐啦（${dishCount}/${minDishes} 道）`;
+      } else {
+        progressText = `再吃几天就有推荐了（已记录 ${progress.historyDays || 0}/${progress.minHistoryDays} 天）`;
+      }
+    }
+
+    this.setData({
+      recommend: {
+        show: true,
+        ready: !!data.ready,
+        items,
+        seasonTip: season.tip || '',
+        progressText
+      }
+    });
+  },
+
+  // 点推荐卡片 = 直接加入今日菜单（推荐场景下「想吃」这个中间步骤是多余的）
+  async onRecommendTap(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const item = this.data.recommend.items[index];
+    if (!item || item.voted) return;
+
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+
+    this.setData({ [`recommend.items[${index}].voted`]: true });
+    wx.vibrateShort({ type: 'light', fail() {} });
+
+    try {
+      await voteApi.add(familyId, item.dishId);
+      this.loadData(true);
+    } catch (err) {
+      // 已经点过（例如刚在列表里点过）：保持已点状态，刷新对齐即可
+      if (err && err.errorCode === 'VOTE_ALREADY_EXISTS') {
+        this.loadData(true);
+        return;
+      }
+      console.error('推荐点菜失败', err);
+      showApiError(err, '点菜失败');
+      this.setData({ [`recommend.items[${index}].voted`]: false });
+    }
+  },
+
   // ============ 数据加载（API-001/API-002/PERF-001） ============
 
   // 同一时间只允许一个加载请求；期间的变更通过 _pendingReload 合并。
   // sort=true 仅用于页面进入/下拉刷新/跨午夜（重新排序），
   // 投票操作与 watcher 驱动的刷新保持现有顺序，避免卡片跳位。
-  // withRice=true 才会一并刷新米饭（低频数据，不跟随高频刷新路径）。
-  async loadData(reset, sort = false, withRice = false) {
+  async loadData(reset, sort = false) {
     if (this._loading) {
       this._pendingReload = true;
-      if (withRice) this._pendingRice = true;
       return;
     }
     this._loading = true;
@@ -220,19 +379,18 @@ Page({
       return;
     }
 
-    const category = this.data.selectedCategory;
+    const categoryKey = this.data.selectedCategory;
     const page = reset ? 1 : this.data.page;
     this.setData({ loading: true });
-    if (withRice) this.loadRice();
 
     try {
       const [voteData, dishResult] = await Promise.all([
         voteApi.todayList(familyId),
-        dishApi.list(familyId, category === 'all' ? '' : category, page, PAGE_SIZE)
+        dishApi.list(familyId, categoryKey === 'all' ? '' : categoryKey, page, PAGE_SIZE)
       ]);
 
-      // 统一契约：todayList -> { date, groups }，由 dto 归一化
-      const { date, groups } = dto.normalizeTodayList(voteData);
+      // 统一契约：todayList -> { date, groups, submitCount }，由 dto 归一化
+      const { date, groups, submitCount } = dto.normalizeTodayList(voteData);
       const dishList = (dishResult && Array.isArray(dishResult.list)) ? dishResult.list : [];
       const total = (dishResult && dishResult.total) || 0;
 
@@ -243,7 +401,7 @@ Page({
       }
 
       // 'all' 不参与投票分组过滤，归一化后传入
-      const pageDishes = dto.buildMenuList(dishList, groups, category === 'all' ? '' : category);
+      const pageDishes = dto.buildMenuList(dishList, groups, categoryKey === 'all' ? '' : categoryKey);
       const dishes = reset && sort
         ? pageDishes
         : dto.mergePreservingOrder(this.data.dishes, pageDishes);
@@ -254,11 +412,13 @@ Page({
         stats,
         page: page + 1,
         hasMore: page * PAGE_SIZE < total,
-        libraryEmpty: category === 'all' && dishList.length === 0 && groups.length === 0
+        libraryEmpty: categoryKey === 'all' && dishList.length === 0 && groups.length === 0
       });
 
-      // 汇总 tab 徽标：今天已点菜数（看过汇总后清除，BADGE-001）
-      refreshSummaryBadge(stats.dishCount);
+      // 汇总 tab 徽标（BADGE-001 / NOTIFY-003）：
+      // 厨师看「今日提交人数」——有人交菜单了就该去汇总页拍板；
+      // 其他人看「今日已点菜数」——提醒去看看大家都点了什么。
+      refreshSummaryBadge(this.data.isChef ? submitCount : stats.dishCount);
     } catch (err) {
       console.error('加载点菜数据失败', err);
       showApiError(err, '加载失败，请下拉刷新');
@@ -268,129 +428,50 @@ Page({
       wx.stopPullDownRefresh();
       if (this._pendingReload) {
         this._pendingReload = false;
-        const pendingRice = !!this._pendingRice;
-        this._pendingRice = false;
-        this.loadData(true, false, pendingRice);
+        this.loadData(true, false);
       }
     }
   },
 
-  // 今日米饭（RICE-001）：独立加载，失败不影响菜品主流程。
-  // 仅由「进入页面 / 下拉刷新 / 跨午夜」触发（withRice 参数），
-  // 避免 watcher 高频刷新与分页加载把米饭也带上（既浪费请求，又会覆盖在途意图）。
-  async loadRice() {
+  // 米饭引导（原 RICE-001 日报卡下线后）：米饭不再是「每日上报」，而是普通菜品 ——
+  // 谁想吃饭就在主食分类里点它，跟饭店扫码点餐一样，点没点彼此可见。
+  // 这里只在「主食分类下还没有米饭」时提示厨师补一道，避免全家的报饭量习惯突然断掉。
+  async checkRiceDish() {
     const familyId = app.globalData.currentFamilyId;
-    if (!familyId) return;
-    try {
-      const res = await riceApi.get(familyId);
-      // 有在途/待发意图时不覆盖本地基准，否则会把用户刚点出的值拉回旧值（RICE-002）
-      if (this._riceInFlight || this._riceIntent !== undefined) return;
-      this._riceRaw = res;
-      this._riceBase = (res && res.mine !== null && res.mine !== undefined) ? res.mine : null;
-      this.setData({ rice: this.deriveRiceView(res) });
-    } catch (err) {
-      console.warn('加载米饭数据失败', err);
-    }
-  },
-
-  // 由服务端聚合数据推导卡片展示字段
-  deriveRiceView(raw) {
-    const list = (raw && raw.reports) || [];
-    const memberCount = (raw && raw.memberCount) || 0;
-    const mine = raw && raw.mine !== null && raw.mine !== undefined ? raw.mine : null;
-    const others = list.filter(r => r.userId !== this.data.currentUserId);
-    const total = (raw && raw.total) || 0;
-    return {
-      mine,
-      mineText: mine === null ? '未报' : `${mine} 碗`,
-      total,
-      hasReport: list.length > 0,
-      totalText: list.length === 0 ? '还没有人报' : `全家共 ${total} 碗`,
-      othersText: others.map(r => `${r.nickname} ${r.bowls}`).join(' · '),
-      unreportedCount: Math.max(0, memberCount - list.length)
-    };
-  },
-
-  // 乐观更新自己的饭量：本地重算聚合，服务端失败再回落
-  optimisticRiceMine(next) {
-    const raw = this._riceRaw || { reports: [], memberCount: 0, mine: null };
-    const myId = this.data.currentUserId;
-    const reports = (raw.reports || []).filter(r => r.userId !== myId);
-    if (next !== null) {
-      reports.push({ userId: myId, bowls: next });
-    }
-    const merged = {
-      ...raw,
-      reports,
-      total: reports.reduce((sum, r) => sum + r.bowls, 0),
-      mine: next
-    };
-    this._riceRaw = merged;
-    this.setData({ rice: this.deriveRiceView(merged) });
-  },
-
-  // 饭量步进（±0.5 碗；未报时 + 直接报 1 碗、- 报 0 碗）
-  //
-  // 并发模型（RICE-002）：
-  //   _riceBase     服务端已确认值（仅 loadRice 成功时更新）
-  //   _riceIntent   用户最新意图值（步进基准，不被在途响应拉回）
-  //   _riceInFlight 是否有请求在途 —— 保证同一时刻只有一个 setRice
-  //   _riceDirty    在途期间又产生新意图，当前请求完成后补发最新值
-  //
-  // 本方法保持「同步返回」：wxml 绑定与 E2E 调用链不受影响，
-  // 网络请求由 _flushRice 串行驱动（不再为适配测试而放弃 await）。
-  onRiceStep(e) {
-    const delta = Number(e.currentTarget.dataset.delta);
-    const base = this._riceIntent !== undefined ? this._riceIntent : this._riceBase;
-    let next;
-    if (base === null || base === undefined) {
-      next = delta > 0 ? 1 : 0;
-    } else {
-      next = Math.min(RICE_BOWLS_MAX, Math.max(0, Math.round((base + delta) * 2) / 2));
-    }
-    if (next === base) return;
-
-    this._riceIntent = next;
-    this.optimisticRiceMine(next);
-    wx.vibrateShort({ type: 'light' });
-    this._flushRice();
-  },
-
-  // 串行上报：在途时只标记 dirty，完成后自动补发最新意图
-  async _flushRice() {
-    if (this._riceInFlight) {
-      this._riceDirty = true;
+    if (!familyId || !this.data.isChef) {
+      this.setData({ showRiceTip: false });
       return;
     }
-    this._riceInFlight = true;
     try {
-      while (this._riceIntent !== undefined) {
-        const target = this._riceIntent;
-        this._riceDirty = false;
-        await riceApi.set(app.globalData.currentFamilyId, target);
-        this._riceBase = target;
-        if (!this._riceDirty) {
-          this._riceIntent = undefined;
-          break;
-        }
-      }
-      this._riceInFlight = false;
+      const res = await dishApi.list(familyId, 'staple', 1, PAGE_SIZE);
+      const list = (res && res.list) || [];
+      const hasRice = list.some(d => typeof d.name === 'string' && d.name.indexOf('米饭') > -1);
+      this.setData({ showRiceTip: !hasRice });
     } catch (err) {
-      // 失败：清空意图并回落服务端真值，避免本地与服务端长期不一致
-      this._riceInFlight = false;
-      this._riceDirty = false;
-      this._riceIntent = undefined;
-      showApiError(err, '饭量上报失败');
-      await this.loadRice();
+      // 引导属增强信息：查询失败就安静隐藏，不打扰点菜主流程
+      console.warn('检查米饭菜品失败', err);
+      this.setData({ showRiceTip: false });
     }
   },
 
-  // 分类切换
-  onCategoryTap(e) {
-    const key = e.currentTarget.dataset.key;
-    if (!key || key === this.data.selectedCategory) return;
-    this.setData({ selectedCategory: key });
-    this.loadData(true, true);
+  // 一键把「米饭」加进主食分类（权限与内容安全由 dish.add 服务端兜底校验）
+  async onCreateRiceDish() {
+    if (this._riceAdding) return;
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+
+    this._riceAdding = true;
+    try {
+      await dishApi.add(familyId, { name: '米饭', category: 'staple', imageUrl: '' });
+      this.setData({ showRiceTip: false });
+      showSuccess('已把米饭加进主食');
+      this.loadData(true, true);
+    } catch (err) {
+      console.error('添加米饭失败', err);
+      showApiError(err, '添加失败');
+    } finally {
+      this._riceAdding = false;
+    }
   },
 
   // 投票
@@ -405,6 +486,8 @@ Page({
     try {
       await voteApi.add(familyId, dish.dishId);
       wx.vibrateShort({ type: 'light' });
+      // 推荐里若包含这道菜，同步标记为已点
+      this.markRecommendVoted(dish.dishId);
     } catch (err) {
       console.error('点菜失败', err);
       showApiError(err, '点菜失败');
@@ -425,12 +508,22 @@ Page({
     try {
       await voteApi.cancel(familyId, dish.dishId);
       wx.vibrateShort({ type: 'light' });
+      this.markRecommendVoted(dish.dishId, false);
     } catch (err) {
       console.error('取消点菜失败', err);
       showApiError(err, '取消失败');
       this.optimisticUpdate(dish.dishId, true);
       if (err && err.errorCode === 'NETWORK_ERROR') this.loadData(true);
     }
+  },
+
+  // 同步推荐卡片的「已点」状态（推荐与列表是同一份今日菜单的两个入口，必须一致）
+  markRecommendVoted(dishId, voted = true) {
+    const items = this.data.recommend.items || [];
+    const idx = items.findIndex(item => item.dishId === dishId);
+    if (idx < 0) return;
+    if (items[idx].voted === voted) return;
+    this.setData({ [`recommend.items[${idx}].voted`]: voted });
   },
 
     // 乐观更新：仅原地更新 voters，不重排（投票后卡片不跳位，进入页面/下拉时才排序）
@@ -500,6 +593,7 @@ Page({
       wx.vibrateShort({ type: 'light', fail() {} });
       // 否决后该菜当日票被清空，保持当前顺序刷新（自然从列表消失）
       this.loadData(true);
+      this.markRecommendVoted(dish.dishId, false);
     } catch (err) {
       console.error('否决失败', err);
       showApiError(err, '操作失败');
@@ -518,15 +612,26 @@ Page({
     wx.navigateTo({ url: '/pages/family/manage/manage' });
   },
 
-  // 上拉加载更多
-  onReachBottom() {
+  // 右侧列表触底加载更多（页面已定高不再滚动，改由 scroll-view 驱动）
+  onLoadMore() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadData(false);
     }
   },
 
-  // 下拉刷新
-  onPullDownRefresh() {
-    this.loadData(true, true, true);
+  // 右侧列表下拉刷新（替代页面级 onPullDownRefresh）
+  async onRefresh() {
+    if (this.data.refreshing) return;
+    this.setData({ refreshing: true });
+    try {
+      await Promise.all([
+        this.loadData(true, true),
+        this.loadCategories(),
+        this.loadRecommend(),
+        this.checkRiceDish()
+      ]);
+    } finally {
+      this.setData({ refreshing: false });
+    }
   }
 });

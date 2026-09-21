@@ -66,7 +66,7 @@ test('冒烟：登录 → 建家 → 记住加入码 → 唯一成员离开（�
   assert.equal(wrong.errorCode, 'JOIN_CODE_INVALID')
 })
 
-test('冒烟：完整家庭链路——建家 → 家人加入 → 金牌大厨加菜 → 家人点菜 → 通知金牌大厨 → 汇总 → 离开再换回来', async () => {
+test('冒烟：完整家庭链路——建家 → 家人加入 → 金牌大厨加菜 → 家人点菜（不即时推送）→ 汇总 → 离开再换回来', async () => {
   env.resetDb()
 
   // 金牌大厨登录 + 建家
@@ -97,13 +97,12 @@ test('冒烟：完整家庭链路——建家 → 家人加入 → 金牌大厨�
   const st = await loginFn.main({ action: 'setNotifyStatus', status: 'accepted' })
   assert.equal(st.data.notifyEnabled, true)
 
-  // 家人点菜 → 触发第一票通知到金牌大厨
+  // 家人点菜 → 只写当日台账，不再逐条推送 chef（改由饭点汇总，NOTIFY-003）：
+  // 一次性订阅的额度是「用户的授权次数」，逐条推送会很快耗光并让用户拒绝授权
   as('member')
   const voted = await voteFn.main({ action: 'add', familyId, dishId: dish.data.dishId })
   assert.equal(voted.success, true, '点菜应成功')
-  assert.equal(env.sent.length, 1, '应发出一条订阅消息')
-  assert.equal(env.sent[0].data.thing1.value, '红烧肉')
-  assert.equal(env.sent[0].data.thing2.value, '微信用户 点的')
+  assert.equal(env.sent.length, 0, '点菜不应即时发送订阅消息');
 
   // 重复点菜 → 幂等拒绝
   const dup = await voteFn.main({ action: 'add', familyId, dishId: dish.data.dishId })

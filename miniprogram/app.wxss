@@ -60,7 +60,7 @@ page {
   --color-warning: #E6A23C;
   --color-danger: #E02020;
   --color-gold: #E6A23C;
-  --color-cream: #FDEBD2;           /* 米黄信息块（米饭卡、统计栏） */
+  --color-cream: #FDEBD2;           /* 米黄信息块（推荐卡、引导条、统计栏） */
 
   /* ---- 图片滤镜（深色模式压暗，手动浅色可还原） ---- */
   --img-filter: none;

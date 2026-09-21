@@ -13,12 +13,14 @@ const assert = require('node:assert/strict')
 const dto = require('../../miniprogram/utils/dto.js')
 
 test('W-B-01 normalizeTodayList：非对象与非法字段兜底', () => {
-  assert.deepEqual(dto.normalizeTodayList(null), { date: '', groups: [] })
-  assert.deepEqual(dto.normalizeTodayList(42), { date: '', groups: [] })
-  assert.deepEqual(dto.normalizeTodayList('x'), { date: '', groups: [] })
+  const empty = { date: '', groups: [], submitCount: 0 }
+  assert.deepEqual(dto.normalizeTodayList(null), empty)
+  assert.deepEqual(dto.normalizeTodayList(42), empty)
+  assert.deepEqual(dto.normalizeTodayList('x'), empty)
   const bad = dto.normalizeTodayList({ date: 123, groups: 'x' })
   assert.equal(bad.date, '')
   assert.deepEqual(bad.groups, [])
+  assert.equal(bad.submitCount, 0)
 })
 
 test('W-B-02 normalizeGroup：null 兜底、非法 voter 过滤、isHidden 真值转换', () => {

@@ -95,5 +95,10 @@ test('W-G-04 列表页：eater 拦截 + chef 放行并正常加载数据', async
   const chefPage = loadPage('list')
   await chefPage.onShow()
   assert.equal(backCalls.length, 0, 'chef 不应被拦截')
-  assert.equal(cloudCalls.length, 1, 'chef 应正常加载菜品数据')
+  // 分类配置（UI-002）与菜品列表是两条独立请求，这里只锚定「菜品列表恰好加载一次」，
+  // 避免把新增的分类请求误判成重复加载
+  const dishListCalls = cloudCalls.filter(
+    c => c.name === 'dish' && c.data && c.data.action === 'list'
+  )
+  assert.equal(dishListCalls.length, 1, 'chef 应正常加载菜品数据')
 })

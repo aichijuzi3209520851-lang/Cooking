@@ -1,8 +1,8 @@
 // pages/dishes/list/list.js
 const theme = require('../../../utils/theme.js');
-const { dishApi } = require('../../../utils/api.js');
+const { dishApi, categoryApi } = require('../../../utils/api.js');
+const category = require('../../../utils/category.js');
 const {
-  getCategoryList,
   getCategoryName,
   getCategoryEmoji,
   guardChefPage,
@@ -19,7 +19,8 @@ Page({
   data: {
     themeClass: '',
     dishes: [],
-    categoryList: [{ key: 'all', name: '全部', emoji: '🍽️' }, ...getCategoryList()],
+    // 筛选项：第一项恒为「全部」，其余来自家庭可配置分类（UI-002）
+    categoryList: category.withAll(category.getCategories()),
     selectedCategory: 'all',
     page: 1,
     hasMore: true,
@@ -36,7 +37,32 @@ Page({
     await app.waitForLogin();
     if (!guardChefPage()) return;
     this.syncPermissions();
+    this.loadCategories();
     this.loadData(true);
+  },
+
+  // 分类筛选项来自家庭配置：先渲染缓存，再拉云端纠偏
+  async loadCategories() {
+    const familyId = app.globalData.currentFamilyId;
+    if (!familyId) return;
+    try {
+      const res = await categoryApi.list(familyId);
+      const list = category.setFamilyCategories(familyId, (res && res.categories) || []);
+      // 当前筛选的分类若已被删除，回落到「全部」，否则列表会一直是空的
+      const stillExists = this.data.selectedCategory === 'all' ||
+        list.some(c => c.key === this.data.selectedCategory);
+      const patch = { categoryList: category.withAll(list) };
+      if (!stillExists) {
+        patch.selectedCategory = 'all';
+        patch.page = 1;
+        patch.hasMore = true;
+        patch.dishes = [];
+      }
+      this.setData(patch);
+      if (!stillExists) this.loadData(true);
+    } catch (err) {
+      console.warn('加载分类失败，沿用本地缓存', err);
+    }
   },
 
   // 同步权限标记：chef 决定隐藏/恢复；isCreator 决定不可逆的删除入口是否可见（与服务端一致）
@@ -107,12 +133,13 @@ Page({
     this.loadData(true);
   },
 
-  // 格式化菜品展示数据（无本地占位图资源，无图时 WXML 回退 emoji）
+  // 格式化菜品展示数据（仅内置分类有占位插画，自定义分类回退 emoji）
   formatDish(item) {
     return {
       ...item,
       categoryName: getCategoryName(item.category),
       categoryEmoji: getCategoryEmoji(item.category),
+      categoryImage: category.imageOf(item.category),
       hasImage: !!item.imageUrl
     };
   },

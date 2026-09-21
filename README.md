@@ -156,7 +156,9 @@ miniprogram-11/
 │   ├── components/               # 自定义组件
 │   │   ├── avatar-group/         #   成员头像组（自动生成暖色渐变头像）
 │   │   ├── dish-card/            #   菜品卡片（缩略图、票数、投票按钮）
-│   │   └── empty-state/          #   空状态引导组件（插画优先、emoji 兜底）
+│   │   ├── empty-state/          #   空状态引导组件（插画优先、emoji 兜底）
+│   │   ├── privacy-popup/        #   隐私协议授权弹窗
+│   │   └── reject-reason/        #   一票否决原因选择弹窗
 │   ├── pages/
 │   │   ├── login/                # 登录首屏：沉浸式品牌页、漂浮动效、微信快捷登录
 │   │   ├── welcome/              # 新用户入口：创建或加入家庭
@@ -165,17 +167,19 @@ miniprogram-11/
 │   │   │   ├── create/           #   创建家庭（生成 6 位加入码）
 │   │   │   ├── join/             #   通过 6 位加入码加入（输满自动提交）
 │   │   │   └── manage/           #   家庭管理（成员、角色、加入码复制）
-│   │   ├── menu/                 # [Tab] 点菜首页：分类胶囊筛选 + 菜品流 + 骨架屏
+│   │   ├── menu/                 # [Tab] 点菜首页：左侧分类导航（导航窗格）+ 今日推荐 + 菜品流
 │   │   ├── summary/              # [Tab] 汇总页：当日投票结果
 │   │   ├── profile/              # [Tab] 我的：家庭/角色/主题/历史入口
 │   │   ├── dishes/
 │   │   │   ├── list/             #   菜谱管理列表（金牌大厨）
-│   │   │   └── edit/             #   菜品新增/编辑表单
+│   │   │   ├── edit/             #   菜品新增/编辑表单
+│   │   │   └── categories/       #   分类管理整页：增删家庭分类 + 5×5 图标方阵
 │   │   ├── history/              # 历史菜单回看（日期选择器）
 │   │   └── settings/
 │   │       └── theme/            #   主题设置：4 张色卡预览选择器
 │   └── utils/
-│       ├── api.js                #   云函数调用封装（dishApi/familyApi/voteApi…）
+│       ├── api.js                #   云函数调用封装（dishApi/familyApi/voteApi/categoryApi…）
+│       ├── category.js           #   菜品分类唯一数据源：家庭分类缓存 + 名称→图标匹配（纯函数，可单测）
 │       ├── dto.js                #   DTO 转换层：云函数返回 → 页面展示数据（纯函数，可单测）
 │       ├── theme.js              #   主题家族管理：解析、导航/tabBar 联动、旧字段迁移
 │       └── util.js               #   日期格式化、防抖节流、分类枚举、交互反馈工具
@@ -185,8 +189,9 @@ miniprogram-11/
 │   ├── family/                   # 家庭：create/joinByCode/list/switch/
 │   │                             #       members/removeMember/leave/updateRole
 │   ├── dish/                     # 菜品：list/add/update/delete/toggleHidden
-│   ├── vote/                     # 投票：add/cancel/chefCancel/todayList/history
-│   ├── notify/                   # 订阅消息通知（仅云函数内部调用）
+│   │                             #       分类：categories/addCategory/removeCategory
+│   ├── vote/                     # 投票：add/cancel/chefCancel/todayList/history/recommend
+│   ├── notify/                   # 订阅消息：内部调用 + 饭点定时汇总（sendMenuDigest）
 │   └── dailyReset/               # 定时任务：每日归档投票、重置菜品状态
 │
 ├── tests/                        # 测试
@@ -226,8 +231,9 @@ miniprogram-11/
 | 模块 | 职责 | 设计原则 |
 |:---|:---|:---|
 | `utils/api.js` | 统一云函数调用封装 | 自定义 `ApiError` 类型（携带稳定 `errorCode`），不做自动 toast，由页面统一处理 |
+| `utils/category.js` | 菜品分类唯一数据源 | **纯函数、零依赖**；内置 5 类默认值 + 当前家庭分类表的内存缓存（`setFamilyCategories` / `getCategories`），页面与组件统一经 `emojiOf` / `nameOf` / `imageOf` 解析，禁止各自硬编码分类 map |
 | `utils/dto.js` | DTO 转换层 | **纯函数、零依赖**，`normalizeTodayList`/`buildMenuList`/`buildSummaryList` 等，可在 Node 环境直接 `require` 测试 |
-| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、分类枚举（5 类 + emoji）、头像颜色生成、家族感知弹窗确认色、`showApiError` 统一错误展示 |
+| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、头像颜色生成、家族感知弹窗确认色、`showApiError` 统一错误展示（分类枚举已迁至 `utils/category.js`） |
 | `utils/theme.js` | 主题家族管理 | 家族解析（跟随系统→深浅映射）、导航/tabBar/窗口联动、主题 class 下发、旧字段缓存迁移 |
 
 > **DTO 层契约**：`vote.todayList` 返回 `{ date, groups[] }`，group 含 `dishId/dishName/category/imageUrl/isHidden/voters[]`；前端统一使用 `dishId` 作为业务 ID，禁止页面猜测 `_id` 格式。
@@ -279,7 +285,11 @@ globalData: {
 users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports
 ```
 
-> `notify_ledger` 用于第一票通知的去重（防止并发点菜产生重复通知）。`rice_reports` 用于今日米饭饭量上报（每日聚合，由 dailyReset 清理昨日数据）。数据库安全规则与索引清单见 [docs/deployment/database.md](docs/deployment/database.md)（需控制台人工配置）。
+> `notify_ledger` 是「当日这道菜首次被点」的台账（确定性 `_id`，并发点菜只会写成功一次）。
+> `menu_submissions` 记录每个人的菜单提交，`notifiedAt` 为空表示尚未被饭点汇总通知过。
+> `rice_reports` 是原「今日米饭」饭量上报用的集合 —— **前端已下线该功能**（米饭改为「主食」分类下的普通菜品，谁想吃谁点），
+> 云函数接口与集合予以保留，`dailyReset` 仍会清理昨日数据。
+> 数据库安全规则与索引清单见 [docs/deployment/database.md](docs/deployment/database.md)（需控制台人工配置）。
 
 **5. 上传云函数**
 
@@ -350,9 +360,12 @@ tcb fn deploy dailyReset -e <环境ID> --force
 
 1. 控制台 → 云函数 → `dailyReset` → 触发器
 2. 新建定时触发器：
+   - **触发器名称**：`dailyResetTimer`（与 `cloudfunctions/dailyReset/config.json` 一致）
    - **触发周期**：自定义
-   - **Cron 表达式**：`0 0 * * * * *`（每日 0 点，东八区）
+   - **Cron 表达式**：`0 0 0 * * * *`（每日 0 点，东八区）
    - **入参**：留空
+
+> ⚠️ 7 段 cron 格式为 `秒 分 时 日 月 星期 年`。写成 `0 0 * * * * *`（时位是 `*`）是**每小时执行**而非每日 0 点，会导致隐藏菜品每小时被重置、并多烧 24 倍配额。
 
 > 也可使用仓库中的 [uploadCloudFunction.sh](scripts/uploadCloudFunction.sh) 辅助批量部署。
 
@@ -365,13 +378,14 @@ tcb fn deploy dailyReset -e <环境ID> --force
 | 集合 | 职责 | 关键字段 |
 |:---|:---|:---|
 | `users` | 用户档案 | `_id`(openid)、`currentFamilyId`、`theme`(system/light/dark，前端映射主题家族)、`notifyEnabled`、`notifyStatus` |
-| `families` | 家庭 | `name`、`joinCode`(唯一)、`memberCount`、`creatorId` |
+| `families` | 家庭 | `name`、`joinCode`(唯一)、`memberCount`、`creatorId`、`categories`(家庭自定义分类表 `[{key,name,emoji}]`；缺省或非法时回退内置 5 类) |
 | `family_members` | 成员关系 | `_id`=`m_{familyId}_{userId}`、`familyId`、`userId`、`role`(chef/eater)、`joinedAt` |
-| `dishes` | 菜品 | `familyId`、`name`、`category`、`imageUrl`、`isHidden`、`cookCount`(累计被点次数) |
+| `dishes` | 菜品 | `familyId`、`name`、`category`(家庭分类表的 key：内置 `meat/veg/soup/staple/cold` 或 `c_` 前缀自定义分类)、`imageUrl`、`isHidden`、`cookCount`(累计被点次数) |
 | `daily_votes` | 当日投票（热数据） | `_id`=`v_{date}_{familyId}_{dishId}_{userId}`、`familyId`、`dishId`、`userId`、`date` |
-| `vote_history` | 历史归档（冷数据） | `_id`=`h_{voteId}`（幂等）、`familyId`、`date`、`dishName`、`userName` |
+| `vote_history` | 历史归档（冷数据） | `_id`=`h_{voteId}`（幂等）、`familyId`、`dishId`、`dishName`、`userId`、`userName`、`date`、`decided` |
 | `notify_ledger` | 第一票通知台账 | `_id`=`n_{date}_{familyId}_{dishId}` |
-| `rice_reports` | 今日米饭饭量上报（热数据，由 dailyReset 清理昨日） | `_id`=`r_{date}_{familyId}_{userId}`、`familyId`、`userId`、`bowls`(0-5，0.5 步进)、`date` |
+| `rice_reports` | 原「今日米饭」饭量上报（**前端已下线，接口保留**；由 dailyReset 清理昨日） | `_id`=`r_{date}_{familyId}_{userId}`、`familyId`、`userId`、`bowls`(0-5，0.5 步进)、`date` |
+| `menu_submissions` | 菜单提交记录（每人每天一条，幂等） | `_id`=`s_{date}_{familyId}_{userId}`、`familyId`、`userId`、`userName`、`date`、`dishIds`、`dishCount`、`notifiedAt`（空＝待汇总通知） |
 
 ### 关系模型
 
@@ -393,6 +407,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `family_members` | `familyId + userId` | 成员资格校验 |
 | `dishes` | `familyId + category` | 分类分页列表 |
 | `daily_votes` | `familyId + date` | 当日投票统计 |
+| `vote_history` | `familyId + date` | 历史查询，以及今日推荐的频率聚合（最近 30 天按菜品统计被点天数） |
 
 ---
 
@@ -402,14 +417,14 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 云函数 | 代码量 | Action 数 | 核心职责 | 依赖 |
 |:---|:---|:---|:---|:---|
-| `login` | 177 行 | 2 | 静默登录、设置通知状态 | `wx-server-sdk` |
-| `family` | 621 行 | 9 | 家庭 CRUD + 成员管理 + 解散清理 | `wx-server-sdk`、`crypto` |
-| `dish` | 354 行 | 5 | 菜品 CRUD + 隐藏切换 | `wx-server-sdk` |
-| `vote` | 467 行 | 5 | 投票核心 + 历史查询 | `wx-server-sdk` |
-| `notify` | 205 行 | 2 | 订阅消息通知（仅内部调用） | `wx-server-sdk` |
-| `dailyReset` | 229 行 | 1 | 定时归档投票 + 重置状态 | `wx-server-sdk` |
+| `login` | 222 行 | 3 | 静默登录、设置通知状态、资料更新 | `wx-server-sdk` |
+| `family` | 669 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 | `wx-server-sdk`、`crypto` |
+| `dish` | 471 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
+| `vote` | 859 行 | 10 | 投票核心 + 历史查询 + 今日推荐 | `wx-server-sdk` |
+| `notify` | 440 行 | 5 | 订阅消息：内部调用 + 饭点定时汇总 | `wx-server-sdk` |
+| `dailyReset` | 213 行 | 1 | 定时归档投票 + 重置状态 | `wx-server-sdk` |
 
-> 后端总代码量约 **2053 行** JavaScript，所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`
+> 后端总代码量约 **2874 行** JavaScript，所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`
 
 所有函数通过 `wx.cloud.callFunction` 调用，首个参数为 `action`。
 
@@ -438,11 +453,14 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | action | 参数 | 说明 |
 |:---|:---|:---|
-| `list` | `familyId, category, page, pageSize, includeHidden` | 分页获取菜品（默认过滤 `isHidden=true`；`includeHidden=true` 仅 chef 可用，用于恢复隐藏菜品） |
-| `add` | `familyId, name, category, imageUrl` | 新增菜品（仅金牌大厨；`imageUrl` 必须属于当前家庭） |
+| `list` | `familyId, category, page, pageSize, includeHidden` | 分页获取菜品（默认过滤 `isHidden=true`；`includeHidden=true` 仅 chef 可用，用于恢复隐藏菜品）。`category` 按**当前家庭的分类表**判定，传入未注册的 key 时忽略该过滤条件而非返回空列表 |
+| `add` | `familyId, name, category, imageUrl` | 新增菜品（仅金牌大厨；`imageUrl` 必须属于当前家庭；分类须存在于本家庭分类表） |
 | `update` | `dishId, …fields` | 编辑菜品（仅本家庭金牌大厨；替换图片时自动清理旧图） |
 | `delete` | `dishId` | 删除菜品，级联清理当日投票与关联图片（**仅家庭创建者**，不可逆操作） |
 | `toggleHidden` | `dishId, isHidden` | 切换隐藏状态（隐藏时清理当日投票） |
+| `categories` | `familyId` | 分类列表 + 各分类菜品数（家庭成员可读；数量用于面板展示与删除提示） |
+| `addCategory` | `familyId, name, emoji?` | 新增分类（**仅金牌大厨**）。名称 ≤6 字、家庭内不重名、总数 ≤24；`emoji` 未传时按名称自动匹配 |
+| `removeCategory` | `familyId, categoryKey` | 删除分类（**仅金牌大厨**）。要求该分类下无菜品、且至少保留 1 个分类 |
 
 ### 错误码约定
 
@@ -459,6 +477,8 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `DISH_NOT_FOUND` / `DISH_HIDDEN` | 菜品不存在 / 已隐藏 |
 | `VOTE_ALREADY_EXISTS` / `VOTE_NOT_FOUND` | 重复点菜 / 未找到点菜记录 |
 | `DISH_LIMIT` / `FAMILY_LIMIT` | 菜品数量达上限（200 道/家庭）/ 创建家庭数达上限（10 个/账号） |
+| `CATEGORY_EXISTS` / `CATEGORY_LIMIT` | 分类重名 / 分类数量达上限（24 个/家庭） |
+| `CATEGORY_IN_USE` / `CATEGORY_LAST_ONE` / `CATEGORY_NOT_FOUND` | 该分类下仍有菜品 / 至少要保留一个分类 / 分类不存在 |
 | `CONTENT_RISKY` | 文本/图片命中内容安全违规（见 [内容安全](docs/deployment/content-security.md)） |
 | `CONTENT_CHECK_FAILED` | 严格模式下内容安全检测不可用 |
 | `NOTIFY_FORBIDDEN` / `NOTIFY_TEMPLATE_MISSING` | 通知无权限 / 模板未配置 |
@@ -474,15 +494,35 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `chefCancel` | `familyId, dishId` | 金牌大厨否决任意投票并隐藏菜品 |
 | `todayList` | `familyId` | 当日投票结果，返回 `{ date, groups[] }`（group 含 `dishId/dishName/category/imageUrl/isHidden/voters[]`） |
 | `history` | `familyId, date` | 按日期（YYYY-MM-DD）查询历史归档，返回 `{ date, groups[] }` |
+| `recommend` | `familyId` | 今日推荐（家庭成员可读）。返回 `{ ready, todayDishIds[], season{season,label,term,foods,tip}, progress{dishCount,historyDays,…}, items[] }`；`items` 每项含 `dishId/name/category/imageUrl/days/votes/reason/reasonType/seasonal/cooling` |
 
-### notify — 消息通知（内部）
+> **今日推荐（`recommend`）判定与打分**
+>
+> - **开启门槛**：菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天（用「一周后菜品库很丰富」的产品预期做近似）。未达门槛时 `ready:false`、`items:[]`，但返回 `progress`，前端据此展示「再攒几道菜」的进度而不是留白。
+> - **数据源**：`vote_history`（`dailyReset` 已归档的历史）+ `daily_votes`（当日尚未归档，必须单独并入，否则「今天刚点的」不计入频率）。
+> - **打分**：频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 +60、季节分类加权 ×5）；最近 2 天吃过的整体 ×0.3 冷却。排序后保证至少一道时令菜入选，理由按贡献最大的因子生成（`reasonType`：`frequent`/`seasonal`/`diverse`），做到「理由与排序自洽」。
+> - **时令来源**：`cloud-shared/season` 的 24 节气近似算法 + 季节食材关键词库，例：秋季给「汤品」加权、命中「玉米/莲藕/南瓜」等食材。
+
+### notify — 消息通知
 
 | action | 参数 | 说明 |
 |:---|:---|:---|
-| `sendVoteNotify` | `familyId, dishId` | 通知金牌大厨有新投票 |
+| `sendVoteNotify` | `familyId, dishId` | 通知金牌大厨有新投票（**新策略下 vote 已不再调用**，接口保留以便回退） |
 | `sendCancelNotify` | `familyId, voteId` | 通知成员投票被否决 |
+| `sendMenuDecidedNotify` | `familyId, dishId, decided` | 厨师拍板/移出今晚菜单，通知全家 |
+| `sendMenuSubmitNotify` | `familyId, userName, dishNames` | 单次提交的即时通知（**新策略下 vote 已不再调用**） |
+| `sendMenuDigest` | — | **饭点汇总**：把当天尚未汇总的提交按家庭合并成一条发给厨师，发完回写 `notifiedAt` 防重复 |
 
-> ⚠️ `notify` 仅允许**云函数内部调用**（需携带内部密钥），客户端直调将被拒绝。
+> ⚠️ `notify` 有**两种入口**：
+> ① 云函数内部调用（必须携带内部密钥 `internalKey`，客户端直调会被拒绝）；
+> ② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），仅放行 `sendMenuDigest`，其余动作仍需密钥。
+>
+> **推送策略（NOTIFY-003）** —— 为什么点菜不再即时推送：
+> 微信小程序一次性订阅消息的额度是**用户的授权次数**（用户授权一次，服务端只能发一条），
+> 不是花钱购买的条数。逐条推送会迅速耗光授权，用户被反复弹授权窗后会直接点「拒绝」。
+> 因此点菜与提交菜单**都不再即时推送**，改由 `sendMenuDigest` 在饭点前（11:00 / 17:00，
+> 见 `cloudfunctions/notify/config.json`）合并成一条发出；只有撤菜、拍板保留即时推送。
+> 厨师端的即时提示靠**汇总 tab 角标**（口径 = 今日提交人数，见 `vote.todayList` 的 `submitCount`），零额度成本。
 
 ### dailyReset — 定时归档
 
@@ -682,7 +722,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 任务 | 触发 | 作用 |
 |:---|:---|:---|
-| `dailyReset` | 每日 00:00（Cron: `0 0 * * * * *`） | 归档昨日投票 → `vote_history`（确定性 `_id` 幂等，重复运行不产生重复历史），清空热数据，重置菜品隐藏标记（不覆盖执行期间的隐藏操作） |
+| `dailyReset` | 每日 00:00（Cron: `0 0 0 * * * *`） | 归档昨日投票 → `vote_history`（确定性 `_id` 幂等，重复运行不产生重复历史），清空热数据，重置菜品隐藏标记（不覆盖执行期间的隐藏操作） |
 
 未配置触发器时，小程序功能仍可用，但历史页将无数据、`isHidden` 状态不会自动恢复。
 
@@ -760,7 +800,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 
 | 功能 | 状态 | 说明 |
 |:---|:---|:---|
-| 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用（见部署文档） |
+| 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用；饭点汇总还需给 `notify` 配两个定时触发器（见 [部署文档](docs/deployment/database.md) §6.2） |
 | 扫码加入家庭 | 未实现 | 暂无二维码生成与 `wx.scanCode` 加入流程，加入方式仅 6 位加入码 |
 
 > 已于 2026-09 完成：分类占位插画（`images/category/`）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）、登录页漂浮素材（`images/login/`），以及**用户自定义昵称与头像**（微信头像昵称填写能力 + 云存储 `avatars/{openid}/` 路径；需在控制台存储规则中放行该前缀的本人写入）。

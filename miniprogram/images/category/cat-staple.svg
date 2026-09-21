@@ -1,35 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- 分类图：主食 —— 红碗白米饭（与rice同款碗型，冒热气，主体占满85%+） -->
-  <!-- 碗身（番茄红，放大） -->
-  <path d="M 112 240
-           L 140 400
-           C 150 432, 362 432, 372 400
-           L 400 240 Z"
+  <!-- 分类图：主食 —— 一碗白米饭
+       为什么写得这么"朴素"：微信小程序的 image 组件对 SVG 支持有限，
+       实测 <defs>/<linearGradient>（fill="url(#id)"）会导致整张图不渲染、<text> 更不支持。
+       所以这里只用最基础的 path/ellipse + 纯色填充，靠「外圈描边层 + 主体层」两片叠加做出轮廓 —— 
+       白米饭若不加米色外圈，在菜品缩略图的米黄底上会糊成一片、看不出形状。 -->
+
+  <!-- 米饭：外圈（米色，充当描边） -->
+  <path d="M 104 306
+           C 118 182, 178 80, 256 80
+           C 334 80, 394 182, 408 306 Z"
+        fill="#E3D2B8"/>
+  <!-- 米饭：主体（奶白） -->
+  <path d="M 116 300
+           C 128 192, 182 96, 256 96
+           C 330 96, 384 192, 396 300 Z"
+        fill="#FFFCF3"/>
+  <!-- 米饭：上部柔光，避免大片死白 -->
+  <ellipse cx="214" cy="196" rx="52" ry="26" fill="#FFFFFF" opacity="0.75"/>
+
+  <!-- 碗身（圆底茶碗，作为底托） -->
+  <path d="M 88 300
+           C 92 382, 156 444, 256 444
+           C 356 444, 420 382, 424 300 Z"
         fill="#D93A2B"/>
-  <!-- 碗沿（深红） -->
-  <ellipse cx="256" cy="240" rx="146" ry="32" fill="#B42A1D"/>
+  <!-- 碗沿（深红，表示碗口厚度） -->
+  <ellipse cx="256" cy="300" rx="168" ry="34" fill="#B42A1D"/>
   <!-- 碗内暗部 -->
-  <ellipse cx="256" cy="240" rx="128" ry="22" fill="#8E1F15"/>
-  <!-- 米饭：三团重叠奶白色（放大） -->
-  <circle cx="198" cy="205" r="62" fill="#FFFDF7"/>
-  <circle cx="256" cy="182" r="70" fill="#FFFDF7"/>
-  <circle cx="316" cy="205" r="62" fill="#FFFDF7"/>
-  <!-- 米饭顶部柔和高光 -->
-  <ellipse cx="248" cy="165" rx="28" ry="13" fill="#FFFFFF" opacity="0.5"/>
-  <!-- 碗身浅反光 -->
-  <path d="M 150 275 C 142 335, 156 385, 185 415"
-        stroke="#E87060" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.4"/>
-  <!-- 蒸汽（三缕姜黄 S 形） -->
-  <path d="M 200 165
-           C 184 140, 220 122, 204 96
-           C 194 80, 206 66, 214 54"
-        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.75"/>
-  <path d="M 256 158
-           C 256 132, 256 112, 256 82
-           C 256 64, 256 50, 256 38"
-        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.8"/>
-  <path d="M 312 165
-           C 328 140, 292 122, 308 96
-           C 318 80, 306 66, 298 54"
-        stroke="#E6A23C" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.75"/>
+  <ellipse cx="256" cy="300" rx="146" ry="24" fill="#8E1F15"/>
+  <!-- 碗身左侧竖向反光（填充形，不用 stroke） -->
+  <path d="M 132 332
+           C 126 376, 148 412, 182 432
+           C 154 408, 140 370, 146 334 Z"
+        fill="#E87060" opacity="0.4"/>
 </svg>

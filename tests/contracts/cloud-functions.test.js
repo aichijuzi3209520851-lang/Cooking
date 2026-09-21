@@ -235,10 +235,29 @@ test('notify：模板 ID 从环境变量读取（NOTIFY-001）', () => {
   assert.ok(!src.includes('TEMPLATE_ID_PLACEHOLDER'), '存在占位模板 ID');
 });
 
-test('vote：通知失败释放台账，允许后续请求重试（NOTIFY-001）', () => {
+test('vote：点菜不再逐条推送，只写当日台账待饭点汇总（NOTIFY-003）', () => {
   const src = readFn('vote');
-  assert.match(src, /if \(!notified\)/, '通知失败未进入补偿分支');
-  assert.match(src, /notify_ledger.*doc\(ledgerId\).*remove/s, '通知失败未清理台账');
+  // 原先是「第一票就通知 chef」，一天 8 道菜＝8 条订阅消息，会迅速耗光用户的授权次数。
+  // 现在只写台账，由 notify.sendMenuDigest 在饭点（11:00 / 17:00）聚合发送。
+  assert.ok(!src.includes("action: 'sendVoteNotify'"), 'vote 不应再即时推送点菜通知');
+  assert.match(src, /notify_ledger/, '缺少当日点菜台账');
+  assert.match(src, /n_\$\{today\}_\$\{familyId\}_\$\{dishId\}/, '台账缺少确定性 _id');
+});
+
+test('vote：提交菜单改为入队等待汇总（NOTIFY-003）', () => {
+  const src = readFn('vote');
+  assert.ok(!src.includes("action: 'sendMenuSubmitNotify'"), '提交菜单不应再即时推送');
+  assert.match(src, /notifiedAt: null/, '提交记录缺少 notifiedAt 入队标记');
+});
+
+test('notify：饭点汇总只发给厨师且按家庭合并（NOTIFY-003）', () => {
+  const src = readFn('notify');
+  assert.match(src, /sendMenuDigest/, '缺少饭点汇总实现');
+  assert.match(src, /notifiedAt: null/, '汇总未筛选「未通知」的提交');
+  assert.match(src, /role: 'chef'/, '汇总收件人应为金牌大厨');
+  assert.match(src, /notifiedAt: new Date\(\)/, '汇总后未回写通知时间，会重复发送');
+  // 定时触发入口：无 OPENID + Type === 'Timer'
+  assert.match(src, /Type === 'Timer'/, '缺少定时触发器识别');
 });
 
 test('notify：发送前校验家庭/菜品/成员关系', () => {
