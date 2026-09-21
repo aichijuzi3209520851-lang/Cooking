@@ -9,7 +9,7 @@
   background: var(--surface-card);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
   box-shadow: var(--elev-1);
   box-sizing: border-box;
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
@@ -90,9 +90,12 @@
 }
 
 .dish-voters-empty {
-  font-size: var(--text-caption);
+  font-size: var(--text-body-sm);
   color: var(--color-text-tertiary);
   line-height: var(--lh-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 右侧按钮 */
@@ -108,10 +111,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 72rpx;
+  height: 76rpx;
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
-  font-size: var(--text-caption);
+  font-size: var(--text-body-sm);
   font-weight: var(--weight-semibold);
   line-height: 1;
   box-sizing: border-box;

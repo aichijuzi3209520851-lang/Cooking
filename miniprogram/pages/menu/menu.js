@@ -10,6 +10,7 @@ const dto = require('../../utils/dto.js');
 const category = require('../../utils/category.js');
 const {
   today,
+  seasonEmojiOf,
   showApiError,
   showSuccess,
   refreshSummaryBadge
@@ -19,14 +20,41 @@ const app = getApp();
 const PAGE_SIZE = 50;
 const WATCH_RETRY_LIMIT = 3;
 
+// 「推荐」是左侧导航第一个伪分类：点进去在右侧看今日推荐，排列与点菜列表一致
+// （同一套 dish-card）。伪 key 只活在导航里，不会写进菜品的 category 字段。
+const RAIL_RECOMMEND = { key: 'recommend', name: '推荐', emoji: '✨' };
+// 导航里的伪分类：不是真实菜品分类，切换回来时不参与云端分类存在性校验
+const PSEUDO_KEYS = ['recommend', 'all'];
+
+/**
+ * 左侧导航表：推荐 → 全部 → 家庭可配置分类
+ */
+function buildRail(list) {
+  return [RAIL_RECOMMEND].concat(category.withAll(list));
+}
+
+/**
+ * 今日每道菜的投票人索引（dishId → voters[]）。
+ * 「推荐」选项卡用它给推荐项补上真实投票人，保证推荐卡与右侧列表的
+ * 「我想吃 / 已想吃」按钮态完全同步（不会列表显示已点、推荐还显示未点）。
+ */
+function buildVoterMap(groups) {
+  const map = {};
+  (groups || []).forEach(g => {
+    const id = g && g.dishId;
+    if (!id) return;
+    map[id] = Array.isArray(g.voters) ? g.voters : [];
+  });
+  return map;
+}
+
 Page({
   data: {
     themeClass: '',
     dishes: [],
     selectedCategory: 'all',
-    // 左侧分类导航：第一项恒为「全部」，其余来自家庭可配置分类表（UI-002）
-    categories: category.withAll(category.getCategories()),
-    stats: { dishCount: 0, voterCount: 0 },
+    // 左侧分类导航：首项「推荐」→「全部」→ 家庭可配置分类（UI-002）
+    categories: buildRail(category.getCategories()),
     currentFamily: null,
     currentRole: '',
     currentUserId: '',
@@ -35,6 +63,8 @@ Page({
     libraryEmpty: false,
     todayDate: '',
     dateText: '',
+    // 「今日推荐」季节提示前的季节图标（纯展示，随月份变化）
+    seasonEmoji: '🍂',
     loading: false,
     refreshing: false,
     page: 1,
@@ -49,6 +79,9 @@ Page({
       seasonTip: '',
       progressText: ''
     },
+    // 「推荐」选项卡的展示数据：把推荐项适配成 dish-card 的入参，
+    // 与右侧菜品列表共用同一张卡片，排列与交互完全一致
+    recommendDishes: [],
     // 一票否决原因弹窗（NOTIFY-002）
     showReject: false,
     rejectDishName: '',
@@ -117,7 +150,8 @@ Page({
     const dateText = `${now.getMonth() + 1}月${now.getDate()}日 周${weekDays[now.getDay()]}`;
     this.setData({
       todayDate: today(),
-      dateText
+      dateText,
+      seasonEmoji: seasonEmojiOf(now.getMonth() + 1)
     });
   },
 
@@ -211,7 +245,7 @@ Page({
   // 用本地缓存先渲染，避免首帧左侧栏空白
   syncCachedCategories() {
     const list = category.getCategories(app.globalData.currentFamilyId);
-    this.setData({ categories: category.withAll(list) });
+    this.setData({ categories: buildRail(list) });
   },
 
   async loadCategories() {
@@ -238,11 +272,12 @@ Page({
     }));
 
     // 当前选中的分类若已被删除，自动回到「全部」，否则列表会一直空着让人困惑
-    const stillExists = this.data.selectedCategory === 'all' ||
+    // （推荐 / 全部是伪分类，不受家庭分类表变动影响）
+    const stillExists = PSEUDO_KEYS.indexOf(this.data.selectedCategory) > -1 ||
       list.some(c => c.key === this.data.selectedCategory);
 
     const patch = {
-      categories: category.withAll(list),
+      categories: buildRail(list),
       dishes
     };
 
@@ -304,7 +339,8 @@ Page({
       dishId: item.dishId,
       name: item.name,
       imageUrl: item.imageUrl,
-      emoji: category.emojiOf(item.category),
+      // category 供 dish-card 解析分类插画 / emoji（不再自己算 emoji）
+      category: item.category || '',
       reason: item.reason || '',
       seasonal: !!item.seasonal,
       voted: !!votedSet[item.dishId]
@@ -331,33 +367,41 @@ Page({
         progressText
       }
     });
+    this.syncRecommendDishes();
   },
 
-  // 点推荐卡片 = 直接加入今日菜单（推荐场景下「想吃」这个中间步骤是多余的）
-  async onRecommendTap(e) {
-    const index = Number(e.currentTarget.dataset.index);
-    const item = this.data.recommend.items[index];
-    if (!item || item.voted) return;
+  /**
+   * 推荐项 → dish-card 入参。
+   * 推荐接口只给「今天有没有被点」，不给具体投票人，因此用今日投票索引补真值：
+   * 命中 todayList 的用真实 voters（别人的头像也能显示），未命中按 voted 兜底。
+   */
+  syncRecommendDishes() {
+    const map = this._voterMap || {};
+    const me = this.data.currentUserId;
+    const items = this.data.recommend.items || [];
 
-    const familyId = app.globalData.currentFamilyId;
-    if (!familyId) return;
-
-    this.setData({ [`recommend.items[${index}].voted`]: true });
-    wx.vibrateShort({ type: 'light', fail() {} });
-
-    try {
-      await voteApi.add(familyId, item.dishId);
-      this.loadData(true);
-    } catch (err) {
-      // 已经点过（例如刚在列表里点过）：保持已点状态，刷新对齐即可
-      if (err && err.errorCode === 'VOTE_ALREADY_EXISTS') {
-        this.loadData(true);
-        return;
+    const recommendDishes = items.map(item => {
+      let voters = map[item.dishId];
+      if (!voters) {
+        voters = item.voted
+          ? [{ openid: me, nickname: '我', avatarUrl: '' }]
+          : [];
       }
-      console.error('推荐点菜失败', err);
-      showApiError(err, '点菜失败');
-      this.setData({ [`recommend.items[${index}].voted`]: false });
-    }
+      return {
+        dishId: item.dishId,
+        dish: {
+          dishId: item.dishId,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          category: item.category,
+          // 投票人随 dish 一起传：dish-card 对 dish(Object) 通道的依赖最可靠
+          voters
+        },
+        voters
+      };
+    });
+
+    this.setData({ recommendDishes });
   },
 
   // ============ 数据加载（API-001/API-002/PERF-001） ============
@@ -380,13 +424,19 @@ Page({
     }
 
     const categoryKey = this.data.selectedCategory;
+    // 「推荐」是左侧导航的伪分类，不是真实菜品分类：
+    // 此时不发菜品库请求（拿 recommend 去筛 category 只会得到空列表、还会误判菜品库为空），
+    // 只拉今日投票，用于刷新推荐卡片的按钮态与角标。
+    const isRecommendTab = categoryKey === 'recommend';
     const page = reset ? 1 : this.data.page;
     this.setData({ loading: true });
 
     try {
       const [voteData, dishResult] = await Promise.all([
         voteApi.todayList(familyId),
-        dishApi.list(familyId, categoryKey === 'all' ? '' : categoryKey, page, PAGE_SIZE)
+        isRecommendTab
+          ? Promise.resolve(null)
+          : dishApi.list(familyId, categoryKey === 'all' ? '' : categoryKey, page, PAGE_SIZE)
       ]);
 
       // 统一契约：todayList -> { date, groups, submitCount }，由 dto 归一化
@@ -400,25 +450,36 @@ Page({
         this.setupWatcher();
       }
 
-      // 'all' 不参与投票分组过滤，归一化后传入
-      const pageDishes = dto.buildMenuList(dishList, groups, categoryKey === 'all' ? '' : categoryKey);
-      const dishes = reset && sort
-        ? pageDishes
-        : dto.mergePreservingOrder(this.data.dishes, pageDishes);
-      const stats = dto.calcVoteStats(dishes);
+      // 今日投票人索引：推荐选项卡据此给推荐项补上真实投票人
+      this._voterMap = buildVoterMap(groups);
 
-      this.setData({
-        dishes,
-        stats,
-        page: page + 1,
-        hasMore: page * PAGE_SIZE < total,
-        libraryEmpty: categoryKey === 'all' && dishList.length === 0 && groups.length === 0
-      });
+      if (isRecommendTab) {
+        // 推荐视图没有菜品库数据，已点菜数改按今日投票分组统计
+        const votedDishCount = Object.keys(this._voterMap)
+          .filter(id => (this._voterMap[id] || []).length > 0).length;
+        refreshSummaryBadge(this.data.isChef ? submitCount : votedDishCount);
+      } else {
+        // 'all' 不参与投票分组过滤，归一化后传入
+        const pageDishes = dto.buildMenuList(dishList, groups, categoryKey === 'all' ? '' : categoryKey);
+        const dishes = reset && sort
+          ? pageDishes
+          : dto.mergePreservingOrder(this.data.dishes, pageDishes);
+        const stats = dto.calcVoteStats(dishes);
 
-      // 汇总 tab 徽标（BADGE-001 / NOTIFY-003）：
-      // 厨师看「今日提交人数」——有人交菜单了就该去汇总页拍板；
-      // 其他人看「今日已点菜数」——提醒去看看大家都点了什么。
-      refreshSummaryBadge(this.data.isChef ? submitCount : stats.dishCount);
+        this.setData({
+          dishes,
+          page: page + 1,
+          hasMore: page * PAGE_SIZE < total,
+          libraryEmpty: categoryKey === 'all' && dishList.length === 0 && groups.length === 0
+        });
+
+        // 汇总 tab 徽标（BADGE-001 / NOTIFY-003）：
+        // 厨师看「今日提交人数」——有人交菜单了就该去汇总页拍板；
+        // 其他人看「今日已点菜数」——提醒去看看大家都点了什么。
+        refreshSummaryBadge(this.data.isChef ? submitCount : stats.dishCount);
+      }
+
+      this.syncRecommendDishes();
     } catch (err) {
       console.error('加载点菜数据失败', err);
       showApiError(err, '加载失败，请下拉刷新');
@@ -524,6 +585,7 @@ Page({
     if (idx < 0) return;
     if (items[idx].voted === voted) return;
     this.setData({ [`recommend.items[${idx}].voted`]: voted });
+    this.syncRecommendDishes();
   },
 
     // 乐观更新：仅原地更新 voters，不重排（投票后卡片不跳位，进入页面/下拉时才排序）
@@ -555,9 +617,14 @@ Page({
     const stats = dto.calcVoteStats(nextDishes);
 
     this.setData({
-      [`dishes[${idx}].voters`]: voters,
-      stats
+      [`dishes[${idx}].voters`]: voters
     });
+
+    // 投票人索引同步更新，「推荐」选项卡里的同一道菜才不会与右侧列表打架
+    this._voterMap = this._voterMap || {};
+    this._voterMap[dishId] = voters;
+    this.syncRecommendDishes();
+
     refreshSummaryBadge(stats.dishCount);
   },
 
@@ -614,6 +681,8 @@ Page({
 
   // 右侧列表触底加载更多（页面已定高不再滚动，改由 scroll-view 驱动）
   onLoadMore() {
+    // 推荐视图是一次性列表，没有分页，也不该触发菜品库查询
+    if (this.data.selectedCategory === 'recommend') return;
     if (this.data.hasMore && !this.data.loading) {
       this.loadData(false);
     }

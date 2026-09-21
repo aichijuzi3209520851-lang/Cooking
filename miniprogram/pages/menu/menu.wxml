@@ -36,43 +36,8 @@
     <text class="rice-tip-arrow">›</text>
   </view>
 
-  <!-- 今日推荐（RECOMMEND-001）：横向卡片，不随推荐条数长高，把纵向空间留给菜品列表 -->
-  <view class="recommend-card" wx:if="{{recommend.show && !libraryEmpty}}">
-    <view class="recommend-head">
-      <text class="recommend-title">今日推荐</text>
-      <text class="recommend-season">{{recommend.seasonTip}}</text>
-    </view>
-
-    <scroll-view wx:if="{{recommend.items.length > 0}}" class="recommend-scroll" scroll-x>
-      <view class="recommend-track">
-        <view
-          class="recommend-item {{item.voted ? 'recommend-item-done' : ''}}"
-          wx:for="{{recommend.items}}"
-          wx:key="dishId"
-          data-index="{{index}}"
-          bindtap="onRecommendTap"
-        >
-          <view class="recommend-thumb">
-            <image
-              wx:if="{{item.imageUrl}}"
-              class="recommend-thumb-img"
-              src="{{item.imageUrl}}"
-              mode="aspectFill"
-            />
-            <text wx:else class="recommend-thumb-emoji">{{item.emoji}}</text>
-            <view class="recommend-flag">{{item.voted ? '✓' : '＋'}}</view>
-          </view>
-          <text class="recommend-name">{{item.name}}</text>
-          <text class="recommend-reason {{item.seasonal ? 'recommend-reason-seasonal' : ''}}">{{item.reason}}</text>
-        </view>
-      </view>
-    </scroll-view>
-
-    <!-- 未到开启门槛：给进度而不是留白，让用户知道推荐会自己来 -->
-    <view wx:else class="recommend-progress">
-      <text class="recommend-progress-text">{{recommend.progressText}}</text>
-    </view>
-  </view>
+  <!-- 今日推荐（RECOMMEND-001）已收进左侧导航首个「推荐」选项卡，
+       推荐菜品用与点菜列表同一套 dish-card 渲染，排列与交互完全一致（见 menu-body） -->
 
   <!-- 无家庭 -->
   <block wx:if="{{!hasFamily}}">
@@ -103,14 +68,6 @@
   </block>
 
   <block wx:else>
-    <!-- 统计栏 -->
-    <view class="stats-bar">
-      <text class="stats-text">已点 <text class="stats-num">{{stats.dishCount}}</text> 道菜</text>
-      <text class="stats-dot">·</text>
-      <text class="stats-text"><text class="stats-num">{{stats.voterCount}}</text> 人参与</text>
-    </view>
-    <text wx:if="{{isChef}}" class="chef-hint">长按菜品卡片可撤下这道菜</text>
-
     <!-- 主体：左侧分类导航（像 Word 的导航窗格）+ 右侧菜品列表，两侧各自独立滚动 -->
     <view class="menu-body">
       <view class="category-rail">
@@ -155,7 +112,42 @@
         bindrefresherrefresh="onRefresh"
         enable-back-to-top
       >
-        <view class="dish-list">
+        <!-- 「推荐」选项卡：季节提示 + 与点菜列表完全一致的 dish-card 排列 -->
+        <block wx:if="{{selectedCategory === 'recommend'}}">
+          <view class="recommend-note">
+            <view class="recommend-season" wx:if="{{recommend.seasonTip}}">
+              <text class="recommend-season-emoji">{{seasonEmoji}}</text>
+              <text class="recommend-season-text">{{recommend.seasonTip}}</text>
+            </view>
+            <!-- 未到开启门槛：给进度而不是留白，让用户知道推荐会自己来 -->
+            <view wx:if="{{!recommend.ready}}" class="recommend-progress">
+              <text class="recommend-progress-text">{{recommend.progressText}}</text>
+            </view>
+          </view>
+
+          <view class="dish-list">
+            <dish-card
+              wx:for="{{recommendDishes}}"
+              wx:key="dishId"
+              id="rec-card-{{index}}"
+              dish="{{item.dish}}"
+              voters="{{item.voters}}"
+              current-user-id="{{currentUserId}}"
+              user-role="{{currentRole}}"
+              bind:vote="onVote"
+              bind:cancel="onCancel"
+              bind:chefcancel="onChefCancel"
+            />
+            <empty-state
+              wx:if="{{recommendDishes.length === 0 && recommend.ready}}"
+              icon="🍳"
+              title="今天还没有推荐"
+              description="多攒几天点菜记录就有啦"
+            />
+          </view>
+        </block>
+
+        <view class="dish-list" wx:else>
           <!-- 首屏加载骨架：避免加载中闪现「暂无菜品」空状态 -->
           <block wx:if="{{loading && dishes.length === 0}}">
             <view class="skeleton-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
