@@ -83,15 +83,16 @@
 ### 3. 每日投票
 - 干饭能手为想吃的菜投票，**每人每天可投多票**
 - 实时统计票数，首页展示当前排行榜
-- 金牌大厨可**取消任意投票**（一票否决）
+- 金牌大厨可**取消任意投票**（一票否决，仅清当日投票、菜品保留可再点，可附原因通知受影响成员）
+- **提交今日菜单**：每人每天一条（幂等 upsert，重复提交覆盖），入队等待饭点汇总通知
 - 当日 24 点由定时任务自动归档，次日重新开始
 
 ### 4. 今日推荐
 - 点菜首页**左侧分类栏的第一个选项卡**就是「✨推荐」，点开后右侧展示今日推荐菜品
 - 推荐菜品**与点菜列表共用同一套卡片组件**（`dish-card`），排列与交互完全一致；投票人真值取自当日投票数据，两个入口的「我想吃/已想吃」状态严格同步
 - **开启门槛**：菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天；未达门槛时展示「还差几道菜 / 还差几天」的进度而不是留白
-- **打分逻辑**：频率（最近 30 天被点天数 ×10 + 票数 ×1）+ 时令（命中当季食材 +60、季节分类加权 ×5），最近 2 天吃过的整体 ×0.3 冷却；保证至少一道时令菜入选
-- 顶部给出**季节/节气提示**（如「🍂 白露 · 秋凉渐起，晚上来碗热汤」），依据 24 节气近似算法
+- **打分逻辑**：频率（最近 30 天被点天数 ×10 + 票数 ×1）+ 时令（命中当季食材 +60、季节分类加权 ×5）+ 节日（命中节日食物 +80，免冷却）+ 天气（雨/热/冷/霾的分类加权），最近 2 天吃过的整体 ×0.3 冷却；保证至少一道时令菜入选
+- 顶部给出**季节/节气/节日/天气提示**（如「🍂 白露 · 秋凉渐起，晚上来碗热汤」），依据 24 节气近似算法、2025-2035 节日锚点表与 LBS 天气（`weather` 云函数）；文案模板兜底、可用 CloudBase AI 增强（失败自动回落）
 - 推荐属增益能力：云函数异常时静默隐藏，不影响点菜主流程
 
 ### 5. 汇总与历史
@@ -100,7 +101,7 @@
 - 数据归档至 `vote_history` 集合，永久可追溯
 
 ### 6. 主题系统
-- **三大主题家族 + 跟随系统**：温馨暖调（辣椒红×米白）/ 清新绿意（葱青绿×薄荷白）/ 静谧夜间（暖黑「深夜食堂」）
+- **五大主题家族 + 跟随系统**：温馨暖调（辣椒红×暖米）/ 清新绿意（葱青绿×薄荷白）/ 晴空浅蓝（晴空蓝×云白）/ 樱粉（樱花粉×奶白）/ 静谧夜间（暖黑「深夜食堂」）
 - **跟随系统实时联动**：系统切深浅色，小程序不重启即时切换（`wx.onThemeChange`）
 - **全量联动**：内容区配色、导航栏、tabBar 选中图标与文字色、下拉刷新底色、原生弹窗确认色随家族整体切换
 - 主题设置页为 4 张纯 CSS 色卡预览（所见即所得），点击立即全页生效；偏好本地持久化 + 云端同步
@@ -110,6 +111,14 @@
 - **tabBar**：面性圆润风格图标（碗筷/清单/人形），选中态颜色随主题家族切换
 - **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史）与菜品分类占位图均为定制 SVG 插画，裂图自动回退 emoji
 - **交互细节**：投票成功弹跳动效 + 震动反馈、菜单页首屏骨架屏、下拉刷新、实时数据监听（watcher）多端同步
+
+### 8. 生日提醒与祝福（BIRTHDAY-001）
+- 生日**只存月日、不存年份**（最小化收集），支持公历 / 农历（1900-2100 农历换算，前端展示「腊月廿九」这类汉字）
+- 菜单页提醒条只覆盖「今天 / 明天」，生日当天弹祝福弹窗（寿星与家人两套文案，一天只弹一次）；文案不复述具体日期
+- `notify` 的 `birthdayWish` 触发器（每日 09:00）向同家庭其他成员发祝福；只广播「明确同意展示」（`shared` 开关）的生日，寿星本人不收
+
+### 9. 分享邀请
+- 家庭管理页支持分享给好友/群与朋友圈，卡片携带 6 位加入码，接收方点开自动填码加入
 
 ---
 
@@ -131,6 +140,9 @@
 │  │  vote    │ │  notify  │ │   dailyReset     │  │
 │  │ 投票核心  │ │ 消息通知  │ │ 定时归档(触发器)  │  │
 │  └──────────┘ └──────────┘ └──────────────────┘  │
+│  ┌───────────────────────────────────────────┐   │
+│  │  weather — LBS 天气代理（推荐天气加权）      │   │
+│  └───────────────────────────────────────────┘   │
 └────────────────────┬────────────────────────────┘
                      │
         ┌────────────┼─────────────┐
@@ -145,7 +157,7 @@
 | 前端 | 微信小程序原生框架 | WXML + WXSS + JavaScript，无第三方 UI 库 |
 | 前端 | CSS 变量主题系统 | `var(--color-primary)` 语义化 token，一键换肤 |
 | 后端 | 微信云开发（CloudBase） | 云函数 + 文档数据库 + 云存储 + 定时触发器 |
-| 运行时 | Node.js（云函数） | `wx-server-sdk ~2.6.3` |
+| 运行时 | Node.js（云函数） | `wx-server-sdk 2.6.3`（精确版本，lint 禁止 `~`/`^`） |
 | 鉴权 | 微信私有协议 | `wx.cloud.callFunction` 自动携带 openid，无需手动登录态 |
 
 ---
@@ -169,6 +181,7 @@ miniprogram-11/
 │   │   ├── dish-card/            #   菜品卡片（缩略图、票数、投票按钮）
 │   │   ├── empty-state/          #   空状态引导组件（插画优先、emoji 兜底）
 │   │   ├── privacy-popup/        #   隐私协议授权弹窗
+│   │   ├── birthday-popup/       #   生日当天祝福弹窗（寿星/家人两套文案）
 │   │   └── reject-reason/        #   一票否决原因选择弹窗
 │   ├── pages/
 │   │   ├── login/                # 登录首屏：沉浸式品牌页、漂浮动效、微信快捷登录
@@ -186,28 +199,41 @@ miniprogram-11/
 │   │   │   ├── edit/             #   菜品新增/编辑表单
 │   │   │   └── categories/       #   分类管理整页：增删家庭分类 + 5×5 图标方阵
 │   │   ├── history/              # 历史菜单回看（日期选择器）
+│   │   ├── help/                 # 使用帮助（按真实点击路径编写的分步指引）
+│   │   ├── agreement/
+│   │   │   └── privacy/          #   用户隐私协议页
 │   │   └── settings/
-│   │       └── theme/            #   主题设置：4 张色卡预览选择器
+│   │       └── theme/            #   主题设置：跟随系统 + 5 个家族色卡选择器
 │   └── utils/
 │       ├── api.js                #   云函数调用封装（dishApi/familyApi/voteApi/categoryApi…）
 │       ├── category.js           #   菜品分类唯一数据源：家庭分类缓存 + 名称→图标匹配（纯函数，可单测）
 │       ├── dto.js                #   DTO 转换层：云函数返回 → 页面展示数据（纯函数，可单测）
 │       ├── theme.js              #   主题家族管理：解析、导航/tabBar 联动、旧字段迁移
-│       └── util.js               #   日期格式化、防抖节流、分类枚举、交互反馈工具
+│       ├── birthday.js           #   生日展示与文案（公历数字/农历汉字，纯函数，可单测）
+│       ├── privacy.js            #   隐私授权管理（onNeedPrivacyAuthorization 统一弹窗）
+│       ├── recommend-copy.js     #   推荐文案层（稳定种子模板 + AI 增强，失败自动回落）
+│       ├── ai.js                 #   CloudBase AI 大模型接入（无 Key、不可用即降级）
+│       └── util.js               #   日期格式化、防抖节流、交互反馈、asArray 等工具
 │
 ├── cloudfunctions/               # 云函数
-│   ├── login/                    # 静默登录：openid 换取用户信息 + 家庭列表
+│   ├── login/                    # 静默登录 + 用户资料：login/setNotifyStatus/updateProfile
 │   ├── family/                   # 家庭：create/joinByCode/list/switch/
-│   │                             #       members/removeMember/leave/updateRole
+│   │                             #       members/removeMember/leave/updateRole/
+│   │                             #       updateMemberRole/transferCreator
 │   ├── dish/                     # 菜品：list/add/update/delete/toggleHidden
 │   │                             #       分类：categories/addCategory/removeCategory
-│   ├── vote/                     # 投票：add/cancel/chefCancel/todayList/history/recommend
-│   ├── notify/                   # 订阅消息：内部调用 + 饭点定时汇总（sendMenuDigest）
-│   └── dailyReset/               # 定时任务：每日归档投票、重置菜品状态
+│   ├── vote/                     # 投票：add/cancel/chefCancel/submitMenu/decideMenu/
+│   │                             #       todayList/history/setRice/getRice/recommend
+│   ├── notify/                   # 订阅消息：内部调用 + 饭点汇总（sendMenuDigest）
+│   │                             #       + 生日祝福（sendBirthdayWish）
+│   ├── dailyReset/               # 定时任务：每日归档投票、重置菜品状态
+│   └── weather/                  # 腾讯位置服务天气代理（推荐天气加权，不引用 shared）
 │
 ├── tests/                        # 测试
-│   ├── unit/                     # 单元测试（dto / date / cloud-shared）
-│   └── contracts/                # 契约测试（云函数 API 契约 + 前端关键行为）
+│   ├── unit/                     # 单元测试（dto/date/category/season/lunar/cloud-shared…）
+│   ├── contracts/                # 契约测试（云函数 API 契约 + 前端关键行为）
+│   ├── smoke/                    # 冒烟测试（内存数据库真实运行核心链路）
+│   └── whitebox/                 # 白盒测试（边界值/判定/幂等重跑，见 docs/whitebox-test-plan.md）
 │
 ├── docs/                         # 项目文档
 │   ├── deployment/               #   部署文档与数据库安全规则
@@ -236,6 +262,9 @@ miniprogram-11/
 | **avatar-group** | `components/avatar-group/` | 成员头像组 | 根据昵称哈希自动生成 8 种暖色渐变头像，首字母显示，支持多头像堆叠 |
 | **dish-card** | `components/dish-card/` | 菜品卡片 | 菜品缩略图 + 分类插画占位、投票人头像组、投票/取消按钮（≥44px 热区）、长按撤下（chef）、隐藏态标记；**点菜列表与今日推荐共用同一套卡片**，保证排列与交互一致 |
 | **empty-state** | `components/empty-state/` | 空状态引导 | SVG 插画优先展示，裂图自动回退 emoji；支持自定义标题与描述 |
+| **privacy-popup** | `components/privacy-popup/` | 隐私授权弹窗 | 由 `utils/privacy.js` 驱动，隐私接口调用前统一弹出（PRIV-001） |
+| **reject-reason** | `components/reject-reason/` | 一票否决原因弹窗 | 预设短语 + 自定义输入，≤20 字；仅用于当次通知，不落库 |
+| **birthday-popup** | `components/birthday-popup/` | 生日当天祝福弹窗 | 纯展示组件（BIRTHDAY-003），「一天只弹一次」由页面缓存控制 |
 
 ### 工具模块
 
@@ -246,8 +275,11 @@ miniprogram-11/
 | `utils/dto.js` | DTO 转换层 | **纯函数、零依赖**，`normalizeTodayList`/`buildMenuList`/`buildSummaryList` 等，可在 Node 环境直接 `require` 测试 |
 | `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、头像颜色生成、家族感知弹窗确认色、`showApiError` 统一错误展示、`asArray` 跨组件数组归一化（分类枚举已迁至 `utils/category.js`） |
 | `utils/theme.js` | 主题家族管理 | 家族解析（跟随系统→深浅映射）、导航/tabBar/窗口联动、主题 class 下发、旧字段缓存迁移 |
+| `utils/birthday.js` | 生日展示与文案 | 公历数字/农历汉字渲染、提醒条与弹窗文案（寿星/家人两套）；纯函数，可单测 |
+| `utils/privacy.js` | 隐私授权管理 | `onNeedPrivacyAuthorization` 统一弹窗、低版本降级、隐私拦截错误识别（PRIV-001） |
+| `utils/recommend-copy.js` + `utils/ai.js` | 推荐文案层 | 稳定种子模板打底 + CloudBase AI 增强；排序/打分永不交给 AI，AI 失败一律回落模板 |
 
-> **DTO 层契约**：`vote.todayList` 返回 `{ date, groups[] }`，group 含 `dishId/dishName/category/imageUrl/isHidden/voters[]`；前端统一使用 `dishId` 作为业务 ID，禁止页面猜测 `_id` 格式。
+> **DTO 层契约**：`vote.todayList` 返回 `{ date, groups[], submitCount }`，group 含 `dishId/dishName/category/imageUrl/isHidden/decided/voters[]`；前端统一使用 `dishId` 作为业务 ID，禁止页面猜测 `_id` 格式。
 
 ---
 
@@ -278,10 +310,10 @@ cd Cooking
 
 **3. 绑定云环境**
 
-编辑 [miniprogram/app.js](miniprogram/app.js) 中的环境 ID：
+编辑 [miniprogram/config.js](miniprogram/config.js) 中的环境 ID（`app.js` 从 config.js 读取）：
 
 ```js
-globalData: {
+module.exports = {
   cloudEnv: '你的云开发环境ID' // 例如 lcw-xxxxxxxxxxxx
 }
 ```
@@ -293,7 +325,7 @@ globalData: {
 在云开发控制台 → 数据库中创建以下集合（无需手动建表结构，文档型数据库自动生成字段）：
 
 ```
-users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports
+users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports  menu_submissions
 ```
 
 > `notify_ledger` 是「当日这道菜首次被点」的台账（确定性 `_id`，并发点菜只会写成功一次）。
@@ -330,7 +362,9 @@ npm test
 右键函数目录 → 上传并部署：云端安装依赖（不上传 node_modules）
 ```
 
-共 6 个函数：`login`、`family`、`dish`、`vote`、`notify`、`dailyReset`
+共 7 个函数：`login`、`family`、`dish`、`vote`、`notify`、`dailyReset`、`weather`
+
+> `weather` 不引用 `shared/`（无需同步拷贝），但需配置环境变量 `LBS_KEY`（腾讯位置服务 Key）。
 
 > **共享模块说明**：6 个云函数共同引用 `shared/` 公共模块（代码内以相对路径 `require('./shared/...')` 引用）。每个函数目录内的 `shared/` 是它的拷贝，**修改 `shared/` 后，需重新拷贝到 6 个函数目录再部署**，否则云端报 `Cannot find module './shared/...'`。
 
@@ -347,6 +381,7 @@ tcb fn deploy vote    -e <环境ID> --force
 tcb fn deploy login   -e <环境ID> --force
 tcb fn deploy notify  -e <环境ID> --force
 tcb fn deploy dailyReset -e <环境ID> --force
+tcb fn deploy weather -e <环境ID> --force
 ```
 
 也可运行 `ENV_ID=<环境ID> ./scripts/uploadCloudFunction.sh` 批量部署。
@@ -361,7 +396,9 @@ tcb fn deploy dailyReset -e <环境ID> --force
 | `vote` | `NOTIFY_INTERNAL_KEY` | 与 notify 一致；缺失时跳过通知（不阻塞投票） |
 | `dish` | `NOTIFY_INTERNAL_KEY` | 与 notify 一致；隐藏/删除菜品清票时通知被影响成员，缺失时跳过 |
 | `notify` | `NOTIFY_MENU_TEMPLATE_ID` | 拍板菜单通知模板 ID（可选，未配置时拍板通知跳过） |
+| `notify` | `NOTIFY_BIRTHDAY_TEMPLATE_ID` | 生日祝福模板 ID（可选，未配置时 `sendBirthdayWish` fail closed，只是不发推送） |
 | `notify` | `NOTIFY_MP_STATE` | 订阅消息版本：formal（默认）/ trial（体验版联调）/ develop |
+| `weather` | `LBS_KEY` | 腾讯位置服务（LBS）Key；缺失时 weather 返回 `CONFIG_MISSING`，推荐自动退化为无天气 |
 | `dailyReset` | `ALLOW_MANUAL_RUN` | 仅开发环境设为 `true`，开启手动归档入口 |
 | `dish` / `login` / `family` | `SEC_CHECK_STRICT` | 内容安全严格模式：设为 `true` 时审核接口异常也拒绝写入（默认 `false`，异常放行并记日志）。详见 [docs/deployment/content-security.md](docs/deployment/content-security.md) |
 
@@ -428,24 +465,25 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 云函数 | 代码量 | Action 数 | 核心职责 | 依赖 |
 |:---|:---|:---|:---|:---|
-| `login` | 222 行 | 3 | 静默登录、设置通知状态、资料更新 | `wx-server-sdk` |
-| `family` | 669 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 | `wx-server-sdk`、`crypto` |
-| `dish` | 471 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
-| `vote` | 859 行 | 10 | 投票核心 + 历史查询 + 今日推荐 | `wx-server-sdk` |
-| `notify` | 440 行 | 5 | 订阅消息：内部调用 + 饭点定时汇总 | `wx-server-sdk` |
-| `dailyReset` | 213 行 | 1 | 定时归档投票 + 重置状态 | `wx-server-sdk` |
+| `login` | 232 行 | 3 | 静默登录、通知授权状态、资料更新（昵称/头像/生日） | `wx-server-sdk` |
+| `family` | 668 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 + 转让创建者 | `wx-server-sdk`、`crypto` |
+| `dish` | 470 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
+| `vote` | 1096 行 | 10 | 投票核心 + 菜单提交/拍板 + 历史 + 米饭 + 今日推荐 | `wx-server-sdk` |
+| `notify` | 536 行 | 6 | 订阅消息：内部调用 + 饭点汇总 + 生日祝福 | `wx-server-sdk` |
+| `dailyReset` | 212 行 | 1 | 定时归档投票 + 重置状态 | `wx-server-sdk` |
+| `weather` | 113 行 | 1 | LBS 天气代理（IP 定位 → 实时/预报天气） | `wx-server-sdk`、`https` |
 
-> 后端总代码量约 **2874 行** JavaScript，所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`
+> 后端总代码量约 **3,327 行** JavaScript（7 个云函数 `index.js` 合计），所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`（`weather`/`dailyReset` 为单入口）
 
 所有函数通过 `wx.cloud.callFunction` 调用，首个参数为 `action`。
 
-### login — 静默登录
+### login — 静默登录与用户资料
 
-| 入参 | 说明 |
-|:---|:---|
-| 无 | 自动从上下文获取 openid |
-
-返回：`openid`、`user`、`families[]`、`members[]`
+| action | 参数 | 说明 |
+|:---|:---|:---|
+| `login`（缺省） | — | 自动从上下文获取 openid；返回 `openid`、`user`、`families[]`、`members[]` |
+| `setNotifyStatus` | `status, reason` | 持久化订阅消息授权结果（accepted / rejected / unknown / expired） |
+| `updateProfile` | `nickname?`, `avatarUrl?`, `birthday?` | 修改昵称 / 自定义头像 / 生日（生日只存月日不存年份；传 `null` 清除） |
 
 ### family — 家庭管理
 
@@ -459,6 +497,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `removeMember` | `familyId, userId` | 移除成员（仅金牌大厨） |
 | `leave` | `familyId` | 退出家庭；末位成员退出触发解散 |
 | `updateRole` / `updateMemberRole` | `familyId, userId, role` | 变更成员角色 |
+| `transferCreator` | `familyId, userId` | 转让创建者身份（仅创建者）；转让后原创建者可正常退出家庭 |
 
 ### dish — 菜谱管理
 
@@ -493,6 +532,10 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `CONTENT_RISKY` | 文本/图片命中内容安全违规（见 [内容安全](docs/deployment/content-security.md)） |
 | `CONTENT_CHECK_FAILED` | 严格模式下内容安全检测不可用 |
 | `NOTIFY_FORBIDDEN` / `NOTIFY_TEMPLATE_MISSING` | 通知无权限 / 模板未配置 |
+| `NOT_FOUND` | 目标记录不存在（成员 / 用户） |
+| `NO_VOTE_TODAY` | 今天还没有人点菜（提交菜单前置校验） |
+| `FORBIDDEN` | 仅定时触发器可调用 / 手动归档未开启（dailyReset） |
+| `CONFIG_MISSING` / `NO_CLIENT_IP` / `LOCATE_FAILED` | weather：未配置 LBS_KEY / 拿不到客户端 IP / IP 定位失败 |
 | `ACTION_UNKNOWN` / `INTERNAL_ERROR` | 未知操作 / 服务异常 |
 | `NETWORK_ERROR`（前端） | 网络请求失败 |
 
@@ -502,17 +545,20 @@ users (1) ──── (N) family_members (N) ──── (1) families
 |:---|:---|:---|
 | `add` | `familyId, dishId` | 投一票（确定性 `_id` 幂等，重复返回 `VOTE_ALREADY_EXISTS`） |
 | `cancel` | `familyId, dishId` | 干饭能手撤回自己的票（不扣减累计 `cookCount`） |
-| `chefCancel` | `familyId, dishId` | 金牌大厨否决任意投票并隐藏菜品 |
-| `todayList` | `familyId` | 当日投票结果，返回 `{ date, groups[] }`（group 含 `dishId/dishName/category/imageUrl/isHidden/voters[]`） |
+| `chefCancel` | `familyId, dishId, reason?` | 金牌大厨否决任意投票（仅清当日投票，菜品保留、可再点），可附原因并通知受影响成员 |
+| `submitMenu` | `familyId` | 提交今日菜单（`menu_submissions` 幂等 upsert，入队等待饭点汇总；重复提交＝更新并重新入队） |
+| `decideMenu` | `familyId, dishId, decided` | 拍板 / 移出今晚菜单（仅 chef）；拍板时通知全家 |
+| `todayList` | `familyId` | 当日投票结果，返回 `{ date, groups[], submitCount }`（group 含 `dishId/dishName/category/imageUrl/isHidden/decided/voters[]`） |
+| `setRice` / `getRice` | `familyId, bowls` / `familyId` | 米饭饭量上报与聚合（**前端 UI 已下线**，接口保留；0-5 碗、0.5 步进） |
 | `history` | `familyId, date` | 按日期（YYYY-MM-DD）查询历史归档，返回 `{ date, groups[] }` |
-| `recommend` | `familyId` | 今日推荐（家庭成员可读）。返回 `{ ready, todayDishIds[], season{season,label,term,foods,tip}, progress{dishCount,historyDays,…}, items[] }`；`items` 每项含 `dishId/name/category/imageUrl/days/votes/reason/reasonType/seasonal/cooling` |
+| `recommend` | `familyId` | 今日推荐（家庭成员可读）。返回 `{ ready, todayDishIds[], festival, weather, birthday, season{season,label,term,foods,tip}, progress{dishCount,historyDays,…}, items[] }`；`items` 每项含 `dishId/name/category/imageUrl/days/votes/reason/reasonType/seasonal/cooling` |
 
 > **今日推荐（`recommend`）判定与打分**
 >
 > - **开启门槛**：菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天（用「一周后菜品库很丰富」的产品预期做近似）。未达门槛时 `ready:false`、`items:[]`，但返回 `progress`，前端据此展示「再攒几道菜」的进度而不是留白。
 > - **数据源**：`vote_history`（`dailyReset` 已归档的历史）+ `daily_votes`（当日尚未归档，必须单独并入，否则「今天刚点的」不计入频率）。
-> - **打分**：频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 +60、季节分类加权 ×5）；最近 2 天吃过的整体 ×0.3 冷却。排序后保证至少一道时令菜入选，理由按贡献最大的因子生成（`reasonType`：`frequent`/`seasonal`/`diverse`），做到「理由与排序自洽」。
-> - **时令来源**：`cloud-shared/season` 的 24 节气近似算法 + 季节食材关键词库，例：秋季给「汤品」加权、命中「玉米/莲藕/南瓜」等食材。
+> - **打分**：频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 +60、季节分类加权 ×5）+ 节日（命中节日食物 +80，豁免冷却）+ 天气（雨/热/冷/霾分类加权 ×5 折算）；最近 2 天吃过的整体 ×0.3 冷却。排序后保证至少一道时令菜入选，理由按贡献最大的因子生成（`reasonType`：`festival`/`weather`/`frequent`/`seasonal`/`diverse`），做到「理由与排序自洽」。
+> - **时令来源**：`shared/season` 的 24 节气近似算法 + 季节食材关键词库（例：秋季给「汤品」加权、命中「玉米/莲藕/南瓜」等食材）；节日来自 `shared/festival` 的 2025-2035 锚点表 + 冬至走节气算法；天气来自 `weather` 云函数（内部超时 4500ms，全失败静默回退）。
 
 ### notify — 消息通知
 
@@ -523,10 +569,11 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `sendMenuDecidedNotify` | `familyId, dishId, decided` | 厨师拍板/移出今晚菜单，通知全家 |
 | `sendMenuSubmitNotify` | `familyId, userName, dishNames` | 单次提交的即时通知（**新策略下 vote 已不再调用**） |
 | `sendMenuDigest` | — | **饭点汇总**：把当天尚未汇总的提交按家庭合并成一条发给厨师，发完回写 `notifiedAt` 防重复 |
+| `sendBirthdayWish` | — | **生日祝福**：当天过生日的成员 → 同家庭其他成员各一条（只发「同意展示」的生日，寿星本人不收） |
 
 > ⚠️ `notify` 有**两种入口**：
 > ① 云函数内部调用（必须携带内部密钥 `internalKey`，客户端直调会被拒绝）；
-> ② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），仅放行 `sendMenuDigest`，其余动作仍需密钥。
+> ② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），按 `TriggerName` 路由：`birthdayWish` → `sendBirthdayWish`，其余（含菜单摘要）→ `sendMenuDigest`；其余动作仍需密钥。
 >
 > **推送策略（NOTIFY-003）** —— 为什么点菜不再即时推送：
 > 微信小程序一次性订阅消息的额度是**用户的授权次数**（用户授权一次，服务端只能发一条），
@@ -534,6 +581,17 @@ users (1) ──── (N) family_members (N) ──── (1) families
 > 因此点菜与提交菜单**都不再即时推送**，改由 `sendMenuDigest` 在饭点前（11:00 / 17:00，
 > 见 `cloudfunctions/notify/config.json`）合并成一条发出；只有撤菜、拍板保留即时推送。
 > 厨师端的即时提示靠**汇总 tab 角标**（口径 = 今日提交人数，见 `vote.todayList` 的 `submitCount`），零额度成本。
+
+### weather — 天气代理（WEATHER-002）
+
+腾讯位置服务（LBS）天气代理，供「今日推荐」的天气加权与菜单页天气 chip 使用（前端零授权弹窗、零合法域名配置）。
+
+| 入参 | 说明 |
+|:---|:---|
+| `type` | `now`（实时，缺省）/ `future`（预报）/ `hours`（逐小时） |
+| `adcode` 或 `location` | 显式指定城市 / 坐标；都不传时按调用方真实出口 IP 自动定位（`event.ip` → `CLIENTIP`/`CLIENTIPV6`） |
+
+> 需配置环境变量 `LBS_KEY`。天气缓存 30 分钟、IP→adcode 缓存 6 小时（实例级）。模拟器拿不到客户端 IP 时返回 `NO_CLIENT_IP`，前端静默不显示天气（推荐主流程不受影响）。
 
 ### dailyReset — 定时归档
 
@@ -680,11 +738,11 @@ users (1) ──── (N) family_members (N) ──── (1) families
 ```
 干饭能手浏览菜谱 → 点菜投票 → 实时票数更新
                                 │
-                          第一票触发 notify
+                   写 notify_ledger 当日台账（不即时推送）
                                 │
-                          通知金牌大厨「有人想吃菜啦」
+              饭点前 11:00 / 17:00 合并一条汇总发给厨师
                                 │
-金牌大厨查看汇总 → 可一票否决（隐藏菜品 + 清投票 + 通知受影响成员）
+金牌大厨查看汇总 → 可一票否决（清当日投票 + 通知受影响成员，菜品保留）
                                 │
                     每日 00:00 dailyReset
                                 │
@@ -706,13 +764,15 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 小程序采用**餐饮品牌视觉风格**（参考费大厨等国民餐饮品牌），强调食欲感与暖调氛围。
 
-### 三大主题家族色板
+### 五大主题家族色板
 
-| 家族 | 背景 | 卡片 | 主文字 | 强调色 | 气质 |
+| 家族 | 页面底 | 卡片 | 主文字 | 强调色 | 气质 |
 |:---|:---|:---|:---|:---|:---|
-| 温馨暖调（默认） | `#FFFDF9` / `#FAF6F0` | `#FFFFFF` | `#2B2118` | `#D93A2B` 辣椒红 | 深夜食堂的暖 |
-| 清新绿意 | `#FBFDF9` / `#F0F7F1` | `#FFFFFF` | `#1F2B22` | `#2F9E6E` 葱青绿 | 清晨菜市场的鲜 |
-| 静谧夜间 | `#17130F` / `#201B16` | `#2A241D` | `#F5EFE8` | `#E8564A` 珊瑚红 | 暖黑不刺眼 |
+| 温馨暖调（默认） | `#F3E9DA` | `#FFFFFF` | `#241B12` | `#D93A2B` 辣椒红 | 深夜食堂的暖 |
+| 清新绿意 | `#DDEBE0` | `#FBFEFC` | `#17251B` | `#1F9360` 葱青绿 | 清晨菜市场的鲜 |
+| 晴空浅蓝 | `#DCEAF6` | `#FBFDFF` | `#14212B` | `#2E8FD8` 晴空蓝 | 云白天青的清爽 |
+| 樱粉 | `#F8E3EA` | `#FFFBFC` | `#2B1720` | `#E05580` 樱花粉 | 樱色奶白的甜 |
+| 静谧夜间 | `#14100C` | `#221C16` | `#F7F1E9` | `#FF6B5A` 珊瑚红 | 暖黑不刺眼 |
 
 每套家族包含背景三级 / 卡片两级 / 文字三级 / 强调色三档 / 阴影 / 图片压暗等 **20+ 个语义令牌**，完整定义见 [miniprogram/app.wxss](miniprogram/app.wxss)。
 
@@ -743,10 +803,11 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `dailyReset` | 每日 00:00（Cron: `0 0 0 * * * *`） | 归档昨日投票 → `vote_history`（确定性 `_id` 幂等，重复运行不产生重复历史），清空热数据，重置菜品隐藏标记（不覆盖执行期间的隐藏操作） |
 | `notify` / `menuDigestNoon` | 每日 11:00（Cron: `0 0 11 * * * *`） | 饭点前把当天尚未汇总的菜单提交合成**一条**发给金牌大厨（`sendMenuDigest`），发完回写 `notifiedAt` |
 | `notify` / `menuDigestEvening` | 每日 17:00（Cron: `0 0 17 * * * *`） | 同上（晚饭档） |
+| `notify` / `birthdayWish` | 每日 09:00（Cron: `0 0 9 * * * *`） | 当天过生日的成员 → 同家庭其他成员各发一条祝福（需 `NOTIFY_BIRTHDAY_TEMPLATE_ID`，未配置则静默不发） |
 
-> `notify` 的两个饭点触发器虽已声明在 `cloudfunctions/notify/config.json`，但**仍需到控制台手动新建同名触发器**才会生效（同 `dailyReset`）。
+> `notify` 的三个触发器（`menuDigestNoon` / `menuDigestEvening` / `birthdayWish`）虽已声明在 `cloudfunctions/notify/config.json`，但**仍需到控制台手动新建同名触发器**才会生效（同 `dailyReset`）。
 
-未配置触发器时，小程序功能仍可用，但历史页将无数据、`isHidden` 状态不会自动恢复、饭点汇总也不会自动发送。
+未配置触发器时，小程序功能仍可用，但历史页将无数据、`isHidden` 状态不会自动恢复、饭点汇总与生日祝福推送也不会自动发送。
 
 ---
 
@@ -758,7 +819,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（208 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（257 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -777,7 +838,7 @@ npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见�
 冷启动登录 → 创建测试家庭 → 错误加入码拒绝 → 小写加入码加入 → 选择金牌大厨身份 → 新增菜品 → 菜单页出现 → 点菜 → 汇总页显示投票人 → 金牌大厨拍板 → 金牌大厨撤下（今日不做语义：汇总移除、菜品不隐藏） → 米饭云函数接口保留可用（**前端「今日米饭」步进 UI 已下线**，米饭回归主食分类下的普通菜品） → 主题切换夜间家族 → 历史页可达 → 解散测试家庭级联清理。
 
 前提与行为说明：
-- 开发者工具需开启「设置 → 安全 → 服务端口」，且 6 个云函数已部署最新代码
+- 开发者工具需开启「设置 → 安全 → 服务端口」，且 7 个云函数已部署最新代码
 - 脚本会自动关闭现存开发者工具实例并以自动化模式冷启动（`cli auto`）
 - 测试数据全部挂在「【测试】筷点E2E」家庭，结束自动解散级联清理并切回原家庭；对本机 storage 做一次清空
 
@@ -803,16 +864,16 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 指标 | 数值 |
 |:---|:---|
 | 前端页面数 | **16** 个 |
-| 自定义组件数 | **5** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason） |
-| 云函数数 | **6** 个（共 **37** 个 Action） |
+| 自定义组件数 | **6** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup） |
+| 云函数数 | **7** 个（login 3 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
 | 数据库集合数 | **9** 个 |
-| 后端代码量 | ~**2,874** 行 JavaScript（各云函数 `index.js`） |
-| 全局样式 | **954** 行（三主题家族变量 + 字阶/间距令牌 + 工具类） |
-| 测试 | **18** 个测试文件 / **208** 个用例（单元 + 契约 + 冒烟 + 白盒），`npm test` 全绿 |
+| 后端代码量 | ~**3,327** 行 JavaScript（各云函数 `index.js` 合计） |
+| 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
+| 测试 | **20** 个测试文件 / **257** 个用例（单元 105 / 契约 50 / 冒烟 4 / 白盒 98），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
 | 插画素材 | **28** 张（空状态 4 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 12，生图模型产出） |
-| 错误码体系 | **21** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |
-| 主题方案 | **3** 大主题家族 + 跟随系统（导航/tabBar/弹窗全量联动） |
+| 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |
+| 主题方案 | **5** 大主题家族 + 跟随系统（导航/tabBar/弹窗全量联动） |
 | 字阶体系 | **10** 档 `--text-*` 令牌（22/24/26/28/30/38/40/42/52/68rpx），页面一律走令牌 |
 
 ---
@@ -823,8 +884,8 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 
 | 功能 | 状态 | 说明 |
 |:---|:---|:---|
-| 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用；饭点汇总还需给 `notify` 配两个定时触发器（见 [部署文档](docs/deployment/database.md) §6.2） |
-| 扫码加入家庭 | 未实现 | 暂无二维码生成与 `wx.scanCode` 加入流程，加入方式仅 6 位加入码 |
+| 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用；饭点汇总与生日祝福还需给 `notify` 配三个定时触发器（见 [部署文档](docs/deployment/database.md) §6.2 / §6.3） |
+| 扫码加入家庭 | 已决定不做 | 不实现二维码生成与 `wx.scanCode` 加入流程；加入方式为 6 位加入码 + 分享卡片邀请 |
 
 > 已于 2026-09 完成：分类占位插画（`images/category/`）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）、登录页漂浮素材（`images/login/`），以及**用户自定义昵称与头像**（微信头像昵称填写能力 + 云存储 `avatars/{openid}/` 路径；需在控制台存储规则中放行该前缀的本人写入）。
 
@@ -833,7 +894,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 ## 常见问题
 
 **Q1：提示 `cloud init` 失败 / 环境不存在？**
-检查 `app.js` 中 `cloudEnv` 是否与控制台环境 ID 完全一致，并确认基础库版本 ≥ 2.2.3。
+检查 `miniprogram/config.js` 中 `cloudEnv` 是否与控制台环境 ID 完全一致，并确认基础库版本 ≥ 2.2.3。
 
 **Q2：云函数调用返回 `-501000` 权限错误？**
 确认数据库集合已创建，且云函数使用 `cloud.DYNAMIC_CURRENT_ENV` 初始化（本项目已内置）。

@@ -1,6 +1,6 @@
 # AGENTS.md — 筷点吃饭
 
-微信原生小程序 + CloudBase 云函数。无构建：前端在微信开发者工具编译，后端 6 个云函数。本地验证全用 Node ≥18 标准库脚本，项目无运行时 npm 依赖。
+微信原生小程序 + CloudBase 云函数。无构建：前端在微信开发者工具编译，后端 7 个云函数。本地验证全用 Node ≥18 标准库脚本，项目无运行时 npm 依赖。
 
 ## 命令
 
@@ -32,6 +32,7 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 | `miniprogram/` | 前端；入口 `app.js`，路由 `app.json`，云环境 ID 在 `config.js` → `cloudEnv` |
 | `miniprogram/utils/api.js` | 云调用唯一入口，信封 `{success,data}` / `{success:false,errorCode,message}` |
 | `miniprogram/utils/{dto,category,theme,util}.js` | 展示/分类/主题/工具；`dto`/`category` 为纯函数，可直接 Node 单测 |
+| `miniprogram/utils/{birthday,privacy,recommend-copy,ai}.js` | 生日文案 / 隐私授权 / 推荐文案（模板兜底 + AI 增强，AI 不参与排序） |
 | `cloudfunctions/{login,family,dish,vote,notify,dailyReset,weather}/` | 7 个云函数，按 `event.action` 分发；`weather` 独立（不引用 shared） |
 | `shared/` | 公共模块**源**（在 `cloudfunctions/` **之外**，见下；测试也 `require` 这里） |
 | `cloudfunctions/<fn>/shared/` | **拷贝**，不是 npm 包 |
@@ -49,7 +50,7 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 6. `app.json` 第一页必须是 `pages/login/login`（契约测试断言）。
 7. 云函数 `package.json` 依赖版本必须精确（禁止 `~`/`^`），`lint` 拦截；当前仅 `wx-server-sdk@2.6.3`。
 8. 密钥与订阅消息模板 ID 只走环境变量；`lint` 禁止占位/硬编码密钥写入业务代码。
-9. 展示层业务 ID 一律 `dishId`，禁止猜测 `_id` 格式。`vote.todayList` 返回 `{date, groups[]}`。
+9. 展示层业务 ID 一律 `dishId`，禁止猜测 `_id` 格式。`vote.todayList` 返回 `{date, groups[], submitCount}`。
 10. `cookCount` 只增不减；当日票数以 `daily_votes` 聚合为准。
 11. 日期统一东八区 `YYYY-MM-DD`（`shared/date` 与前端 `formatDateCST` 有同源测试）。
 
@@ -59,9 +60,9 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 分类是家庭级 `families.categories`；内置 key `meat/veg/soup/staple/cold`，自定义 `c_` 前缀。删除分类：该分类下无菜品 + 至少保留 1 个。分类管理是整页 `pages/dishes/categories/`（非弹层）。
 - 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单入队 `menu_submissions.notifiedAt`；饭点定时器合并摘要。即时推送仅「撤菜」「拍板」。
 - 数据库 9 个集合（含 `menu_submissions`、`rice_reports`）。米饭前端已下线，云函数接口保留，`dailyReset` 仍会清理。
-- 部署：先同步 `shared` → 再传 6 个函数。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
+- 部署：先同步 `shared` → 再传 7 个函数（`weather` 无 shared，但也需上传）。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
 - 当前环境安全规则**不支持 `get()` 跨集合**，已退化为客户端读写全关、仅云函数访问（`docs/deployment/database.md` §2.1）。
-- 未实现/待配置：订阅消息模板、扫码加入家庭——见 README「未完成功能」。
+- 待配置：订阅消息模板 ID + `NOTIFY_*`/`LBS_KEY` 环境变量 + 4 个定时触发器——见 README「未完成功能」。**扫码加入家庭已决定不做**（加入方式＝6 位加入码 + 分享卡片）。
 
 ## 参考
 
@@ -69,4 +70,4 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 部署与控制台：`docs/deployment/database.md`
 - 白盒测试设计：`docs/whitebox-test-plan.md`
 
-> `CLAUDE.md` 若仍写「`cloud-shared` 为 `file:../shared`，各函数 `npm install` 后上传所有文件」——以本文件与 `scripts/uploadCloudFunction.sh` 为准（**拷贝模型**）。集合数、测试计数以 README/代码为准。
+> 共享模块是**拷贝模型**（`cloud-shared` 历史包名已废弃；`CLAUDE.md` 现也按拷贝模型描述）。集合数、测试计数以 README/代码为准（当前 9 集合 / 257 项测试）。

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「筷点吃饭」家庭就餐决策小程序：原生微信小程序前端 + 微信云开发（CloudBase）后端。金牌大厨（chef）维护菜谱，干饭能手（eater）每日投票，自动汇总出今日菜单。
 
-无构建步骤——前端编译在微信开发者工具中完成；后端为 6 个云函数 + 1 个共享模块，零第三方运行时依赖（仅 `wx-server-sdk`）。代码质量验证走根目录 npm scripts（见下）。
+无构建步骤——前端编译在微信开发者工具中完成；后端为 7 个云函数（含独立的 `weather` 天气代理，不引用 shared）+ 1 个共享模块，零第三方运行时依赖（仅 `wx-server-sdk`）。代码质量验证走根目录 npm scripts（见下）。
 
 ## 常用操作
 
@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **本地验证**（全部零依赖，Node ≥18）：
   - `npm run check:syntax` — 全部 JS 语法检查（151 个文件，进程内 `vm.Script` 解析，零子进程）
   - `npm run lint` — JSON 合法性、硬编码密钥/占位模板 ID 扫描、依赖版本固定性、本地资源引用检查、**shared 模块同步校验**
-  - `npm test` — 全部测试（当前 255 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
+  - `npm test` — 全部测试（当前 257 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
   - 跑单个测试：`node --test tests/unit/dto.test.js`
   - `npm run predeploy` — 部署前完整门禁
 - **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset` `weather`）：
@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   `birthdayWish` = `0 0 9 * * * *`（名称与 cron 见 `cloudfunctions/notify/config.json`，**入口按 TriggerName 路由**）。
   未配置饭点触发器时「总菜单汇总」不会自动发给厨师；未建 `birthdayWish` 或未配 `NOTIFY_BIRTHDAY_TEMPLATE_ID` 时生日祝福静默不推送（fail closed）。
 - **云环境 ID**：在 `miniprogram/config.js` 的 `cloudEnv`（当前 `lcw-d5gfcge7b41bedd02`），`app.js` 从 config 读取；必须与控制台环境一致。
-- **数据库集合**：首次部署需在控制台手动创建 7 个集合（`users` `families` `family_members` `dishes` `daily_votes` `vote_history` `notify_ledger`）+ 索引/安全规则/存储权限，全部清单见 `docs/deployment/database.md`（规则文件在 `docs/deployment/security-rules/*.json`）。
+- **数据库集合**：首次部署需在控制台手动创建 9 个集合（`users` `families` `family_members` `dishes` `daily_votes` `vote_history` `notify_ledger` `rice_reports` `menu_submissions`）+ 索引/安全规则/存储权限，全部清单见 `docs/deployment/database.md`（规则文件在 `docs/deployment/security-rules/*.json`）。
 
 ## 架构
 
@@ -45,9 +45,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **所有云函数调用经 `utils/api.js` 的 `call()` 封装**：信封 `{success, data}` / `{success: false, errorCode, message}`；失败 reject `ApiError(errorCode)`，**不自动 toast**（页面用 `util.showApiError` 单次提示）；错误经 `wx.getRealtimeLogManager` 上报。新增接口先加到这里。
 - `utils/dto.js`：**纯函数 DTO 转换层**（可单测）：`normalizeTodayList` 统一 `{date, groups}` 契约、`buildMenuList(dishList, groups, category)` / `buildSummaryList` / `calcVoteStats`。**展示层一律使用 `dishId`，禁止页面再猜测 `_id`/`list`/`Array.isArray`**。
 - `utils/category.js`：**菜品分类的唯一数据源**（纯函数可单测）：内置 5 类默认值、`matchEmoji`（名称→图标）、当前家庭分类表的内存缓存（`setFamilyCategories` / `getCategories` / `hasFamilyCategories` / `clear`）、渲染解析（`resolve` / `nameOf` / `emojiOf` / `imageOf` / `withAll`）。**页面与组件禁止再各自硬编码分类 map**——`dto.js` 与 `dish-card` 均已改为经它解析，未知分类回退「其他 + 🍽️」而不是抛错。
-- `utils/util.js`：`showApiError`、`normalizeJoinCode` 等通用工具；`utils/theme.js`：CSS 变量主题（4 套 accent 色）。
+- `utils/util.js`：`showApiError`、`normalizeJoinCode`、`asArray`（跨组件数组对象化兜底）等通用工具；`utils/theme.js`：主题家族管理（**5 个家族** warm/fresh/sky/pink/dark + 跟随系统，旧「accent 色」体系已废除）；`utils/birthday.js`（生日展示与文案，纯函数）、`utils/privacy.js`（隐私授权 PRIV-001）、`utils/recommend-copy.js` + `utils/ai.js`（推荐文案：稳定种子模板兜底 + CloudBase AI 增强，AI 只写文案不参与排序）。
 - `config.js`：`cloudEnv` + `notifyTemplates`（订阅消息模板 ID 留空时通知功能自动停用）。
-- `components/`：`avatar-group`、`dish-card`、`empty-state`、`privacy-popup`、`reject-reason`。无第三方 UI 库。
+- `components/`：`avatar-group`、`dish-card`、`empty-state`、`privacy-popup`、`reject-reason`、`birthday-popup`（生日当天弹窗，纯展示）。无第三方 UI 库。
 - 分类管理是**独立页面** `pages/dishes/categories/categories`（不是弹层组件）：图标选择需要一屏铺开 5×5 方阵，半屏弹层里只能挤成横向滚动条，用户看不全也不好点。同样受 `guardChefPage()` 保护。
   图标方阵的原则是**「一个类型一个图标」而非「一种食物一个图标」**（水果只放 🍎 一个，
   不放苹果/橙子/西瓜一整行）——用户挑的是分类类型的图标，同族食物对分类是同一个东西；
@@ -66,6 +66,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `validators` | `validateImageUrl`（cloud:// 且路径含 `/dishes/{familyId}/`）、`VALID_CATEGORIES`（5 类内置分类的静态清单，仅用于兼容既有引用；**分类合法性判定已改走 `categories`**） |
 | `categories` | 家庭级分类配置：`DEFAULT_CATEGORIES`（内置 5 类）、`matchEmoji`（名称→图标）、`normalizeCategories` / `normalizeCategory`（过滤非法项与重复 key，结果为空则回退默认）、`getFamilyCategories`（只读，家庭不存在也回退默认）/ `requireFamilyCategories`（写操作，家庭不存在抛 `FAMILY_NOT_FOUND`）、`isValidCategory`、`assertCategoryName`（空 / 超长 / 重名）、`buildCustomKey`（`c_` 前缀）、`CATEGORY_MAX`（24）/ `CATEGORY_NAME_MAX`（6） |
 | `season` | 季节 / 节气 / 时令：`getSolarTerm`（24 节气近似算法，误差 ≤1 天）、`seasonOfTermIndex`（以立春/立夏/立秋/立冬为季节起点）、`buildSeasonContext`（聚合季节+节气+食材+分类加权+文案）、`matchSeasonFood`（菜名命中当季食材）、`buildSeasonTip` |
+| `security` | 内容安全（UGC）：`assertTextSafe`（`msgSecCheck`，2500 字分段）/ `assertImageSafe`（`imgSecCheck`，先换临时 https 链接）；命中违规抛 `CONTENT_RISKY`，审核接口异常默认 fail-open（`SEC_CHECK_STRICT=true` 切 fail-closed） |
+| `festival` | 传统节日（FEST-001）：2025-2035 公历锚点表 + 除夕=春节-1 推导、冬至走节气算法；`getFestival`（含窗口期，取 \|offset\| 最小）、`getFestivalFoods` |
+| `lunar` | 农历换算（1900-2100 查表）：`solarToLunar` / `lunarToSolar` / `nextLunarOccurrence`（绝不返回过去日期）/ `lunarMonthName` / `lunarDayName`（腊月/廿九）；与前端 `utils/birthday.js` 名称数组同源，有测试锁 |
+| `birthday` | 生日（BIRTHDAY-001）：`validateBirthday`（只存月日，农历 1-30、公历按月天数）/ `isShared`（家人可见开关）/ `nextOccurrence` / `pickUpcoming`（同日多人列全名单）；不产出展示文案 |
+| `weather-map` | 天气→推荐加权（WEATHER-002）：`buildWeatherBoost`（雨/热/冷/霾 → 分类加权 + 理由文案，晴/多云不加权）、`weatherIconOf` |
 
 每个云函数统一模式：
 
@@ -76,28 +81,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 函数 | 职责 |
 |:---|:---|
-| `login` | 用户档案（不存在则创建，并发冲突重读）+ 家庭/成员列表（统一 `familyId` DTO）+ `setNotifyStatus`；`currentFamilyId` 失效自动修正 |
-| `family` | create / joinByCode（原子容量闸门 `memberCount < 10` 条件更新 + 确定性成员 `_id` 幂等 + 失败补偿）/ list / switch / members / removeMember / leave（创建者非末位禁止退出；末位退出自动解散并级联清理含云存储图片）/ updateRole / updateMemberRole |
+| `login` | 用户档案（不存在则创建，并发冲突重读）+ 家庭/成员列表（统一 `familyId` DTO）+ `setNotifyStatus`（订阅授权结果）+ `updateProfile`（昵称/头像/生日，含内容安全与旧头像清理）；`currentFamilyId` 失效自动修正 |
+| `family` | create / joinByCode（原子容量闸门 `memberCount < 10` 条件更新 + 确定性成员 `_id` 幂等 + 失败补偿；连续失败冷却 SEC-003）/ list / switch / members / removeMember / leave（创建者非末位禁止退出；末位退出自动解散并级联清理含云存储图片）/ updateRole / updateMemberRole / transferCreator |
 | `dish` | list（分页 + 按家庭动态分类过滤；`includeHidden=true` 仅 chef，用于恢复隐藏菜品）/ add / update（替换图片删旧图）/ delete / toggleHidden（隐藏时清理当日投票）/ **categories**（分类列表 + 各分类菜品数，家庭成员可读）/ **addCategory** / **removeCategory**（后两者仅 chef；要求分类下无菜品、至少保留 1 个分类、总数 ≤ 24）。add/update 的分类合法性按家庭配置表判定，不再用静态 5 类白名单 |
-| `vote` | add / cancel / chefCancel（撤菜+隐藏）/ todayList（返回 `{date, groups[], submitCount}`）/ history（按 `date` 查询）/ **recommend**（今日推荐，见下）。点菜只写 `notify_ledger` 台账、**不再即时推送**（见「订阅消息策略」） |
-| `notify` | 订阅消息，两种入口：① 云函数内部调用（`internalKey === process.env.NOTIFY_INTERNAL_KEY`，**代码无默认值，缺失 fail closed**）；② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`，仅放行 `sendMenuDigest`）。模板 ID 走环境变量；发送前校验家庭/菜品/成员关系 |
+| `vote` | add / cancel / **chefCancel**（仅清当日投票、**不隐藏菜品**，可附原因通知受影响成员）/ **submitMenu**（`menu_submissions` 幂等 upsert，入队待汇总）/ **decideMenu**（拍板/移出今晚菜单，拍板通知全家）/ todayList（返回 `{date, groups[], submitCount}`）/ history（按 `date` 查询）/ setRice / getRice（米饭接口保留、前端 UI 已下线）/ **recommend**（今日推荐，见下）。点菜只写 `notify_ledger` 台账、**不再即时推送**（见「订阅消息策略」） |
+| `notify` | 订阅消息，两种入口：① 云函数内部调用（`internalKey === process.env.NOTIFY_INTERNAL_KEY`，**代码无默认值，缺失 fail closed**）；② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），按 `TriggerName` 路由：`birthdayWish` → `sendBirthdayWish`，其余 → `sendMenuDigest`。模板 ID 走环境变量；发送前校验家庭/菜品/成员关系 |
+| `weather` | LBS 天气代理（WEATHER-002）：显式 `adcode`/`location` 或按调用方真实出口 IP（`event.ip` → `CLIENTIP`/`CLIENTIPV6`）定位后查实时/预报天气；`LBS_KEY` 走环境变量（缺失返回 `CONFIG_MISSING`）；天气缓存 30 分钟、IP→adcode 6 小时；**不引用 shared** |
 | `dailyReset` | 定时归档：投票 → `vote_history`（`h_{voteId}` 派生 `_id` + `set` upsert，重复运行幂等）→ 清空热数据 → 重置 `isHidden`（限定 `updatedAt <= resetWindow`）；手动入口需 `ALLOW_MANUAL_RUN=true` |
 
 ### 数据库（文档型，无固定表结构）
 
 | 集合 | 关键字段 |
 |:---|:---|
-| `users` | `_id`=openid、`currentFamilyId`、`theme`、`accentColor`、`notifyEnabled`/`notifyStatus` |
+| `users` | `_id`=openid、`currentFamilyId`、`theme`、`nickname`/`avatarUrl`/`birthday`（只存月日，含 `shared` 可见开关）、`notifyEnabled`/`notifyStatus` |
 | `families` | `name`、`joinCode`（唯一）、`creatorId`、`memberCount`、`categories`（家庭自定义分类表 `[{key,name,emoji}]`；缺省或非法时回退内置 5 类） |
 | `family_members` | `_id`=`m_{familyId}_{userId}`（确定性）、`role`（chef/eater）、`joinedAt` |
 | `dishes` | `familyId`、`name`、`category`（家庭分类表的 key：内置 5 类或 `c_` 前缀的自定义分类）、`imageUrl`、`isHidden`、`cookCount` |
-| `daily_votes` | `_id`=`v_{date}_{familyId}_{dishId}_{openid}`（确定性幂等）、`familyId`、`dishId`、`userId`、`date` |
+| `daily_votes` | `_id`=`v_{date}_{familyId}_{dishId}_{openid}`（确定性幂等）、`familyId`、`dishId`、`userId`、`date`、`decided` |
 | `vote_history` | `_id`=`h_{voteId}`（归档幂等）、冗余菜名/昵称，永久可追溯 |
-| `notify_ledger` | `_id`=`n_{date}_{familyId}_{dishId}`，第一票通知去重 |
+| `notify_ledger` | `_id`=`n_{date}_{familyId}_{dishId}`，当日首点台账（去重） |
+| `rice_reports` | `_id`=`r_{date}_{familyId}_{userId}`（幂等 upsert）；前端功能已下线、接口保留，dailyReset 清理 |
+| `menu_submissions` | `_id`=`s_{date}_{familyId}_{userId}`（每人每天一条，重复提交覆盖）、`dishIds`/`dishCount`/`notifiedAt`（空＝待饭点汇总） |
 
 ### 约定与安全模型
 
-- **日期统一东八区字符串**：`cloud-shared/date` 的 `getTodayStr/getYesterdayStr`；前端业务日期以服务端 `todayList.date` 为准。
+- **日期统一东八区字符串**：`shared/date` 的 `getTodayStr/getYesterdayStr`（前端 `utils/util.js` 的 `formatDateCST` 与之同源，有测试锁）；前端业务日期以服务端 `todayList.date` 为准。
 - **每次写操作前做服务端归属校验**：`requireMember`/`requireChef` → `requireDishInFamily`，防跨家庭越权。
 - **`cookCount` 为累计被点次数，只增不减**（仅 vote.add +1；取消/撤菜/隐藏/删除/成员退出均不扣减）。当日当前票数一律以 `daily_votes` 聚合得到，禁止混用。
 - 计数用 `_.inc()` 原子操作；批量查用 `_.in` 且每批 ≤100。
@@ -109,19 +117,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 仅「撤菜」「厨师拍板」保留即时推送（低频且重要）；
   - 厨师端的即时提示靠**汇总 tab 角标**（厨师的徽标口径＝今日提交人数 `todayList.submitCount`，其他人仍是已点菜数），零额度成本。
 - **菜品分类为家庭级配置**（`families.categories`）：删除分类要求「该分类下无菜品」且「至少保留 1 个分类」。否则历史菜品的 `category` 会指向一个不存在的分类，菜品库出现无法筛出的孤儿分类。
-- **今日推荐（`vote.recommend`）**：门槛为「菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天」，未达门槛返回 `ready:false` + `progress`（前端据此展示「再攒几道菜」的进度而不是留白）。打分 = 频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 60 + 季节分类加权 ×5），最近 2 天吃过的整体 ×0.3 冷却；结果保证至少一道时令菜入选，理由按贡献最大的因子生成，做到「理由与排序自洽」。数据源为 `vote_history`（已归档）+ `daily_votes`（当日尚未归档，必须单独并入）。
+- **今日推荐（`vote.recommend`）**：门槛为「菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天」，未达门槛返回 `ready:false` + `progress`（前端据此展示「再攒几道菜」的进度而不是留白）。打分 = 频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 60 + 季节分类加权 ×5）+ 节日（命中节日食物 80，豁免冷却）+ 天气（`weather` 云函数的分类加权），最近 2 天吃过的整体 ×0.3 冷却；结果保证至少一道时令菜入选，理由按贡献最大的因子生成（`festival`/`weather`/`frequent`/`seasonal`/`diverse`），做到「理由与排序自洽」。数据源为 `vote_history`（已归档）+ `daily_votes`（当日尚未归档，必须单独并入）。同一响应还带 `birthday`（今日/明日生日提醒）与 `festival`/`weather` 上下文；推荐区文案由前端模板兜底、CloudBase AI 可增强（`utils/recommend-copy.js`，**AI 只写文案不参与排序**）。
 
 ## 已知注意事项（以代码为准）
 
 - 云函数 action 清单以各函数 `exports.main` 的 switch 分支为准，前端以 `utils/api.js` 为准。
-- `cloud-shared` 是 `file:` 本地依赖，部署必须「本地 npm install + 上传所有文件」（见常用操作与 `docs/deployment/database.md` §8）。
-- 数据库安全规则依赖控制台配置（`get()` 跨集合校验），若控制台不支持需退化为轮询方案——见 `docs/deployment/database.md` §2。
-- 未实现/待配置功能（订阅消息模板 ID、扫码加入、昵称头像授权）在 README「未完成功能」中明确标注，不要把它们当作已完成。
+- 共享模块是**拷贝模型**（不是 `file:` npm 依赖，`cloud-shared` 已废弃）：改 `shared/` 后必须同步拷贝到 6 个函数目录再部署（见常用操作与 `docs/deployment/database.md` §8）；**不需要** `npm install` 云函数。
+- 数据库安全规则：当前环境 `lcw-d5gfcge7b41bedd02` **不支持 `get()` 跨集合规则**，已退化为客户端读写全关、仅云函数访问（前端 watcher 必然失效，靠下拉刷新/重进兜底）——见 `docs/deployment/database.md` §2.1，不要按 §2 的理想规则想当然。
+- 未实现/待配置功能（订阅消息模板 ID 与定时触发器、`LBS_KEY`）在 README「未完成功能」中明确标注；**扫码加入家庭已决定不做**，昵称头像授权已实现——不要把未配置当未实现。
 
 ## 参考
 
 - `README.md`：功能说明、云函数 API、错误码表、数据库设计、部署与常见问题。
-- `docs/deployment/database.md`：控制台人工配置全清单（集合/规则/索引/存储/触发器/环境变量）+ cloud-shared 部署说明。
+- `docs/deployment/database.md`：控制台人工配置全清单（集合/规则/索引/存储/触发器/环境变量）+ shared 拷贝同步说明。
 - `docs/history/plan-do-chack/plan-do-chack.md` 与 `docs/history/plan-do-chack/结果验收.md`：优化需求编号与逐项验收状态（含手工测试矩阵、BLOCKED 项）。
 - `docs/history/task-checklist.md`：里程碑任务清单及真实完成状态说明。
 - `docs/2026-08-15-family-dining-miniprogram-design.md`：产品设计稿。

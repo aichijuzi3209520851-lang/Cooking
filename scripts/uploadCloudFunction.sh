@@ -30,5 +30,5 @@ done
 
 echo "部署完成。"
 echo "提示：notify 需配置环境变量（NOTIFY_INTERNAL_KEY / NOTIFY_VOTE_TEMPLATE_ID / NOTIFY_CANCEL_TEMPLATE_ID /"
-echo "      NOTIFY_BIRTHDAY_TEMPLATE_ID），vote 需配置 NOTIFY_INTERNAL_KEY 与 LBS_KEY；"
+echo "      NOTIFY_BIRTHDAY_TEMPLATE_ID），vote 需配置 NOTIFY_INTERNAL_KEY，weather 需配置 LBS_KEY；"
 echo "      dailyReset / notify 需在控制台手工建定时触发器，详见 docs/deployment/database.md"

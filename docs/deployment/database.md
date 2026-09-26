@@ -133,6 +133,7 @@
 | `vote` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；缺失时跳过通知并记录日志（不阻塞投票主流程） |
 | `dish` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；隐藏/删除菜品清票时通知被影响成员，缺失时跳过 |
 | `dailyReset` | `ALLOW_MANUAL_RUN` | 否 | 设为 `true` 才允许 `manualDate` 手动触发入口（仅开发环境开启） |
+| `weather` | `LBS_KEY` | 是（天气功能） | 腾讯位置服务（LBS）Key；缺失时 `weather` 返回 `CONFIG_MISSING`，今日推荐自动退化为无天气（不影响主流程） |
 | `dish` / `login` / `family` | `SEC_CHECK_STRICT` | 否 | 内容安全严格模式：`true` 时审核接口异常也拒绝写入（默认 `false`，异常放行并记日志）。详见 [content-security.md](content-security.md) |
 
 > ⚠️ `NOTIFY_INTERNAL_KEY` 必须让 3 个函数（`notify` / `vote` / `dish`）使用**同一个值**，
