@@ -1,7 +1,12 @@
 #!/usr/bin/env node
-// scripts/check-syntax.js - 对项目全部 JS 文件执行 node --check 语法检查
+// scripts/check-syntax.js - 对项目全部 JS 文件做语法检查（只解析，不执行）
 // 用法：npm run check:syntax
-const { execFileSync } = require('node:child_process');
+//
+// 说明：早期版本对每个文件 `execFileSync(node, ['--check', file])`，等价于逐个起 151 个
+// 子进程——慢，且在某些受限环境（子进程被禁）里会全部误报 FAIL，导致 `npm run predeploy`
+// 整条门禁无法执行。改用进程内 `new vm.Script(code)`：同样只做解析、不执行代码，
+// 能捕获相同的 SyntaxError，且零进程、秒级完成。
+const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -33,12 +38,13 @@ if (files.length === 0) {
 let failed = 0;
 for (const file of files) {
   try {
-    execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' });
+    // 与 `node --check` 等价：解析成脚本、不运行。filename 用于报错时定位文件。
+    new vm.Script(fs.readFileSync(file, 'utf8'), { filename: file });
     console.log(`OK  ${path.relative(ROOT, file)}`);
   } catch (e) {
     failed += 1;
     console.error(`FAIL ${path.relative(ROOT, file)}`);
-    const out = String(e.stderr || e.stdout || '').trim();
+    const out = String((e && e.stack) || e || '').trim();
     if (out) console.error(out.split('\n').slice(0, 8).join('\n'));
   }
 }

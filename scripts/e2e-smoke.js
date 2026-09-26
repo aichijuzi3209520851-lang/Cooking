@@ -16,7 +16,8 @@ const path = require('node:path')
 const net = require('node:net')
 const { spawn, execSync } = require('node:child_process')
 
-const CLI = 'D:\\we-chat\\微信web开发者工具\\cli.bat'
+// 本机安装根目录为非标准路径：D:\we-chat\DATA\微信web开发者工具
+const CLI = 'D:\\we-chat\\DATA\\微信web开发者工具\\cli.bat'
 const PROJECT = path.resolve(__dirname, '..')
 const AUTO_PORT = 9421
 const TEST_FAMILY = '【测试】筷点E2E'
@@ -133,14 +134,55 @@ function waitPort(port, timeout = 90000) {
   })
 }
 
-function startAutomation() {
+/**
+ * 关闭残留的开发者工具实例。
+ *
+ * 两个坑（都踩过）：
+ *   1. 本机进程名是中文「微信开发者工具.exe」，不是 wechatdevtools.exe ——
+ *      按旧名 taskkill 会静默失败，上一次的实例继续占着 AUTO_PORT，
+ *      下一次跑就会 "Failed connecting to ws://..." 直接挂。
+ *   2. 中文进程名经 cmd 传递可能受编码影响，所以主路径改为
+ *      「按监听端口定位 PID → 按 PID 强杀」，不依赖进程名。
+ */
+function killExistingIde() {
+  let killed = false
+
+  // 主路径：谁占着自动化端口就杀谁（含子进程）
   try {
-    execSync('taskkill /F /IM wechatdevtools.exe /T', { stdio: 'ignore' })
-    log('已关闭现存开发者工具实例')
-    sleep(2000)
-  } catch (e) {
-    log('开发者工具未在运行（无需关闭）')
-  }
+    const out = execSync('netstat -ano -p TCP', { encoding: 'utf8' })
+    const pids = new Set()
+    out.split(/\r?\n/).forEach((line) => {
+      if (line.indexOf(':' + AUTO_PORT) > -1 && /LISTENING/.test(line)) {
+        const pid = line.trim().split(/\s+/).pop()
+        if (/^\d+$/.test(pid) && pid !== '0') pids.add(pid)
+      }
+    })
+    pids.forEach((pid) => {
+      try {
+        execSync(`taskkill /F /PID ${pid} /T`, { stdio: 'ignore' })
+        killed = true
+      } catch (e) {}
+    })
+  } catch (e) {}
+
+  // 兜底：按进程名再试一遍（兼容旧版命名）
+  const NAMES = ['微信开发者工具.exe', 'wechatdevtools.exe', 'wechatwebdevtools.exe']
+  NAMES.forEach((name) => {
+    for (const mode of ['/F', '/F /T']) {
+      try {
+        execSync(`taskkill ${mode} /IM "${name}"`, { stdio: 'ignore', shell: 'cmd.exe' })
+        killed = true
+      } catch (e) {}
+    }
+  })
+
+  log(killed ? '已关闭残留的开发者工具实例' : '开发者工具未在运行（无需关闭）')
+  if (killed) sleep(3000)
+  return killed
+}
+
+function startAutomation() {
+  killExistingIde()
   spawn('cmd.exe', ['/c', CLI, 'auto', '--project', PROJECT, '--auto-port', String(AUTO_PORT)], {
     stdio: 'ignore'
   })
@@ -385,6 +427,60 @@ async function t08_history() {
   record('S8 历史页可达（空态/数据均正常）', Array.isArray(d.data.historyList))
 }
 
+// profile 页分组折叠（分组折叠改造后的回归用例）：
+// 默认全展开 → 点击分组头收起 → 再点展开 → 非法 section key 安全忽略
+async function t10_profile_collapse() {
+  await race(mini.switchTab('/pages/profile/profile'), 20000, 'switchTab profile')
+  await sleep(1200)
+  const before = await currentPageData()
+  assert(before.data.expanded, 'profile 页缺少 expanded 状态')
+  record(
+    'S10-1 profile 分组默认展开',
+    before.data.expanded.family === true &&
+      before.data.expanded.preference === true &&
+      before.data.expanded.other === true,
+    JSON.stringify(before.data.expanded)
+  )
+
+  // 走真实方法（与点击分组头同源）
+  await callPage('toggleSection', { currentTarget: { dataset: { section: 'family' } } })
+  await sleep(500)
+  let d = await currentPageData()
+  record('S10-2 点击分组头可折叠', d.data.expanded.family === false, JSON.stringify(d.data.expanded))
+
+  await callPage('toggleSection', { currentTarget: { dataset: { section: 'family' } } })
+  await sleep(500)
+  d = await currentPageData()
+  record('S10-3 再次点击可重新展开', d.data.expanded.family === true)
+
+  // 非白名单 key 必须被忽略，不能污染 expanded（WXML 里 data-section 写错时不会崩）
+  await callPage('toggleSection', { currentTarget: { dataset: { section: '__nope__' } } })
+  await sleep(300)
+  d = await currentPageData()
+  record(
+    'S10-4 非法分组 key 安全忽略',
+    d.data.expanded.family === true && !('__nope__' in d.data.expanded)
+  )
+}
+
+// 推荐区文案（推荐文案层改造后的回归用例）：
+// 顶部一句话在未达推荐门槛时也必须非空（模板兜底），且 reasonText 通道对每个推荐项存在
+async function t11_recommend_note() {
+  await race(mini.switchTab('/pages/menu/menu'), 20000, 'switchTab menu')
+  await sleep(1000)
+  await callPage('onCategoryTap', { currentTarget: { dataset: { key: 'recommend' } } })
+  await sleep(1500)
+  const d = await currentPageData()
+  const rec = d.data.recommend || {}
+  const note = rec.noteText || ''
+  record('S11-1 推荐区顶部文案非空（模板兜底，不依赖 AI）', note.length > 0, note)
+  record('S11-2 顶部文案带节气前缀', note.indexOf('·') > -1, note)
+
+  const dishes = d.data.recommendDishes || []
+  const allHaveReasonKey = dishes.every((x) => typeof x.reasonText === 'string')
+  record('S11-3 推荐卡 reasonText 通道存在', allHaveReasonKey, `推荐项=${dishes.length}`)
+}
+
 async function t09_teardown() {
   const res = await callCloud('family', { action: 'leave', familyId: testFamilyId })
   const disbanded = res.success && res.data && res.data.disbanded
@@ -448,6 +544,8 @@ async function main() {
     await t06b_rice_api()
     await t07_theme_switch()
     await t08_history()
+    await t10_profile_collapse()
+    await t11_recommend_note()
   } catch (err) {
     record('执行中断', false, err.message)
   } finally {

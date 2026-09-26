@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const FN_DIR = path.resolve(__dirname, '../../cloudfunctions');
+const ROOT = path.resolve(__dirname, '../..');
 const FUNCTIONS = ['login', 'family', 'dish', 'vote', 'notify', 'dailyReset'];
 
 function readFn(name) {
@@ -295,4 +296,72 @@ test('login：updateProfile 校验昵称与头像地址（PROFILE-001）', () =>
   assert.match(src, /昵称不能超过 20 个字/, '缺少昵称长度校验');
   assert.match(src, /validateAvatarUrl/, '头像地址未走校验器');
   assert.match(src, /deleteFile/, '旧云存储头像未清理');
+});
+
+test('login：updateProfile 支持生日，且只存月日不存年份（BIRTHDAY-001）', () => {
+  const src = readFn('login');
+  assert.match(src, /validateBirthday/, '生日未走校验器');
+  assert.match(src, /birthday/, '缺少生日字段');
+  // 未显式传 birthday 时不得改动既有值（防止改昵称顺手清掉生日）
+  assert.match(src, /data\.birthday !== undefined/, '缺少「不传即不改」的判断');
+});
+
+test('vote：recommend 返回家庭生日提醒，且不含年份（BIRTHDAY-001）', () => {
+  const src = readFn('vote');
+  assert.match(src, /collectBirthdayNotice/, '缺少生日提醒的数据来源');
+  assert.match(src, /pickUpcoming/, '未使用挑最近生日的纯函数');
+  assert.match(src, /family_members/, '未按家庭成员维度查询');
+  // 文案归前端：云函数只给 days/nickname，不得出现面向用户的成句文案
+  assert.doesNotMatch(src, /今天是.*生日|明天是.*生日|天后是/, '生日文案应在前端生成');
+});
+
+test('vote：天气取值兜底 IPv6，且 cloud.callFunction 有 try/catch（WEATHER-002）', () => {
+  const src = readFn('vote');
+  assert.match(src, /CLIENTIPV6/, '未兜底 IPv6（CLIENTIP 只装 IPv4）');
+  assert.match(src, /call_threw/, 'cloud.callFunction 异常未被捕获');
+});
+
+test('vote：生日只提前 1 天提醒，不做更早的预告（BIRTHDAY-001）', () => {
+  const src = readFn('vote');
+  assert.match(src, /BIRTHDAY_LOOKAHEAD_DAYS = 1/,
+    '窗口必须是 1（今天 + 明天）——每多提前一天，出生日期的暴露窗口就多一天（运营规范 5.12.6）');
+  // 返回结构必须是「点名到人」而不是「N 位家人」
+  assert.match(src, /names/, '应返回昵称数组，前端才能点名');
+  assert.match(src, /selfIncluded|pickUpcoming/, '应能判断「我」是不是寿星');
+});
+
+test('生日弹窗与文案层齐备，且寿星/家人两套内容分流（BIRTHDAY-003）', () => {
+  const feUtil = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/birthday.js'), 'utf8');
+  assert.match(feUtil, /buildPopupContent/, '缺少弹窗内容生成函数');
+  assert.match(feUtil, /selfIncluded/, '未按「我是不是寿星」分流文案');
+
+  // 组件四件套必须齐
+  ['js', 'json', 'wxml', 'wxss'].forEach(ext => {
+    const p = path.join(ROOT, 'miniprogram/components/birthday-popup/birthday-popup.' + ext);
+    assert.ok(fs.existsSync(p), `缺少组件文件 birthday-popup.${ext}`);
+  });
+  const menuJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'miniprogram/pages/menu/menu.json'), 'utf8'));
+  assert.ok(menuJson.usingComponents && menuJson.usingComponents['birthday-popup'],
+    'menu.json 未注册 birthday-popup');
+  const menuWxml = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/menu/menu.wxml'), 'utf8');
+  assert.match(menuWxml, /<birthday-popup/, 'menu.wxml 未挂载弹窗');
+
+  // 一天只弹一次：必须用带日期的本地缓存去重，否则每次进页面都会弹
+  const menuJs = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/menu/menu.js'), 'utf8');
+  assert.match(menuJs, /bdpopup:/, '缺少「一天只弹一次」的本地缓存 key');
+});
+
+test('notify：生日祝福推送的模板、动作与定时触发器齐备（BIRTHDAY-001）', () => {
+  const src = readFn('notify');
+  assert.match(src, /sendBirthdayWish/, '缺少生日祝福发送函数');
+  assert.match(src, /NOTIFY_BIRTHDAY_TEMPLATE_ID/, '模板未走环境变量');
+  assert.match(src, /isShared/, '未过滤「不同意展示」的生日');
+  assert.match(src, /days === 0/, '未限定只在当天发送');
+  assert.match(src, /TriggerName/, '定时触发未按 TriggerName 路由（会串到菜单摘要）');
+
+  const cfg = JSON.parse(fs.readFileSync(path.join(FN_DIR, 'notify/config.json'), 'utf8'));
+  const names = (cfg.triggers || []).map(t => t.name);
+  assert.ok(names.includes('birthdayWish'), 'config.json 缺少 birthdayWish 定时触发器');
+  assert.ok(names.includes('menuDigestNoon') && names.includes('menuDigestEvening'),
+    '原有的菜单摘要触发器不应被覆盖');
 });
