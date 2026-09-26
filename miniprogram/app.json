@@ -44,6 +44,12 @@
         "selectedIconPath": "images/tabbar/summary-active-warm.png"
       },
       {
+        "pagePath": "pages/menu-board/menu-board",
+        "text": "菜单",
+        "iconPath": "images/tabbar/menu.png",
+        "selectedIconPath": "images/tabbar/menu-active-warm.png"
+      },
+      {
         "pagePath": "pages/profile/profile",
         "text": "我的",
         "iconPath": "images/tabbar/profile.png",

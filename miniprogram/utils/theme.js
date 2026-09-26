@@ -65,13 +65,14 @@ const CHROME = {
 };
 
 // tabBar 选中态图标随家族切换（图标颜色烤在 PNG 里，需逐项替换；
-// 未选中态三个家族共用同一套暖灰图）
+// 未选中态共用同一套暖灰图）。数组顺序与 app.json tabBar 一致：
+// 点菜(0) / 汇总(1) / 菜单(2) / 我的(3)
 const TAB_SELECTED_ICONS = {
-  warm: ['order-active-warm', 'summary-active-warm', 'profile-active-warm'],
-  fresh: ['order-active-fresh', 'summary-active-fresh', 'profile-active-fresh'],
-  sky: ['order-active-sky', 'summary-active-sky', 'profile-active-sky'],
-  pink: ['order-active-pink', 'summary-active-pink', 'profile-active-pink'],
-  dark: ['order-active-dark', 'summary-active-dark', 'profile-active-dark']
+  warm: ['order-active-warm', 'summary-active-warm', 'menu-active-warm', 'profile-active-warm'],
+  fresh: ['order-active-fresh', 'summary-active-fresh', 'menu-active-fresh', 'profile-active-fresh'],
+  sky: ['order-active-sky', 'summary-active-sky', 'menu-active-sky', 'profile-active-sky'],
+  pink: ['order-active-pink', 'summary-active-pink', 'menu-active-pink', 'profile-active-pink'],
+  dark: ['order-active-dark', 'summary-active-dark', 'menu-active-dark', 'profile-active-dark']
 };
 
 /**
