@@ -34,11 +34,11 @@
 |:---|:---|:---|:---|
 | C1 | 订阅消息模板 2 个 | ✅ 完成 | 见 §1 |
 | C2 | `config.js` notifyTemplates | ✅ 完成（本地） | 需重新编译/上传体验版后生效 |
-| C3 | `notify` 环境变量 | ⏳ 待配 | `NOTIFY_INTERNAL_KEY`（强随机）、`NOTIFY_CANCEL_TEMPLATE_ID`=`qHIL…btjsI`、`NOTIFY_MENU_TEMPLATE_ID`=`qHIL…btjsI`（与 CANCEL 同值）、`NOTIFY_BIRTHDAY_TEMPLATE_ID`=`JgrR…9gkc`、`NOTIFY_MP_STATE`=`trial`（联调期） |
-| C4 | `vote` / `dish` 环境变量 | ⏳ 待配 | `NOTIFY_INTERNAL_KEY` 与 notify **同值**（不一致时静默跳过通知，只记日志） |
-| C5 | 4 个定时触发器 | ⏳ 待建 | `dailyResetTimer`=`0 0 0 * * * *`、`menuDigestNoon`=`0 0 11 * * * *`、`menuDigestEvening`=`0 0 17 * * * *`、`birthdayWish`=`0 0 9 * * * *`（7 段 cron，时位必须是 0） |
-| C6 | `notify` 云函数重新部署 | ⏳ 待办 | **本地字段名改动未上云**，云端仍是旧 thing1/thing2；部署方式见 L3 |
-| C7 | 体验版上传 | ⏳ 待办 | 联调期 `NOTIFY_MP_STATE=trial` 要求消息跳转体验版；正式版切换见 L5 |
+| C3 | `notify` 环境变量 | ✅ 完成 | 经 tcb deploy 的 envVariables 注入，`fn detail` 已核实（KEY + 3 模板 ID + MP_STATE=develop） |
+| C4 | `vote` / `dish` 环境变量 | ✅ 完成 | `NOTIFY_INTERNAL_KEY` 同值注入 |
+| C5 | 4 个定时触发器 | ✅ 完成 | notify 三个 + dailyResetTimer 均随 tcb deploy 自动创建，`fn detail` 已核实 |
+| C6 | 全部 7 个云函数重新部署 | ✅ 完成 | 2026-09-27 经 tcb v3 CLI 部署（见 §7 通道备忘） |
+| C7 | 体验版上传 | ⏳ 待办 | 联调期 `NOTIFY_MP_STATE=develop`（开发版预览即可验证）；正式版切换见 L5 |
 
 ---
 
@@ -140,7 +140,19 @@
 
 | 风险 | 对策 |
 |:---|:---|
-| 一次性订阅额度 = 授权次数，测试连发会很快耗尽 | 每个测试账号授权时勾「总是保持以上选择」；测试节奏控制在每链路 1~2 条 |
-| 体验版消息收不到 | 检查 `NOTIFY_MP_STATE=trial`；正式版切换前必为 trial |
+| 一次性订阅额度 = 授权次数，测试连发会很快耗尽 | 每个测试账号授权时勾「总是保持以上选择」；测试节奏控制在每链路 1~2 条；**每次真实推送消耗 1 条额度，测下一条前重新点一次「通知设置」静默续额度** |
+| 体验版消息收不到 | 检查 `NOTIFY_MP_STATE` 与打开的版本匹配（develop=开发版 / trial=体验版 / formal=正式版） |
 | 字段名再漂移 | L0 建议中补字段名断言；平台改模板时以「我的模板 → 详情」的 `{{thingN.DATA}}` 为唯一事实源 |
 | 云端还是旧代码（未部署） | L3.1 是硬前置，未部署前 L4 的 T2/T3 必然发旧字段 → 平台拒发（47003），不要误判为授权问题 |
+
+---
+
+## 7. 部署与验证通道备忘（2026-09-27 实测）
+
+| 通道 | 部署 | openapi 发送验证 | 结论 |
+|:---|:---|:---|:---|
+| wechatide `cloud_fn_deploy` / `cloud_fn_inc_deploy` | ✖ 三次复现 `ResourceNotFound.Namespace`（走腾讯云 SCF 原生通道，与微信云开发环境不兼容） | — | 部署不可用 |
+| tcb v3 CLI（`tcb login` 走「微信公众平台账号登录」） | ✔ 7/7 成功；`cloudbaserc.json` 的 `functions[].envVariables/triggers/timeout` 随部署生效；`--all` 必须加 `--force` 跳过交互选择；单函数用 `--dir <绝对路径>`（避免 functionRoot 与 cwd 拼接 bug） | ✖ `tcb fn invoke` 调 `subscribeMessage.send` **必报** `invalid wx openapi access_token` —— CLI 调用通道铸造 openapi token 失败，属**假阴性** | 部署可用；发送验证不可用 |
+| 真实微信通道（模拟器 `automation_evaluate` 调 `wx.cloud.callFunction`，或真机/定时触发器） | — | ✔ `sendMenuDigest` 返回 `notified:1, digested:1`，`notifiedAt` 正确回写 | **验证只能走这条通道** |
+
+> 环境变量清单中的密钥值通过临时 `cloudbaserc-*.json`（系统临时目录）注入，**不入仓库**。

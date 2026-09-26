@@ -1,0 +1,132 @@
+/* pages/menu-board/menu-board.wxss */
+.board-page {
+  min-height: 100vh;
+  padding: 24rpx 32rpx 64rpx;
+  box-sizing: border-box;
+}
+
+.board-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16rpx 8rpx 24rpx;
+}
+
+.board-title {
+  font-weight: 800;
+}
+
+.board-sub {
+  color: var(--color-text-secondary);
+}
+
+.board-state {
+  padding: 120rpx 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.board-card {
+  background: var(--surface-card);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.board-section-title {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 20rpx;
+}
+
+/* 全家总单 */
+.total-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.total-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: var(--color-card-inner);
+  border-radius: 999rpx;
+  padding: 12rpx 24rpx;
+}
+
+.total-name {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.total-count {
+  font-size: var(--text-mini);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* 按提交人分组 */
+.sub-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.sub-name {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.sub-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.meal-tag {
+  font-size: var(--text-mini);
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.meal-breakfast {
+  background: rgba(240, 130, 30, 0.12);
+  color: #B4690E;
+}
+
+.meal-lunch {
+  background: rgba(31, 147, 96, 0.12);
+  color: #1F7D54;
+}
+
+.meal-dinner {
+  background: rgba(217, 58, 43, 0.10);
+  color: var(--color-accent);
+}
+
+.sub-time {
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+}
+
+.sub-dishes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.sub-dish {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-card-inner);
+  border-radius: 12rpx;
+  padding: 8rpx 20rpx;
+}

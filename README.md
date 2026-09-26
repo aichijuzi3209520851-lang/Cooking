@@ -575,12 +575,16 @@ users (1) ──── (N) family_members (N) ──── (1) families
 > ① 云函数内部调用（必须携带内部密钥 `internalKey`，客户端直调会被拒绝）；
 > ② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），按 `TriggerName` 路由：`birthdayWish` → `sendBirthdayWish`，其余（含菜单摘要）→ `sendMenuDigest`；其余动作仍需密钥。
 >
-> **推送策略（NOTIFY-003）** —— 为什么点菜不再即时推送：
+> **推送策略（NOTIFY-003，2026-09-27 改版为实时推送）**：
 > 微信小程序一次性订阅消息的额度是**用户的授权次数**（用户授权一次，服务端只能发一条），
 > 不是花钱购买的条数。逐条推送会迅速耗光授权，用户被反复弹授权窗后会直接点「拒绝」。
-> 因此点菜与提交菜单**都不再即时推送**，改由 `sendMenuDigest` 在饭点前（11:00 / 17:00，
-> 见 `cloudfunctions/notify/config.json`）合并成一条发出；只有撤菜、拍板保留即时推送。
-> 厨师端的即时提示靠**汇总 tab 角标**（口径 = 今日提交人数，见 `vote.todayList` 的 `submitCount`），零额度成本。
+> 因此**点菜仍然不推送**；提交菜单（餐次自选早餐/午餐/晚餐）后**立即实时推送**——
+> `submitMenu` 直接调用 `sendMenuDigest` 把该家庭所有未汇总提交合并成一条发出；
+> 饭点触发器（11:00 / 17:00）**转为兜底补发**（即时推送因额度耗尽失败时自动重试）；
+> 撤菜、拍板同为即时推送。厨师端的即时提示靠**汇总 tab 角标**（口径 = 今日提交人数，
+> 见 `vote.todayList` 的 `submitCount`）+ 推送卡片。
+> 所有订阅消息的跳转落点是**「菜单」看板页** `pages/menu-board/menu-board`（数据源
+> `vote.todaySubmissions`）：卡片只有 20 字摘要，「谁点了哪些菜」的明细由看板页承载。
 
 ### weather — 天气代理（WEATHER-002）
 

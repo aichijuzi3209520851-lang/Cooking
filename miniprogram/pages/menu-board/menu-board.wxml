@@ -1,0 +1,51 @@
+<!--pages/menu-board/menu-board.wxml-->
+<view class="container board-page {{themeClass}}">
+  <view class="board-header">
+    <view class="title-md board-title">{{dateText}} · 菜单</view>
+    <view class="caption board-sub" wx:if="{{submitCount > 0}}">{{submitCount}} 人已提交</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="board-state">
+    <view class="caption">加载中...</view>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="board-state">
+    <view class="caption">加载失败，下拉重试</view>
+  </view>
+
+  <block wx:else>
+    <empty-state
+      wx:if="{{totalDishes.length === 0}}"
+      icon="🍽️"
+      title="今天还没有提交的菜单"
+      description="大家点完菜提交后，这里会汇总全家想吃的菜"
+    />
+
+    <block wx:else>
+      <!-- 全家总单：跨提交人去重，按被点人数排序 -->
+      <view class="board-card">
+        <view class="board-section-title">全家总单</view>
+        <view class="total-list">
+          <view class="total-item" wx:for="{{totalDishes}}" wx:key="name">
+            <text class="total-name">{{item.name}}</text>
+            <text class="total-count">{{item.count}} 人点</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 按提交人分组的明细 -->
+      <view class="board-card" wx:for="{{submissions}}" wx:key="index">
+        <view class="sub-head">
+          <text class="sub-name">{{item.userName}}</text>
+          <view class="sub-meta">
+            <text class="meal-tag meal-{{item.meal}}">{{item.mealLabel}}</text>
+            <text class="sub-time" wx:if="{{item.timeText}}">{{item.timeText}}</text>
+          </view>
+        </view>
+        <view class="sub-dishes">
+          <text class="sub-dish" wx:for="{{item.dishNames}}" wx:for-item="dish" wx:key="*this">{{dish}}</text>
+        </view>
+      </view>
+    </block>
+  </block>
+</view>

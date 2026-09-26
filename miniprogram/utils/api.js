@@ -107,8 +107,11 @@ const voteApi = {
   todayList: (familyId) => call('vote', { action: 'todayList', familyId }),
   decideMenu: (familyId, dishId, decided) =>
     call('vote', { action: 'decideMenu', familyId, dishId, decided }, true),
-  // 提交今日菜单（NOTIFY-002）：汇总当日投票并通知金牌大厨
-  submitMenu: (familyId) => call('vote', { action: 'submitMenu', familyId }, true)
+  // 提交今日菜单（NOTIFY-002）：meal 为餐次（breakfast/lunch/dinner，缺省中餐），
+  // 提交成功后云函数实时推送汇总给金牌大厨
+  submitMenu: (familyId, meal) => call('vote', { action: 'submitMenu', familyId, meal }, true),
+  // 菜单看板：某天按提交人分组的提交明细 + 全家合并总单
+  todaySubmissions: (familyId, date) => call('vote', { action: 'todaySubmissions', familyId, date })
 };
 
 // 历史记录

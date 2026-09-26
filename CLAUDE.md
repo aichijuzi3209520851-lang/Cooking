@@ -111,11 +111,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 计数用 `_.inc()` 原子操作；批量查用 `_.in` 且每批 ≤100。
 - `joinCode`：6 位大写字母数字，排除易混淆字符（0/O/1/I），生成时查重。
 - 跨函数调用（vote→notify）包 `safeCallNotify`：密钥缺失跳过并打日志，失败不阻塞主流程。
-- **订阅消息策略（NOTIFY-003）**：微信小程序一次性订阅消息的额度是**用户的授权次数**（用户授权一次，服务端只能发一条），并非花钱购买的条数 —— 发得越勤，用户被弹授权窗的次数越多，最终会直接拒绝。因此：
-  - 点菜（`vote.add`）**不推送**，只写 `notify_ledger` 台账；提交菜单（`vote.submitMenu`）写 `notifiedAt: null` **入队**；
-  - `notify.sendMenuDigest` 由**定时触发器**在饭点前（11:00 / 17:00）按家庭把「当天点菜概要 + 已交菜单人数」合并成**一条**发出，发完回写 `notifiedAt`；该时间点没有新提交就一条都不发；
-  - 仅「撤菜」「厨师拍板」保留即时推送（低频且重要）；
-  - 厨师端的即时提示靠**汇总 tab 角标**（厨师的徽标口径＝今日提交人数 `todayList.submitCount`，其他人仍是已点菜数），零额度成本。
+- **订阅消息策略（NOTIFY-003，2026-09-27 改版为实时推送）**：微信小程序一次性订阅消息的额度是**用户的授权次数**（用户授权一次，服务端只能发一条），并非花钱购买的条数 —— 发得越勤，用户被弹授权窗的次数越多，最终会直接拒绝。因此：
+  - 点菜（`vote.add`）**不推送**，只写 `notify_ledger` 台账；
+  - 提交菜单（`vote.submitMenu`，餐次 `meal` 自选早餐/午餐/晚餐、缺省中餐）写 `notifiedAt: null` 入队后**立即实时推送**：直接调用 `notify.sendMenuDigest` 把该家庭所有未汇总提交合并成**一条**发给大厨；
+  - **饭点触发器（11:00 / 17:00）转为兜底补发**：即时发送因额度耗尽失败时 `notifiedAt` 仍为 null，触发器自动补发 —— 无需额外重试逻辑；
+  - 「撤菜」「厨师拍板」同为即时推送（低频且重要）；
+  - 厨师端的即时提示靠**汇总 tab 角标**（厨师的徽标口径＝今日提交人数 `todayList.submitCount`，其他人仍是已点菜数）+ 推送卡片；
+  - 所有订阅消息的跳转落点是**「菜单」看板页** `pages/menu-board/menu-board?familyId=xxx&date=xxx`（`notify.jumpPage`）：卡片只有 20 字摘要，「谁点了哪些菜」的明细由看板页承载（数据源 `vote.todaySubmissions`：按提交人分组 + 全家合并总单）。
 - **菜品分类为家庭级配置**（`families.categories`）：删除分类要求「该分类下无菜品」且「至少保留 1 个分类」。否则历史菜品的 `category` 会指向一个不存在的分类，菜品库出现无法筛出的孤儿分类。
 - **今日推荐（`vote.recommend`）**：门槛为「菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天」，未达门槛返回 `ready:false` + `progress`（前端据此展示「再攒几道菜」的进度而不是留白）。打分 = 频率（最近 30 天「被点天数」×10 + 票数 ×1）+ 时令（菜名命中当季食材 60 + 季节分类加权 ×5）+ 节日（命中节日食物 80，豁免冷却）+ 天气（`weather` 云函数的分类加权），最近 2 天吃过的整体 ×0.3 冷却；结果保证至少一道时令菜入选，理由按贡献最大的因子生成（`festival`/`weather`/`frequent`/`seasonal`/`diverse`），做到「理由与排序自洽」。数据源为 `vote_history`（已归档）+ `daily_votes`（当日尚未归档，必须单独并入）。同一响应还带 `birthday`（今日/明日生日提醒）与 `festival`/`weather` 上下文；推荐区文案由前端模板兜底、CloudBase AI 可增强（`utils/recommend-copy.js`，**AI 只写文案不参与排序**）。
 

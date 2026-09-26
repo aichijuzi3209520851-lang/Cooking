@@ -226,14 +226,17 @@ async function chefCancel(data, openid) {
   }
 }
 
-// 提交今日菜单（NOTIFY-002）
-// 汇总当日全部投票 → 幂等写入 menu_submissions（每人每天一条）→ 通知金牌大厨
-// 通知失败不阻塞提交结果（与点菜通知同一策略）
+// 提交今日菜单（NOTIFY-002 / 2026-09-27 改版：实时推送）
+// 幂等写入 menu_submissions（每人每天一条）→ 立即把该家庭所有未汇总提交合并成一条发给大厨。
+// 餐次由用户自选（早餐/午餐/晚餐，缺省中餐）。
 async function submitMenu(data, openid) {
   const { familyId } = data
   if (!familyId) {
     throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
   }
+
+  const MEALS = ['breakfast', 'lunch', 'dinner']
+  const meal = MEALS.includes(data.meal) ? data.meal : 'lunch'
 
   await requireMember(db, familyId, openid)
 
@@ -263,6 +266,7 @@ async function submitMenu(data, openid) {
     userId: openid,
     userName,
     date: today,
+    meal,
     dishIds,
     dishCount: dishIds.length,
     updatedAt: now
@@ -288,8 +292,14 @@ async function submitMenu(data, openid) {
     }
   }
 
+  // 实时推送：提交后立即把该家庭所有未汇总提交合并成一条发给大厨。
+  // 发送失败（如订阅额度耗尽）时 notifiedAt 仍为 null，
+  // 11:00 / 17:00 的饭点触发器自动补发 —— 无需额外重试逻辑。
+  await safeCallNotify({ action: 'sendMenuDigest' })
+
   return {
     date: today,
+    meal,
     dishCount: dishIds.length,
     dishNames
   }
@@ -371,6 +381,50 @@ async function todayList(data, openid) {
   const groups = Object.values(groupMap).sort((a, b) => b.voters.length - a.voters.length)
 
   return { date: today, groups, submitCount }
+}
+
+// 今日菜单提交看板（「菜单」页数据源）：按提交人分组的提交明细 + 全家合并总单。
+// 订阅消息卡片只有 20 字摘要，「谁点了哪些菜」的明细由点进来的这一页承载。
+async function todaySubmissions(data, openid) {
+  const { familyId } = data
+  if (!familyId) {
+    throw new ApiError('INVALID_PARAM', '家庭ID不能为空')
+  }
+
+  await requireMember(db, familyId, openid)
+
+  const today = getTodayStr()
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(data.date || '') ? data.date : today
+
+  const subRes = await db.collection('menu_submissions')
+    .where({ familyId, date })
+    .orderBy('createdAt', 'asc')
+    .get()
+  const submissions = subRes.data || []
+
+  const dishMap = await getDishMap(db, _, submissions.flatMap(s => s.dishIds || []))
+
+  const list = submissions.map(s => ({
+    userName: s.userName || '家人',
+    meal: s.meal || 'lunch',
+    dishCount: s.dishCount || (s.dishIds || []).length,
+    dishNames: (s.dishIds || []).map(id => (dishMap[id] && dishMap[id].name) || '已删除菜品'),
+    submittedAt: s.createdAt || s.updatedAt || ''
+  }))
+
+  // 全家总单：跨提交人去重菜品并统计被几人点了（含同一人多道）
+  const counter = {}
+  for (const s of submissions) {
+    for (const id of (s.dishIds || [])) {
+      const name = (dishMap[id] && dishMap[id].name) || '已删除菜品'
+      counter[name] = (counter[name] || 0) + 1
+    }
+  }
+  const totalDishes = Object.keys(counter)
+    .map(name => ({ name, count: counter[name] }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+
+  return { date, submissions: list, totalDishes }
 }
 
 // 拍板今日菜单（仅 chef）：将菜品标记为「今晚吃」，通知全家（PRODUCT-002）
@@ -1061,6 +1115,9 @@ exports.main = async (event, context) => {
         break
       case 'todayList':
         data = await todayList(event, openid)
+        break
+      case 'todaySubmissions':
+        data = await todaySubmissions(event, openid)
         break
       case 'setRice':
         data = await setRice(event, openid)

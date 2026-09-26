@@ -73,7 +73,7 @@ const DOCUMENTED_ACTIONS = {
   login: ['login', 'setNotifyStatus', 'updateProfile'],
   family: ['create', 'joinByCode', 'list', 'switch', 'members', 'removeMember', 'leave', 'updateRole', 'updateMemberRole'],
   dish: ['list', 'add', 'update', 'delete', 'toggleHidden'],
-  vote: ['add', 'cancel', 'chefCancel', 'decideMenu', 'todayList', 'setRice', 'getRice', 'history'],
+  vote: ['add', 'cancel', 'chefCancel', 'decideMenu', 'todayList', 'todaySubmissions', 'submitMenu', 'recommend', 'setRice', 'getRice', 'history'],
   notify: ['sendVoteNotify', 'sendCancelNotify'],
   dailyReset: []
 };
@@ -322,9 +322,29 @@ test('notify：发送前校验家庭/菜品/成员关系', () => {
   assert.match(src, /memberIds\.has\(id\)/, '撤菜通知缺少成员关系校验');
 });
 
-test('notify：跳转页面为实际可用页面', () => {
+test('notify：跳转页面为「菜单」看板且带家庭/日期参数', () => {
   const src = readFn('notify');
-  assert.match(src, /pages\/menu\/menu/, '跳转页面无效');
+  assert.match(src, /pages\/menu-board\/menu-board/, '跳转页面应为菜单看板');
+  assert.match(src, /jumpPage\(/, '跳转应带 familyId/date 参数');
+});
+
+test('vote：提交菜单实时推送汇总（2026-09-27 改版，触发器转为兜底）', () => {
+  const src = readFn('vote');
+  const block = src.match(/async function submitMenu[\s\S]*?\n\}/);
+  assert.ok(block, '未找到 submitMenu 实现');
+  assert.match(block[0], /sendMenuDigest/, '提交后应立即实时推送汇总');
+  assert.match(block[0], /meal/, '提交记录应包含餐次（breakfast/lunch/dinner）');
+  assert.match(src, /notifiedAt: null/, '未汇总标记仍保留，供触发器兜底补发');
+});
+
+test('vote：todaySubmissions 菜单看板接口（按人分组 + 全家总单）', () => {
+  const src = readFn('vote');
+  assert.match(src, /case 'todaySubmissions'/, '缺少看板 action');
+  const block = src.match(/async function todaySubmissions[\s\S]*?\n\}/);
+  assert.ok(block, '未找到 todaySubmissions 实现');
+  assert.match(block[0], /requireMember/, '看板应校验家庭成员');
+  assert.match(block[0], /totalDishes/, '应返回全家合并总单');
+  assert.match(block[0], /dishNames/, '应返回按人分组的菜品明细');
 });
 
 test('login：返回统一 familyId DTO（AUTH-002）', () => {
