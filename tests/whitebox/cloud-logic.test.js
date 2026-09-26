@@ -647,7 +647,7 @@ test('W-C-V4 chefCancel 语义修正：撤菜不再隐藏菜品 + 通知受影�
   const votesLeft = await env.db.collection('daily_votes')
     .where({ familyId: fam.data.familyId, dishId: dish.data.dishId }).get()
   assert.equal(votesLeft.data.length, 0, '当日票应被清理')
-  assert.ok(env.sent.some(m => m.data.thing1.value === '糖醋排骨'), '受影响成员应收到撤菜通知')
+  assert.ok(env.sent.some(m => m.data.thing6.value === '糖醋排骨'), '受影响成员应收到撤菜通知')
 })
 
 test('W-C-D6 隐藏/删除菜品 → 受影响成员收到通知（语义统一）', async () => {
@@ -665,9 +665,9 @@ test('W-C-D6 隐藏/删除菜品 → 受影响成员收到通知（语义统一�
 
   as('chef')
   assert.equal((await run(dishFn, { action: 'toggleHidden', familyId: fam.data.familyId, dishId: d1.data.dishId, isHidden: true })).success, true)
-  assert.ok(env.sent.some(m => m.data.thing1.value === '菜A'), '隐藏应通知被清票成员')
+  assert.ok(env.sent.some(m => m.data.thing6.value === '菜A'), '隐藏应通知被清票成员')
   assert.equal((await run(dishFn, { action: 'delete', familyId: fam.data.familyId, dishId: d2.data.dishId })).success, true)
-  assert.ok(env.sent.some(m => m.data.thing1.value === '菜B'), '删除应通知被清票成员')
+  assert.ok(env.sent.some(m => m.data.thing6.value === '菜B'), '删除应通知被清票成员')
 })
 
 test('W-C-D7 delete：仅家庭创建者可执行（普通成员提权为 chef 后仍被拒）', async () => {
