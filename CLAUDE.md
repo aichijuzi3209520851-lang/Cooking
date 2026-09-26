@@ -12,17 +12,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **开发/编译**：微信开发者工具导入仓库根目录（`miniprogramRoot: miniprogram/`，`cloudfunctionRoot: cloudfunctions/`），点击「编译」。冷启动入口页是 `pages/login/login`（用户在登录页点击「微信快捷登录」后才路由到菜单/欢迎页）。
 - **本地验证**（全部零依赖，Node ≥18）：
-  - `npm run check:syntax` — 全部 JS 语法检查（113 个文件）
-  - `npm run lint` — JSON 合法性、硬编码密钥/占位模板 ID 扫描、依赖版本固定性、本地资源引用检查
-  - `npm test` — 全部测试（当前 203 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
+  - `npm run check:syntax` — 全部 JS 语法检查（151 个文件，进程内 `vm.Script` 解析，零子进程）
+  - `npm run lint` — JSON 合法性、硬编码密钥/占位模板 ID 扫描、依赖版本固定性、本地资源引用检查、**shared 模块同步校验**
+  - `npm test` — 全部测试（当前 255 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
   - 跑单个测试：`node --test tests/unit/dto.test.js`
   - `npm run predeploy` — 部署前完整门禁
-- **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset`）：
-  - ⚠️ 所有函数依赖本地包 `cloud-shared`（`"file:../shared"`，源码在 `cloudfunctions/shared/`）。**必须先对每个函数目录 `npm install`，然后用开发者工具「上传并部署：所有文件」**（"云端安装依赖"无法解析 file: 依赖）。详见 `docs/deployment/database.md` §8。
-  - CLI：`tcb fn deploy <name> -e <envID> --force`，或 `ENV_ID=<envID> ./scripts/uploadCloudFunction.sh`。
-  - 修改 `cloudfunctions/shared/` 后需重新部署**全部 6 个函数**。
+- **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset` `weather`）：
+  - 各函数**不依赖 npm 包**：`cloudfunctions/shared/*.js` 是权威源，各函数目录内的 `shared/` 是它的
+    **逐文件拷贝**，函数统一用相对路径 `require('./shared/xxx')` 引用。改完源必须同步 6 份拷贝
+    （`npm run lint` 会强制校验缺失/多余/不一致），再部署。
+  - ⚠️ `cloudfunctions/shared/` 内**只能有 `*.js`**，**不要放 `package.json`**：微信开发者工具会把
+    `cloudfunctionRoot` 下「含 package.json（或 index.js）」的一级子目录识别成可部署云函数，
+    曾因此在云端创建出一个名为 `shared` 的幽灵函数并卡在 `CreateFailed`，阻塞后续部署。
+  - 命令行：`ENV_ID=<envID> ./scripts/uploadCloudFunction.sh`；或用 MCP
+    `cloudbase.manageFunctions action=updateFunctionCode`（非交互，推荐）。
+  - 修改 `cloudfunctions/shared/` 后需重新部署**全部依赖它的函数**（当前 6 个）。
 - **定时触发器**：`dailyReset` 需在控制台手动配置 Cron `0 0 0 * * * *`（东八区每日 0 点）。未配置时历史页无数据、菜品 `isHidden` 不会自动恢复。
-  `notify` 另需两个饭点触发器：`menuDigestNoon` = `0 0 11 * * * *`、`menuDigestEvening` = `0 0 17 * * * *`（名称与 cron 见 `cloudfunctions/notify/config.json`）。未配置时「总菜单汇总」不会自动发给厨师。
+  `notify` 另需三个触发器：`menuDigestNoon` = `0 0 11 * * * *`、`menuDigestEvening` = `0 0 17 * * * *`、
+  `birthdayWish` = `0 0 9 * * * *`（名称与 cron 见 `cloudfunctions/notify/config.json`，**入口按 TriggerName 路由**）。
+  未配置饭点触发器时「总菜单汇总」不会自动发给厨师；未建 `birthdayWish` 或未配 `NOTIFY_BIRTHDAY_TEMPLATE_ID` 时生日祝福静默不推送（fail closed）。
 - **云环境 ID**：在 `miniprogram/config.js` 的 `cloudEnv`（当前 `lcw-d5gfcge7b41bedd02`），`app.js` 从 config 读取；必须与控制台环境一致。
 - **数据库集合**：首次部署需在控制台手动创建 7 个集合（`users` `families` `family_members` `dishes` `daily_votes` `vote_history` `notify_ledger`）+ 索引/安全规则/存储权限，全部清单见 `docs/deployment/database.md`（规则文件在 `docs/deployment/security-rules/*.json`）。
 
@@ -45,7 +53,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 后端（cloudfunctions/）
 
-**共享模块 `cloudfunctions/shared/`（包名 `cloud-shared`）**，所有 6 个云函数依赖它，公共逻辑禁止复制回单个函数：
+**共享模块 `cloudfunctions/shared/`**（**不是** npm 包，历史上有过 `cloud-shared` 包名，现已废弃）：函数通过相对路径 `require('./shared/xxx')` 引用各函数目录内的拷贝，公共逻辑禁止复制回单个函数：
 
 | 模块 | 内容 |
 |:---|:---|

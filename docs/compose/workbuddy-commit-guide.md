@@ -11,6 +11,7 @@
 | `.tmp-*.png`、`.tmp-*.js`（如 `.tmp-preview-qr2.png`、`.tmp-anchor-audit.js`、`.tmp-hko-verify.js`、`.tmp-p1.png`） | 已加进 `.gitignore`，不要提交 |
 | `.tmp/`（目录形式的临时产物，如验证截图） | 已加进 `.gitignore`，不要提交 |
 | `cloudfunctions/{login,family,dish,vote,notify,dailyReset}/shared/package.json` | 这 6 份是 `cloudfunctions/shared/` 里误拷进去的。`scripts/uploadCloudFunction.sh` 只拷 `*.js`，各函数 `shared/` 不该有 `package.json`。**已删除**；现在 `npm run lint` 会自动拦截「多余文件 / 缺失 / 内容不一致」三种情况 |
+| `cloudfunctions/shared/package.json`（权威源那一份） | **也已删除**。它会让微信开发者工具把 `cloudfunctions/shared/` 误判成一个可部署云函数，云端因此出现过名为 `shared` 的幽灵函数并卡在 `CreateFailed`，阻塞后续部署。`lint` 现已禁止该目录出现任何非 `*.js` 文件 |
 
 `.gitignore` 在「本地验证产物」一节已包含：
 
@@ -118,6 +119,12 @@ git commit -m "feat(recommend): 天气加权+节日食物分+推荐诊断+UI折�
    实测报错原文：`showModal:fail confirmText length should not larger than 4 Chinese characters`。
    已加契约测试全量扫描防回归（只覆盖字面量写法，别把按钮文案存进变量再传）
 10. **改了 WXSS 必须 `cleanCompileCache` 再 refresh**：`simulator_refresh` 只重编 WXML/JS，WXSS 吃编译缓存
+11. **`cloudfunctions/shared/` 里绝不能放 `package.json`**：开发者工具会把 `cloudfunctionRoot` 下
+    「含 `package.json`（或 `index.js`）」的一级子目录当成可部署云函数。放过一次 → 云端多出一个
+    叫 `shared` 的云函数、卡在 `CreateFailed`（`FailedOperation.UpdateFunctionCode：当前函数处于
+    CreateFailed状态，无法进行此操作`），**会阻塞后续所有云函数部署**。`lint` 已禁止该目录出现非 `*.js`。
+    真出现了就去云开发控制台删掉那个 `shared` 函数（MCP 的 `deleteFunction` 对它可能返回
+    `ResourceNotFound.Function`，但列表会随即恢复干净）
 
 ---
 

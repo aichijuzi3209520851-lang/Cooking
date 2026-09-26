@@ -96,7 +96,20 @@ function readNorm(file) {
 }
 
 if (fs.existsSync(SHARED_SRC)) {
-  const srcJs = fs.readdirSync(SHARED_SRC).filter(f => f.endsWith('.js')).sort();
+  const srcEntries = fs.readdirSync(SHARED_SRC);
+  // (0) 权威源目录里只允许 .js。
+  // ⚠️ 特别地**不允许 package.json**：微信开发者工具会把 cloudfunctionRoot 下
+  //    「有 package.json（或 index.js）」的一级子目录识别成一个可部署云函数。
+  //    shared/ 里那份 package.json（还写着不存在的 main: index.js）曾导致工具在云端
+  //    创建出一个名为 shared 的云函数且停在 CreateFailed 状态，阻碍后续部署。（踩过）
+  for (const f of srcEntries) {
+    if (!f.endsWith('.js')) {
+      errors.push(`cloudfunctions/shared/${f}: 多余文件（该目录只允许 *.js；`
+        + `package.json 会让开发者工具把 shared/ 误判为云函数）`);
+    }
+  }
+
+  const srcJs = srcEntries.filter(f => f.endsWith('.js')).sort();
 
   for (const fn of FN_NAMES) {
     const fnShared = path.join(fnDir, fn, 'shared');
