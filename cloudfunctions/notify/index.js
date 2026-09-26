@@ -19,8 +19,14 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
-// 跳转页面（点菜列表页，实际可用页面）
-const JUMP_PAGE = 'pages/menu/menu'
+// 跳转页面（消息落点：「菜单」页 —— 按提交人分组的提交明细 + 全家总单）
+const JUMP_PAGE = 'pages/menu-board/menu-board'
+
+// 带家庭与日期参数的跳转路径；无家庭上下文时回退默认入口（看板自行取当前家庭与今天）
+function jumpPage(familyId, date) {
+  if (!familyId) return JUMP_PAGE
+  return `${JUMP_PAGE}?familyId=${familyId}${date ? `&date=${date}` : ''}`
+}
 
 // ============ 工具函数 ============
 
@@ -65,12 +71,12 @@ async function filterNotifyEnabled(userIds) {
 // 字段数据驱动：模板由微信后台定义、字段名与数量不可自定义，
 // 因此本函数接收「组装好的 data 对象」（如 { thing1: { value } }）。
 // 模板字段变化时只需改各业务函数的组装处，无需改这里。
-async function sendOne(touser, templateId, data) {
+async function sendOne(touser, templateId, data, page) {
   try {
     await cloud.openapi.subscribeMessage.send({
       touser,
       templateId,
-      page: JUMP_PAGE,
+      page: page || JUMP_PAGE,
       miniprogramState: getMiniprogramState(),
       lang: 'zh_CN',
       data
@@ -136,7 +142,7 @@ async function sendVoteNotify(data) {
     results.push(await sendOne(openid, templateId, {
       thing1: thing(dishName, '有菜品被点'),
       thing2: thing(voterName ? `${voterName} 点的` : '有家庭成员点的')
-    }))
+    }, jumpPage(familyId, getTodayStr())))
   }
 
   return {
@@ -185,7 +191,7 @@ async function sendCancelNotify(data) {
     results.push(await sendOne(openid, templateId, {
       thing6: thing(dishName, '有菜品'),
       thing14: thing(reason)
-    }))
+    }, jumpPage(familyId, getTodayStr())))
   }
 
   return {
@@ -225,7 +231,7 @@ async function sendMenuDecidedNotify(data) {
     results.push(await sendOne(openid, templateId, {
       thing6: thing(dishName, '今晚菜单'),
       thing14: thing(decided ? '已加入今晚菜单' : '已移出今晚菜单')
-    }))
+    }, jumpPage(familyId, getTodayStr())))
   }
 
   return {
@@ -270,7 +276,7 @@ async function sendMenuSubmitNotify(data) {
     results.push(await sendOne(openid, templateId, {
       thing1: thing(summary, '今日菜单已提交'),
       thing2: thing(userName ? `${userName} 提交 ${count} 道` : `共 ${count} 道菜`)
-    }))
+    }, jumpPage(familyId, getTodayStr())))
   }
 
   return {
@@ -350,7 +356,7 @@ async function sendMenuDigest() {
       results.push(await sendOne(openid, templateId, {
         thing6: thing(summarizeDishes(dishNames), '今日菜单'),
         thing14: thing(detail)
-      }))
+      }, jumpPage(familyId, today)))
     }
     const okCount = results.filter(r => r.success).length
     notifiedTotal += okCount
@@ -448,7 +454,7 @@ async function sendBirthdayWish() {
         const r = await sendOne(openid, templateId, {
           thing2: thing(person.nickname, '家人'),
           thing3: thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
-        })
+        }, jumpPage(familyId, today))
         if (r.success) notified++
       }
     }

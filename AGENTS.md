@@ -58,7 +58,7 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 
 - 角色：chef（金牌大厨）/ eater。**删除菜品仅家庭创建者**；chef 可隐藏/撤菜/清票。
 - 分类是家庭级 `families.categories`；内置 key `meat/veg/soup/staple/cold`，自定义 `c_` 前缀。删除分类：该分类下无菜品 + 至少保留 1 个。分类管理是整页 `pages/dishes/categories/`（非弹层）。
-- 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单入队 `menu_submissions.notifiedAt`；饭点定时器合并摘要。即时推送仅「撤菜」「拍板」。
+- 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单（餐次自选，缺省中餐）后**立即实时合并推送**给大厨，饭点定时器（11:00/17:00）转为兜底补发；即时推送还有「撤菜」「拍板」。消息跳转落点是「菜单」看板页 `pages/menu-board/menu-board`（`vote.todaySubmissions` 数据源）。
 - 数据库 9 个集合（含 `menu_submissions`、`rice_reports`）。米饭前端已下线，云函数接口保留，`dailyReset` 仍会清理。
 - 部署：先同步 `shared` → 再传 7 个函数（`weather` 无 shared，但也需上传）。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
 - 当前环境安全规则**不支持 `get()` 跨集合**，已退化为客户端读写全关、仅云函数访问（`docs/deployment/database.md` §2.1）。

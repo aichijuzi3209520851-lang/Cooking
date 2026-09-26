@@ -73,6 +73,12 @@
   width: 100%;
   height: 100%;
   opacity: 0;
+  /* 部分安卓机型聚焦后原生层会无视 opacity 直接画出文字（与装饰框形成错位重影），
+     文字与光标再设为透明双保险 */
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  border: none;
   z-index: 10;
 }
 

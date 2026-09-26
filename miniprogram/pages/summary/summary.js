@@ -10,8 +10,7 @@ const {
   markSummarySeen,
   showApiError,
   showSuccess,
-  showError,
-  showConfirm
+  showError
 } = require('../../utils/util.js');
 const app = getApp();
 
@@ -281,7 +280,8 @@ Page({
     return this.doChefCancel(dishId, dishName, reason);
   },
 
-  // 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知金牌大厨
+  // 提交今日菜单（NOTIFY-002）：先选餐次（早餐/午餐/晚餐，用户自由），提交后云函数
+  // 实时把该家庭未汇总的菜单合并成一条推送给金牌大厨
   async onSubmitMenu() {
     if (this._submitting) return;
 
@@ -291,18 +291,26 @@ Page({
       return;
     }
 
-    const confirmed = await showConfirm(
-      '提交今日菜单',
-      `把今日 ${dishCount} 道菜提交给金牌大厨，并发送通知。`
-    );
-    if (!confirmed) return;
+    const MEALS = [
+      { label: '早餐', value: 'breakfast' },
+      { label: '午餐', value: 'lunch' },
+      { label: '晚餐', value: 'dinner' }
+    ];
+    wx.showActionSheet({
+      itemList: MEALS.map(m => m.label),
+      success: (res) => {
+        const meal = MEALS[res.tapIndex] || MEALS[1];
+        this.doSubmitMenu(meal.value, meal.label);
+      }
+    });
+  },
 
+  async doSubmitMenu(meal, mealLabel) {
     this._submitting = true;
     try {
-      const res = await voteApi.submitMenu(app.globalData.currentFamilyId);
+      await voteApi.submitMenu(app.globalData.currentFamilyId, meal);
       this.setData({ submitted: true });
-      showSuccess('已提交给金牌大厨');
-      return res;
+      showSuccess(`已提交${mealLabel}菜单，金牌大厨会收到通知`);
     } catch (err) {
       showApiError(err, '提交失败');
     } finally {

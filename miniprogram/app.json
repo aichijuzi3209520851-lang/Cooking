@@ -13,6 +13,7 @@
     "pages/dishes/edit/edit",
     "pages/dishes/categories/categories",
     "pages/history/history",
+    "pages/menu-board/menu-board",
     "pages/settings/theme/theme",
     "pages/help/help",
     "pages/agreement/privacy/privacy"
