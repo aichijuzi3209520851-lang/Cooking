@@ -12,7 +12,8 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 // 需要检查的目录（排除 node_modules / .git）
-const SCAN_DIRS = ['miniprogram', 'cloudfunctions', 'scripts', 'tests'];
+// `shared` 是共享模块源（放在 cloudfunctions/ 之外，见 scripts/lint.js 的说明）
+const SCAN_DIRS = ['miniprogram', 'cloudfunctions', 'shared', 'scripts', 'tests'];
 
 function collectJs(dir) {
   const out = [];

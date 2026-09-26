@@ -332,7 +332,7 @@ npm test
 
 共 6 个函数：`login`、`family`、`dish`、`vote`、`notify`、`dailyReset`
 
-> **共享模块说明**：6 个云函数共同引用 `cloudfunctions/shared/` 公共模块（代码内以相对路径 `require('./shared/...')` 引用）。每个函数目录内的 `shared/` 是它的拷贝，**修改 `cloudfunctions/shared/` 后，需重新拷贝到 6 个函数目录再部署**，否则云端报 `Cannot find module './shared/...'`。
+> **共享模块说明**：6 个云函数共同引用 `shared/` 公共模块（代码内以相对路径 `require('./shared/...')` 引用）。每个函数目录内的 `shared/` 是它的拷贝，**修改 `shared/` 后，需重新拷贝到 6 个函数目录再部署**，否则云端报 `Cannot find module './shared/...'`。
 
 ### 方式二：CloudBase CLI
 
@@ -594,7 +594,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | 文本 | 家庭名称、菜品名称、昵称 | `security.msgSecCheck` |
 | 图片 | 菜品图片、自定义头像 | `security.imgSecCheck` |
 
-统一封装在 `cloudfunctions/shared/security.js`；命中违规抛 `CONTENT_RISKY` 终止写入；审核接口异常默认 fail-open（记日志放行），可通过 `SEC_CHECK_STRICT=true` 切换为 fail-closed。完整说明见 [docs/deployment/content-security.md](docs/deployment/content-security.md)。
+统一封装在 `shared/security.js`；命中违规抛 `CONTENT_RISKY` 终止写入；审核接口异常默认 fail-open（记日志放行），可通过 `SEC_CHECK_STRICT=true` 切换为 fail-closed。完整说明见 [docs/deployment/content-security.md](docs/deployment/content-security.md)。
 
 ### 6. 最小化客户端信任
 

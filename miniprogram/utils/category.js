@@ -6,7 +6,7 @@
 //   - 渲染永远调用 resolve / emojiOf / nameOf，避免多处各写一份 map 后逐渐漂移
 //   - 纯内存 + 常量，不依赖 wx，可在 Node 环境直接测试
 //
-// 注意：本模块的默认值与云函数 cloudfunctions/shared/categories.js 必须保持一致；
+// 注意：本模块的默认值与云函数 shared/categories.js 必须保持一致；
 // 两端的 emoji 匹配规则同源，前端先用本地规则做「输入即预览」，服务端仍会兜底纠正。
 
 // 内置分类：key 与云函数 DEFAULT_CATEGORIES 完全一致

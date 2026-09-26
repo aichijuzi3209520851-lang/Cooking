@@ -20,7 +20,7 @@
 
 | 端 | 实现 | 时区 |
 |:---|:---|:---|
-| 云函数 | `cloudfunctions/shared/date.js:8` `new Date(Date.now() + 8*3600*1000)` | **固定东八区** |
+| 云函数 | `shared/date.js:8` `new Date(Date.now() + 8*3600*1000)` | **固定东八区** |
 | 小程序端 | `miniprogram/utils/util.js:17` `today()` → `formatDate(new Date())` | **设备本地时区** |
 
 ### 影响链路

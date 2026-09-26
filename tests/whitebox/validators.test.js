@@ -5,7 +5,7 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 
-const { validateImageUrl, validateAvatarUrl, VALID_CATEGORIES } = require('../../cloudfunctions/shared/validators.js')
+const { validateImageUrl, validateAvatarUrl, VALID_CATEGORIES } = require('../../shared/validators.js')
 
 const AVATAR_BASE = 'cloud://env.aaa/avatars/userA/'
 

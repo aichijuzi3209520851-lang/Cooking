@@ -165,7 +165,7 @@ exports.main = async (event) => {
 | **B3** | chef 模型改造（**依你选定方案 A/B/C 执行**）                                                         | 视方案        | 中  | `npm run predeploy` + 新增单测 |
 | **B4** | 收尾验证：全量测试 + 契约检查 + 输出控制台核对清单                                                           | —          | —  | 153+ 测试全绿                  |
 
-**部署提醒**：改动 `cloudfunctions/` 后须按 `database.md` §8 流程——先把 `cloudfunctions/shared/*.js` **同步拷贝**到各函数目录的 `shared/`（`uploadCloudFunction.sh` 已内置），再用开发者工具「上传并部署：所有文件」。本次涉及 `dailyReset`、`family`、`dish` 三个函数。
+**部署提醒**：改动 `cloudfunctions/` 后须按 `database.md` §8 流程——先把 `shared/*.js` **同步拷贝**到各函数目录的 `shared/`（`uploadCloudFunction.sh` 已内置），再用开发者工具「上传并部署：所有文件」。本次涉及 `dailyReset`、`family`、`dish` 三个函数。
 
 ---
 
@@ -207,7 +207,7 @@ exports.main = async (event) => {
 | 文件 | 改动 | 对应项 |
 |:---|:---|:---|
 | `cloudfunctions/dailyReset/index.js` | 入口新增 `getWXContext()` 鉴权：带 OPENID 一律拒绝 | P0-1 |
-| `cloudfunctions/shared/auth.js` | 新增 `requireCreator()`（已同步到 6 个函数副本） | P0-2 |
+| `shared/auth.js` | 新增 `requireCreator()`（已同步到 6 个函数副本） | P0-2 |
 | `cloudfunctions/dish/index.js` | `deleteDish` 改用 `requireCreator`；`listDishes` 加 `page ≤ 500` | P0-2 / P2 |
 | `cloudfunctions/family/index.js` | `joinFamily` 满员重入修复；`joinByCode` 失败冷却（5 次/分钟 → 封锁 1 分钟，新增 `RATE_LIMITED`） | P2 / 遗漏项 |
 | `miniprogram/pages/dishes/list/list.js` | 删除入口按创建者可见（`isCreator`）；隐藏/恢复仍归 chef | P0-2 前端配套 |
@@ -266,7 +266,7 @@ Lint 通过：JSON 合法、无硬编码密钥/占位模板、依赖版本固定
 # 1. 同步共享模块（本次已执行；今后改 shared 后需重跑）
 for fn in login family dish vote notify dailyReset; do
   rm -rf "cloudfunctions/${fn}/shared"; mkdir -p "cloudfunctions/${fn}/shared"
-  cp "cloudfunctions/shared/"*.js "cloudfunctions/${fn}/shared/"
+  cp "shared/"*.js "cloudfunctions/${fn}/shared/"
 done
 # 2. 部署：开发者工具右键函数目录 →「上传并部署：所有文件」；或
 ENV_ID=<环境ID> ./uploadCloudFunction.sh

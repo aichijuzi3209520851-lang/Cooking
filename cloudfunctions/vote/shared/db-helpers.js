@@ -1,4 +1,4 @@
-// cloudfunctions/shared/db-helpers.js - 数据库批量操作工具
+// shared/db-helpers.js - 数据库批量操作工具
 // 所有函数接受 db/cloud/_ 作为参数注入，避免重复初始化
 
 const { getTodayStr } = require('./date')

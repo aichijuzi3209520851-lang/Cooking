@@ -32,8 +32,8 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 | `miniprogram/` | 前端；入口 `app.js`，路由 `app.json`，云环境 ID 在 `config.js` → `cloudEnv` |
 | `miniprogram/utils/api.js` | 云调用唯一入口，信封 `{success,data}` / `{success:false,errorCode,message}` |
 | `miniprogram/utils/{dto,category,theme,util}.js` | 展示/分类/主题/工具；`dto`/`category` 为纯函数，可直接 Node 单测 |
-| `cloudfunctions/{login,family,dish,vote,notify,dailyReset}/` | 6 个云函数，按 `event.action` 分发 |
-| `cloudfunctions/shared/` | 公共模块**源**（测试也 `require` 这里） |
+| `cloudfunctions/{login,family,dish,vote,notify,dailyReset,weather}/` | 7 个云函数，按 `event.action` 分发；`weather` 独立（不引用 shared） |
+| `shared/` | 公共模块**源**（在 `cloudfunctions/` **之外**，见下；测试也 `require` 这里） |
 | `cloudfunctions/<fn>/shared/` | **拷贝**，不是 npm 包 |
 | `docs/deployment/database.md` | 控制台人工配置权威清单（集合/规则/索引/触发器/环境变量） |
 
@@ -41,16 +41,17 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 
 ## 硬约束（最易踩）
 
-1. **改 `cloudfunctions/shared/` 后必须同步 6 份拷贝**到各函数的 `shared/`。函数一律 `require('./shared/...')`。`scripts/uploadCloudFunction.sh` 会先 `cp` 再部署；DevTools 右键上传同理。只改源不拷贝 → 云端 `Cannot find module './shared/...'`。
-2. **测试以 `cloudfunctions/shared/` 为真源**——不要只改函数目录里的拷贝。
-3. 分类图标必须同时改前端 `utils/category.js` 的 `EMOJI_PICKER` 与云函数 `ALLOWED_EMOJI`，否则服务端会静默改回「按名称匹配」（`tests/unit/category.test.js` 锁两端一致性）。
-4. 页面跳转 URL 必须与 `app.json` **末段路径**完全一致（如 `/pages/agreement/privacy/privacy`）。`npm run check:routes` 专查这类静默失败。
-5. `app.json` 第一页必须是 `pages/login/login`（契约测试断言）。
-6. 云函数 `package.json` 依赖版本必须精确（禁止 `~`/`^`），`lint` 拦截；当前仅 `wx-server-sdk@2.6.3`。
-7. 密钥与订阅消息模板 ID 只走环境变量；`lint` 禁止占位/硬编码密钥写入业务代码。
-8. 展示层业务 ID 一律 `dishId`，禁止猜测 `_id` 格式。`vote.todayList` 返回 `{date, groups[]}`。
-9. `cookCount` 只增不减；当日票数以 `daily_votes` 聚合为准。
-10. 日期统一东八区 `YYYY-MM-DD`（`shared/date` 与前端 `formatDateCST` 有同源测试）。
+1. **改 `shared/` 后必须同步 6 份拷贝**到各函数的 `shared/`。函数一律 `require('./shared/...')`。`scripts/uploadCloudFunction.sh` 会先 `cp` 再部署；DevTools 右键上传同理。只改源不拷贝 → 云端 `Cannot find module './shared/...'`。
+2. **`shared/` 必须在 `cloudfunctions/` 之外，且 `cloudfunctions/` 下每个一级子目录都必须是真云函数（含 `index.js`）**。微信开发者工具把 `cloudfunctionRoot` 下的**每个一级子目录**都当成一个可部署云函数（不看有没有 `index.js`）。曾把共享源放在 `cloudfunctions/shared/` → 云端多出一个叫 `shared` 的幽灵函数、创建失败后长期卡 `CreateFailed`，之后所有「上传并部署」都报 `FailedOperation.UpdateFunctionCode`，整条部署链路卡死。`npm run lint` 与契约测试 `CLOUD-DIR-001/002` 双重拦截。
+3. **测试以 `shared/` 为真源**——不要只改函数目录里的拷贝。
+4. 分类图标必须同时改前端 `utils/category.js` 的 `EMOJI_PICKER` 与云函数 `ALLOWED_EMOJI`，否则服务端会静默改回「按名称匹配」（`tests/unit/category.test.js` 锁两端一致性）。
+5. 页面跳转 URL 必须与 `app.json` **末段路径**完全一致（如 `/pages/agreement/privacy/privacy`）。`npm run check:routes` 专查这类静默失败。
+6. `app.json` 第一页必须是 `pages/login/login`（契约测试断言）。
+7. 云函数 `package.json` 依赖版本必须精确（禁止 `~`/`^`），`lint` 拦截；当前仅 `wx-server-sdk@2.6.3`。
+8. 密钥与订阅消息模板 ID 只走环境变量；`lint` 禁止占位/硬编码密钥写入业务代码。
+9. 展示层业务 ID 一律 `dishId`，禁止猜测 `_id` 格式。`vote.todayList` 返回 `{date, groups[]}`。
+10. `cookCount` 只增不减；当日票数以 `daily_votes` 聚合为准。
+11. 日期统一东八区 `YYYY-MM-DD`（`shared/date` 与前端 `formatDateCST` 有同源测试）。
 
 ## 业务与部署
 

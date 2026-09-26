@@ -20,7 +20,7 @@
 
 ## 2. 实现要点
 
-统一封装在 `cloudfunctions/shared/security.js`：
+统一封装在 `shared/security.js`：
 
 | 能力 | 说明 |
 |:---|:---|
@@ -43,7 +43,7 @@
 
 ## 3. 部署步骤（必做）
 
-1. **同步共享模块**：`cloudfunctions/shared/security.js` 已拷贝到 6 个函数目录下（本项目约定：每个函数目录内的 `shared/` 是拷贝，改完必须同步，否则云端报 `Cannot find module './shared/security'`）。
+1. **同步共享模块**：`shared/security.js` 已拷贝到 6 个函数目录下（本项目约定：每个函数目录内的 `shared/` 是拷贝，改完必须同步，否则云端报 `Cannot find module './shared/security'`）。
 2. **声明 openapi 权限**：已为需要检测的函数新增 `config.json`：
 
    | 云函数 | 声明的 openapi 权限 |

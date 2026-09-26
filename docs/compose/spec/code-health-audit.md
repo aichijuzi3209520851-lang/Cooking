@@ -24,7 +24,7 @@ commits: f806912..f806912
 
 ### 范围
 
-- **在范围内**：`miniprogram/**/*.js|wxml`（页面、组件、utils）、`cloudfunctions/**/index.js` 与 `cloudfunctions/shared/*.js`
+- **在范围内**：`miniprogram/**/*.js|wxml`（页面、组件、utils）、`cloudfunctions/**/index.js` 与 `shared/*.js`
 - **不在范围内**：本轮不提交修复 diff（见 Out of Scope）
 
 ### 体检维度

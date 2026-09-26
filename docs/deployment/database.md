@@ -203,9 +203,9 @@
 
 ## 8. 云函数部署与共享模块同步（ENG-001）
 
-共享源码位于 `cloudfunctions/shared/`。**每个函数目录内的 `shared/` 是它的一份物理拷贝**，函数统一用相对路径 `require('./shared/xxx')` 引用（不依赖 DevTools 的 `cloud-shared` 黑盒机制；函数 `package.json` 中**没有**该依赖）。
+共享源码位于 `shared/`。**每个函数目录内的 `shared/` 是它的一份物理拷贝**，函数统一用相对路径 `require('./shared/xxx')` 引用（不依赖 DevTools 的 `cloud-shared` 黑盒机制；函数 `package.json` 中**没有**该依赖）。
 
-**关键约束**：改完 `cloudfunctions/shared/` 后必须**先同步拷贝到每个函数目录**，再整目录上传：
+**关键约束**：改完 `shared/` 后必须**先同步拷贝到每个函数目录**，再整目录上传：
 
 1. 同步（`uploadCloudFunction.sh` 已内置该步骤，也可手动执行）：
 
@@ -213,14 +213,14 @@
    for fn in login family dish vote notify dailyReset; do
      rm -rf "cloudfunctions/${fn}/shared"
      mkdir -p "cloudfunctions/${fn}/shared"
-     cp "cloudfunctions/shared/"*.js "cloudfunctions/${fn}/shared/"
+     cp "shared/"*.js "cloudfunctions/${fn}/shared/"
    done
    ```
 
 2. 部署：开发者工具右键函数目录 → **上传并部署：所有文件**；
 3. CLI：`ENV_ID=xxx ./scripts/uploadCloudFunction.sh`（内部先同步，再 `tcb fn deploy`）。
 
-修改 `cloudfunctions/shared/` 下任何模块后，须重新同步并重新部署**所有** 6 个函数（全部依赖它）。
+修改 `shared/` 下任何模块后，须重新同步并重新部署**所有** 6 个函数（全部依赖它）。
 
 ## 9. 验证命令（本地可执行）
 

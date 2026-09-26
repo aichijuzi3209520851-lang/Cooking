@@ -1,4 +1,4 @@
-// cloudfunctions/shared/date.js - 东八区日期工具
+// shared/date.js - 东八区日期工具
 // 云函数统一约定：new Date(ms + 8h).toISOString().slice(0,10)
 
 /**

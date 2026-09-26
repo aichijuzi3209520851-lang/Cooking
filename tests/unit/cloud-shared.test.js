@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 // ============ ApiError ============
 
-const { ApiError } = require('../../cloudfunctions/shared/api-error');
+const { ApiError } = require('../../shared/api-error');
 
 test('ApiError：构造时携带 errorCode 和 message', () => {
   const err = new ApiError('INVALID_PARAM', '参数无效');
@@ -22,7 +22,7 @@ test('ApiError：缺省 message 时仍可构造', () => {
 
 // ============ 日期工具 ============
 
-const { getTodayStr, getYesterdayStr } = require('../../cloudfunctions/shared/date');
+const { getTodayStr, getYesterdayStr } = require('../../shared/date');
 
 test('getTodayStr：返回 YYYY-MM-DD 格式', () => {
   const result = getTodayStr();
@@ -49,7 +49,7 @@ test('东八区日期约定：UTC 20:00（北京时间次日 04:00）应归入�
 
 // ============ 校验器 ============
 
-const { validateImageUrl, VALID_CATEGORIES } = require('../../cloudfunctions/shared/validators');
+const { validateImageUrl, VALID_CATEGORIES } = require('../../shared/validators');
 
 test('VALID_CATEGORIES：包含 5 种合法分类', () => {
   assert.deepEqual(VALID_CATEGORIES, ['meat', 'veg', 'soup', 'staple', 'cold']);

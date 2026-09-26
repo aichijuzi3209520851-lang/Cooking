@@ -1,4 +1,4 @@
-// cloudfunctions/shared/auth.js - 鉴权与成员校验工具
+// shared/auth.js - 鉴权与成员校验工具
 // 接受 cloud/db 作为参数注入，避免每个模块重复初始化
 
 const { ApiError } = require('./api-error')

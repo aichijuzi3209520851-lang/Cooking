@@ -52,7 +52,7 @@ test('getAvatarText：昵称首字，空值回退', () => {
 // 两者不一致时（海外用户或改过设备时区），实时监听的 where 条件永远匹配不到，
 // 表现为「点菜后其他家人看不到」（静默失效，不报错），徽标跨日判定也会错乱。
 // 以下用例锁定：客户端 formatDateCST 与云函数 getTodayStr 对同一时刻得到同一天。
-const { getTodayStr } = require('../../cloudfunctions/shared/date.js');
+const { getTodayStr } = require('../../shared/date.js');
 
 test('formatDateCST：UTC 15:59:59.999 仍属当天，UTC 16:00:00.000 进入次日', () => {
   assert.equal(util.formatDateCST(Date.UTC(2026, 8, 5, 15, 59, 59, 999)), '2026-09-05');

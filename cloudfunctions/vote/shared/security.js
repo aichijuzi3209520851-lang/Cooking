@@ -1,4 +1,4 @@
-// cloudfunctions/shared/security.js - 内容安全（UGC 审核）
+// shared/security.js - 内容安全（UGC 审核）
 //
 // 背景：后台《用户生成内容场景信息安全声明》已勾选「使用平台建议的内容安全API」，
 // 因此代码侧必须对每一处用户可生成的内容真正调用该 API，否则属于「声明与实现不符」。

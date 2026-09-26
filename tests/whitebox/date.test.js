@@ -7,7 +7,7 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 
-const { getTodayStr, getYesterdayStr } = require('../../cloudfunctions/shared/date.js')
+const { getTodayStr, getYesterdayStr } = require('../../shared/date.js')
 
 function withFrozenClock(utcMs, fn) {
   const real = Date.now

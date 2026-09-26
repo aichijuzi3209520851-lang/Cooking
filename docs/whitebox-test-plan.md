@@ -92,7 +92,7 @@
 | cloudfunctions/notify/index.js | —（未单独采集） | 72.91 / 66.67 |
 | cloudfunctions/vote/index.js | —（未单独采集） | 64.74 / — |
 | cloudfunctions/dailyReset/index.js | —（未单独采集） | 91.19 / — |
-| cloudfunctions/shared/validators.js | 49.12 / 66.67 | **100 / 100** |
+| shared/validators.js | 49.12 / 66.67 | **100 / 100** |
 | miniprogram/utils/dto.js | — | **100 / 90** |
 | shared/date（utils 侧 date.js） | 60-75 / 100 | 100 / 100 |
 

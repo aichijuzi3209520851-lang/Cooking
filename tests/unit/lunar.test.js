@@ -1,4 +1,4 @@
-// 单元测试：农历转换与生日（cloudfunctions/shared/lunar.js、birthday.js）
+// 单元测试：农历转换与生日（shared/lunar.js、birthday.js）
 //
 // 农历算法出错是「静默错误」——界面照样渲染，只是日期不对，
 // 靠肉眼很难发现。所以这里用三重独立校验：
@@ -10,9 +10,9 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 
-const lunar = require('../../cloudfunctions/shared/lunar.js')
-const birthday = require('../../cloudfunctions/shared/birthday.js')
-const festival = require('../../cloudfunctions/shared/festival.js')
+const lunar = require('../../shared/lunar.js')
+const birthday = require('../../shared/birthday.js')
+const festival = require('../../shared/festival.js')
 const feBirthday = require('../../miniprogram/utils/birthday.js')
 
 const MS_PER_DAY = 86400000

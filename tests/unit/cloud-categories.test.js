@@ -1,10 +1,10 @@
-// 单元测试：云函数分类模块（cloudfunctions/shared/categories.js）
+// 单元测试：云函数分类模块（shared/categories.js）
 // 分类从「前端硬编码」升级为「家庭级可配置」后，服务端是唯一的合法性来源，
 // 因此这里重点覆盖：归一化过滤、重名/长度校验、家庭读写与「写操作不静默回退」。
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 
-const categories = require('../../cloudfunctions/shared/categories.js')
+const categories = require('../../shared/categories.js')
 
 const DEFAULT_KEYS = ['meat', 'veg', 'soup', 'staple', 'cold']
 

@@ -17,7 +17,7 @@ Module._resolveFilename = function (request, ...args) {
 }
 
 const env = require('../smoke/mocks/env.js')
-const lunar = require('../../cloudfunctions/shared/lunar.js')
+const lunar = require('../../shared/lunar.js')
 
 const loginFn = require('../../cloudfunctions/login/index.js')
 const voteFn = require('../../cloudfunctions/vote/index.js')

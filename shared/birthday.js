@@ -1,4 +1,4 @@
-// cloudfunctions/shared/birthday.js - 生日（BIRTHDAY-001）
+// shared/birthday.js - 生日（BIRTHDAY-001）
 //
 // 存储约定（**只存月日，不存年份**，最小化收集）：
 //   users.birthday = { calendar: 'solar' | 'lunar', month: 1-12, day: 1-31 }

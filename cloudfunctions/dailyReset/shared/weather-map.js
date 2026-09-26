@@ -1,4 +1,4 @@
-// cloudfunctions/shared/weather-map.js
+// shared/weather-map.js
 // 天气 → 推荐加权映射（WEATHER-002）。纯函数，无依赖，可直接 Node 单测。
 //
 // 输入来自 LBS 天气接口（腾讯位置服务）：

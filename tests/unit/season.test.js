@@ -1,10 +1,10 @@
-// 单元测试：季节 / 节气 / 时令食材（cloudfunctions/shared/season.js）
+// 单元测试：季节 / 节气 / 时令食材（shared/season.js）
 // 这是「今日推荐」的时令依据来源，节气算法出错的后果是推荐理由整体失真，
 // 因此对边界（跨月回退、跨年回退）与全年健壮性都做断言。
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 
-const season = require('../../cloudfunctions/shared/season.js')
+const season = require('../../shared/season.js')
 
 const SEASON_KEYS = ['spring', 'summer', 'autumn', 'winter']
 const BUILTIN_CATEGORIES = ['meat', 'veg', 'soup', 'staple', 'cold']

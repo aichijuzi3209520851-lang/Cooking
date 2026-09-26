@@ -18,7 +18,7 @@ function formatDate(date) {
 /**
  * 格式化时间戳为东八区（UTC+8）日期 YYYY-MM-DD
  *
- * 与服务端 cloudfunctions/shared/date.js 的 getTodayStr 完全同源。
+ * 与服务端 shared/date.js 的 getTodayStr 完全同源。
  * 业务日期（daily_votes.date / rice_reports.date / 实时监听条件 / 历史归档）
  * 一律走东八区，避免「客户端本地时区 vs 服务端东八区」错位导致监听失效。
  */

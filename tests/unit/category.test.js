@@ -119,7 +119,7 @@ test('EMOJI_PICKER：规整方阵（25 个）且无重复', () => {
 test('EMOJI_PICKER：每个图标都在云函数白名单内（否则用户的选择会被服务端静默替换）', () => {
   // 云函数 normalizeCategory 只接受 ALLOWED_EMOJI 内的图标，不在白名单的会被改回「按名称自动匹配」，
   // 用户就会看到自己选的图标没生效——这是两端常量漂移最隐蔽的表现，因此用断言锁住
-  const cloudCategories = require('../../cloudfunctions/shared/categories.js')
+  const cloudCategories = require('../../shared/categories.js')
   category.EMOJI_PICKER.forEach(emoji => {
     assert.ok(
       cloudCategories.ALLOWED_EMOJI.indexOf(emoji) > -1,

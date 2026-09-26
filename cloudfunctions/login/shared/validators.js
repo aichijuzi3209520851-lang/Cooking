@@ -1,4 +1,4 @@
-// cloudfunctions/shared/validators.js - 业务校验纯函数
+// shared/validators.js - 业务校验纯函数
 // 纯函数，不依赖 wx-server-sdk，可在 Node 环境直接测试
 
 const { ApiError } = require('./api-error')

@@ -8,11 +8,66 @@ const path = require('node:path');
 
 const FN_DIR = path.resolve(__dirname, '../../cloudfunctions');
 const ROOT = path.resolve(__dirname, '../..');
+// 共享模块源在**项目根** shared/（刻意放在 cloudfunctions/ 之外：开发者工具会把
+// cloudfunctionRoot 下每个一级子目录都当成云函数，放里面会凭空多出一个部署失败的幽灵函数）
+const SHARED_DIR = path.join(ROOT, 'shared');
 const FUNCTIONS = ['login', 'family', 'dish', 'vote', 'notify', 'dailyReset'];
 
 function readFn(name) {
   return fs.readFileSync(path.join(FN_DIR, name, 'index.js'), 'utf8');
 }
+
+/**
+ * 微信开发者工具会把 cloudfunctionRoot（cloudfunctions/）下的**每一个一级子目录**
+ * 都当成一个可部署云函数，不看有没有 index.js。踩过：共享模块源曾放在
+ * cloudfunctions/shared/，云端因此多出一个叫 shared 的幽灵函数、创建失败后长期卡在
+ * CreateFailed，之后所有「上传并部署」都报 FailedOperation.UpdateFunctionCode。
+ * 所以：cloudfunctions/ 下只许有真云函数；共享模块源在项目根 shared/。
+ */
+test('CLOUD-DIR-001：cloudfunctions/ 下每个一级子目录都必须是真云函数', () => {
+  const dirs = fs.readdirSync(FN_DIR, { withFileTypes: true })
+    .filter(e => e.isDirectory())
+    .map(e => e.name);
+  assert.ok(dirs.length > 0, 'cloudfunctions/ 下没有任何云函数目录');
+
+  const notFunctions = dirs.filter(name => !fs.existsSync(path.join(FN_DIR, name, 'index.js')));
+  assert.deepEqual(notFunctions, [],
+    `以下目录没有 index.js，会被开发者工具当成云函数却部署失败：${notFunctions.join(', ')}。`
+    + '共享模块源请放到项目根 shared/');
+
+  assert.ok(fs.existsSync(SHARED_DIR), '缺少共享模块源目录 shared/');
+  const srcNonJs = fs.readdirSync(SHARED_DIR).filter(f => !f.endsWith('.js'));
+  assert.deepEqual(srcNonJs, [], `shared/ 下只允许 *.js：${srcNonJs.join(', ')}`);
+});
+
+/**
+ * 各函数目录内的 shared/ 必须与项目根 shared/ 逐字节一致（部署脚本会整目录上传）。
+ */
+test('CLOUD-DIR-002：各函数 shared/ 拷贝与源 shared/ 完全一致', () => {
+  const srcJs = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.js')).sort();
+  assert.ok(srcJs.length > 0, '源 shared/ 为空');
+
+  const read = f => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
+  const problems = [];
+
+  for (const name of fs.readdirSync(FN_DIR, { withFileTypes: true })
+    .filter(e => e.isDirectory()).map(e => e.name)) {
+    const fnShared = path.join(FN_DIR, name, 'shared');
+    if (!fs.existsSync(fnShared)) continue; // weather 不引用 shared，可无此目录
+
+    const have = fs.readdirSync(fnShared).sort();
+    const missing = srcJs.filter(f => !have.includes(f));
+    const extra = have.filter(f => !srcJs.includes(f));
+    const diff = srcJs.filter(f => have.includes(f)
+      && read(path.join(SHARED_DIR, f)) !== read(path.join(fnShared, f)));
+
+    if (missing.length) problems.push(`${name}/shared 缺: ${missing.join(',')}`);
+    if (extra.length) problems.push(`${name}/shared 多: ${extra.join(',')}`);
+    if (diff.length) problems.push(`${name}/shared 不一致: ${diff.join(',')}`);
+  }
+
+  assert.deepEqual(problems, [], `共享模块未同步：\n${problems.join('\n')}`);
+});
 
 const DOCUMENTED_ACTIONS = {
   login: ['login', 'setNotifyStatus', 'updateProfile'],
@@ -93,7 +148,7 @@ test('dish：includeHidden 为 chef 专属（UI-001）', () => {
 
 test('dish：图片地址校验与生命周期清理（STORAGE-001）', () => {
   const src = readFn('dish');
-  const sharedValidators = fs.readFileSync(path.join(FN_DIR, 'shared', 'validators.js'), 'utf8');
+  const sharedValidators = fs.readFileSync(path.join(SHARED_DIR, 'validators.js'), 'utf8');
   assert.match(src, /validateImageUrl/, '缺少图片地址校验');
   assert.match(sharedValidators, /\/dishes\/\$\{familyId\}\//, '图片路径未校验家庭归属');
   assert.match(src, /safeDeleteFiles/, '缺少旧图片/关联图片清理');

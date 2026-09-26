@@ -136,7 +136,7 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 - 用户选「仅自己可见」时，`collectBirthdayNotice` 与 `sendBirthdayWish` 都会把他剔除
   （依据 `shared/birthday.js#isShared`，缺省视为允许，只有显式 `false` 才隐藏）。
 
-> 📌 对应实现：`cloudfunctions/shared/birthday.js`、`cloudfunctions/vote/index.js#collectBirthdayNotice`、
+> 📌 对应实现：`shared/birthday.js`、`cloudfunctions/vote/index.js#collectBirthdayNotice`、
 > `cloudfunctions/notify/index.js#sendBirthdayWish`、`miniprogram/utils/birthday.js`、
 > `miniprogram/components/birthday-popup/`、`miniprogram/pages/profile/`（同意弹窗 + 开关）。
 > 回归：`tests/whitebox/birthday.test.js`（W-C-B10 ~ W-C-B16）、`tests/unit/lunar.test.js`。

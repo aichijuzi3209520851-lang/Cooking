@@ -1,4 +1,4 @@
-// cloudfunctions/shared/season.js - 季节 / 节气 / 时令食材
+// shared/season.js - 季节 / 节气 / 时令食材
 //
 // 「今日推荐」的时令依据来源：
 //   1. 当前处于哪个季节 → 该季节的时令食材关键词（用于匹配菜名）

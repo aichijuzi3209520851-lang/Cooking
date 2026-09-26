@@ -3,7 +3,8 @@
 // 1. 所有 JSON 文件可解析
 // 2. 云函数源码禁止硬编码内部密钥/占位模板 ID/浮动依赖版本
 // 3. 云函数依赖必须固定版本
-// 4. shared 模块必须与 cloudfunctions/shared/ 严格同步（不得缺失/多余/不一致）
+// 4. cloudfunctions/ 下每个一级子目录必须是真云函数；shared 模块须与根 shared/ 严格同步
+//    （不得缺失/多余/内容不一致）
 // 5. 小程序侧禁止引用不存在的本地资源路径
 // 用法：npm run lint
 const fs = require('node:fs');
@@ -79,33 +80,39 @@ for (const entry of fs.readdirSync(fnDir, { withFileTypes: true })) {
   }
 }
 
-// ---------- 4. shared 模块必须与权威源严格同步（SHARED-SYNC-001） ----------
-// 背景：cloudfunctions/shared/*.js 是权威源，各函数内的 shared/ 是逐文件拷贝，
-// 函数统一用相对路径 require('./shared/xxx')。改了源却忘了同步 → 云端
-// `Cannot find module './shared/...'` 或跑旧代码（踩过：7 个白盒测试因 names undefined 全崩）。
-// scripts/uploadCloudFunction.sh 的实际行为是「rm -rf shared → 只拷 *.js」，
-// 所以各函数 shared/ 里**不该存在任何非 .js 文件**（比如误拷进去的 package.json）。
-const SHARED_SRC = path.join(fnDir, 'shared');
-const FN_NAMES = fs.readdirSync(fnDir, { withFileTypes: true })
-  .filter(e => e.isDirectory() && e.name !== 'shared')
-  .map(e => e.name);
+// ---------- 4. 云函数目录与共享模块（SHARED-SYNC-001） ----------
+// ⚠️ 铁律：微信开发者工具会把 cloudfunctionRoot 下的**每一个一级子目录**都当成一个
+// 可部署云函数（不看有没有 index.js / package.json）。踩过：共享模块源目录曾放在
+// cloudfunctions/shared/，于是云端多出一个叫 shared 的幽灵函数、创建失败后长期停在
+// CreateFailed，之后任何「上传并部署」都报 FailedOperation.UpdateFunctionCode，
+// 整个部署链路被卡死。所以共享源现在放在**项目根目录的 `shared/`**。
+// 对应地：cloudfunctions/ 下每个一级子目录必须是真云函数（含 index.js）。
 
 /** 归一化行尾后再比较，避免 git autocrlf 造成假失败 */
 function readNorm(file) {
   return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 }
 
+// (1) cloudfunctions/ 下只允许真云函数（必须有 index.js 入口）
+const FN_NAMES = [];
+for (const entry of fs.readdirSync(fnDir, { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue;
+  if (!fs.existsSync(path.join(fnDir, entry.name, 'index.js'))) {
+    errors.push(`cloudfunctions/${entry.name}/: 缺少 index.js —— 它会被开发者工具当成云函数`
+      + `（每个一级子目录都算），但部署必然失败并可能卡死整个部署链路。`
+      + `共享模块源请放到项目根目录的 shared/`);
+    continue;
+  }
+  FN_NAMES.push(entry.name);
+}
+
+// (2) 共享模块源：项目根 shared/，只允许 *.js
+const SHARED_SRC = path.join(ROOT, 'shared');
 if (fs.existsSync(SHARED_SRC)) {
   const srcEntries = fs.readdirSync(SHARED_SRC);
-  // (0) 权威源目录里只允许 .js。
-  // ⚠️ 特别地**不允许 package.json**：微信开发者工具会把 cloudfunctionRoot 下
-  //    「有 package.json（或 index.js）」的一级子目录识别成一个可部署云函数。
-  //    shared/ 里那份 package.json（还写着不存在的 main: index.js）曾导致工具在云端
-  //    创建出一个名为 shared 的云函数且停在 CreateFailed 状态，阻碍后续部署。（踩过）
   for (const f of srcEntries) {
     if (!f.endsWith('.js')) {
-      errors.push(`cloudfunctions/shared/${f}: 多余文件（该目录只允许 *.js；`
-        + `package.json 会让开发者工具把 shared/ 误判为云函数）`);
+      errors.push(`shared/${f}: 多余文件（共享模块源目录只允许 *.js）`);
     }
   }
 
@@ -114,9 +121,7 @@ if (fs.existsSync(SHARED_SRC)) {
   for (const fn of FN_NAMES) {
     const fnShared = path.join(fnDir, fn, 'shared');
     // 函数是否真的引用了 shared（未引用就不强制，例如 weather）
-    const fnJs = fs.existsSync(path.join(fnDir, fn))
-      ? fs.readdirSync(path.join(fnDir, fn)).filter(f => f.endsWith('.js'))
-      : [];
+    const fnJs = fs.readdirSync(path.join(fnDir, fn)).filter(f => f.endsWith('.js'));
     const usesShared = fnJs.some(f =>
       /require\(\s*['"]\.\/shared\//.test(fs.readFileSync(path.join(fnDir, fn, f), 'utf8')));
 
@@ -130,7 +135,7 @@ if (fs.existsSync(SHARED_SRC)) {
     // (a) 缺失的源文件
     for (const f of srcJs) {
       if (!have.includes(f)) {
-        errors.push(`cloudfunctions/${fn}/shared/${f}: 缺失（未从 cloudfunctions/shared/ 同步）`);
+        errors.push(`cloudfunctions/${fn}/shared/${f}: 缺失（未从 shared/ 同步）`);
       }
     }
     // (b) 多余文件（含误拷的 package.json —— 部署脚本只拷 *.js）
@@ -144,7 +149,7 @@ if (fs.existsSync(SHARED_SRC)) {
       const a = path.join(SHARED_SRC, f);
       const b = path.join(fnShared, f);
       if (fs.existsSync(b) && readNorm(a) !== readNorm(b)) {
-        errors.push(`cloudfunctions/${fn}/shared/${f}: 内容与 cloudfunctions/shared/${f} 不一致`);
+        errors.push(`cloudfunctions/${fn}/shared/${f}: 内容与 shared/${f} 不一致`);
       }
     }
   }

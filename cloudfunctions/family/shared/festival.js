@@ -1,4 +1,4 @@
-// cloudfunctions/shared/festival.js
+// shared/festival.js
 // 中国传统节日识别：把「节日 → 传统食物」接入今日推荐。
 //
 // 数据来源（多源交叉核实，2025-2035 公历日期）：

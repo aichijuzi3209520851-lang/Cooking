@@ -10,8 +10,8 @@
 |:---|:---|
 | `.tmp-*.png`、`.tmp-*.js`（如 `.tmp-preview-qr2.png`、`.tmp-anchor-audit.js`、`.tmp-hko-verify.js`、`.tmp-p1.png`） | 已加进 `.gitignore`，不要提交 |
 | `.tmp/`（目录形式的临时产物，如验证截图） | 已加进 `.gitignore`，不要提交 |
-| `cloudfunctions/{login,family,dish,vote,notify,dailyReset}/shared/package.json` | 这 6 份是 `cloudfunctions/shared/` 里误拷进去的。`scripts/uploadCloudFunction.sh` 只拷 `*.js`，各函数 `shared/` 不该有 `package.json`。**已删除**；现在 `npm run lint` 会自动拦截「多余文件 / 缺失 / 内容不一致」三种情况 |
-| `cloudfunctions/shared/package.json`（权威源那一份） | **也已删除**。它会让微信开发者工具把 `cloudfunctions/shared/` 误判成一个可部署云函数，云端因此出现过名为 `shared` 的幽灵函数并卡在 `CreateFailed`，阻塞后续部署。`lint` 现已禁止该目录出现任何非 `*.js` 文件 |
+| `cloudfunctions/{login,family,dish,vote,notify,dailyReset}/shared/package.json` | 这 6 份是误拷进去的。`scripts/uploadCloudFunction.sh` 只拷 `*.js`，各函数 `shared/` 不该有 `package.json`。**已删除**；`npm run lint` 会自动拦截「多余文件 / 缺失 / 内容不一致」三种情况 |
+| `cloudfunctions/shared/`（整个目录） | **已搬出到项目根 `shared/`**。这是本次上传失败的根因：只要共享源目录还挂在 `cloudfunctions/` 下，开发者工具就把它当成一个云函数，见下方第 11 条 |
 
 `.gitignore` 在「本地验证产物」一节已包含：
 
@@ -25,12 +25,18 @@
 
 ## 二、shared 模块（硬约束）
 
-- 源是 `cloudfunctions/shared/*.js`（测试也 `require` 这里）
+- 源是**项目根目录的 `shared/*.js`**（测试也 `require` 这里）。
+  ⚠️ **刻意不放在 `cloudfunctions/` 里**：微信开发者工具会把 `cloudfunctionRoot` 下的
+  **每一个一级子目录**都当成可部署云函数（不看有没有 `index.js`）。曾经放在
+  `cloudfunctions/shared/` → 云端凭空多出一个叫 `shared` 的幽灵函数、创建失败后长期卡在
+  `CreateFailed`，之后所有「上传并部署」都报 `FailedOperation.UpdateFunctionCode`，部署链路被卡死。
 - 各函数目录的 `shared/` 是 **拷贝**，函数一律 `require('./shared/...')`
 - 新增的 `festival.js` / `weather-map.js` / `birthday.js` / `lunar.js` 必须与源**字节一致**同步到 6 个函数
 - 改完源文件后：同步拷贝 → 再部署；否则云端 `Cannot find module './shared/...'`
-- **已由 `npm run lint` 强制**（SHARED-SYNC-001）：逐函数比对「缺失 / 多余 / 内容不一致」，
-  多余文件也报错（部署脚本只拷 `*.js`，所以 `shared/package.json` 之类一律拦截）。
+- **已由 `npm run lint` + 契约测试 `CLOUD-DIR-001/002` 双重强制**：
+  ① `cloudfunctions/` 下每个一级子目录必须有 `index.js`；
+  ② `shared/` 下只允许 `*.js`；
+  ③ 各函数 `shared/` 与源比对「缺失 / 多余 / 内容不一致」。
   忘了同步不再是「靠记忆」，而是门禁直接红
 - 部署参考 `scripts/uploadCloudFunction.sh`（会 `cp shared/*.js` 再 `tcb fn deploy`）
 
@@ -119,12 +125,16 @@ git commit -m "feat(recommend): 天气加权+节日食物分+推荐诊断+UI折�
    实测报错原文：`showModal:fail confirmText length should not larger than 4 Chinese characters`。
    已加契约测试全量扫描防回归（只覆盖字面量写法，别把按钮文案存进变量再传）
 10. **改了 WXSS 必须 `cleanCompileCache` 再 refresh**：`simulator_refresh` 只重编 WXML/JS，WXSS 吃编译缓存
-11. **`cloudfunctions/shared/` 里绝不能放 `package.json`**：开发者工具会把 `cloudfunctionRoot` 下
-    「含 `package.json`（或 `index.js`）」的一级子目录当成可部署云函数。放过一次 → 云端多出一个
-    叫 `shared` 的云函数、卡在 `CreateFailed`（`FailedOperation.UpdateFunctionCode：当前函数处于
-    CreateFailed状态，无法进行此操作`），**会阻塞后续所有云函数部署**。`lint` 已禁止该目录出现非 `*.js`。
-    真出现了就去云开发控制台删掉那个 `shared` 函数（MCP 的 `deleteFunction` 对它可能返回
-    `ResourceNotFound.Function`，但列表会随即恢复干净）
+11. **`cloudfunctions/` 下只能放真云函数**（每个目录必须有 `index.js`）。微信开发者工具把
+    `cloudfunctionRoot` 下的**每一个一级子目录**都当成可部署云函数——**不看有没有
+    `index.js` / `package.json`**（早期以为是靠 package.json 判定，是错的）。
+    踩过的后果：共享源目录 `cloudfunctions/shared/` 被当成云函数 → 云端凭空多出一个叫
+    `shared` 的幽灵函数，创建失败后长期停在 `CreateFailed`，之后**所有**「上传并部署」都报
+    `FailedOperation.UpdateFunctionCode：当前函数处于 CreateFailed状态`，整条部署链路卡死。
+    现在共享源在**项目根 `shared/`**；`lint` 与契约测试 `CLOUD-DIR-001/002` 双重拦截。
+    真出现了幽灵函数：先去云开发控制台删掉它（MCP `deleteFunction` 可能返回
+    `ResourceNotFound.Function`，但函数列表会随即恢复干净），**再确认本地目录结构已改对**，
+    否则下次点上传还会再造一个
 
 ---
 
