@@ -25,6 +25,12 @@ const JUMP_PAGE = 'pages/menu/menu'
 // ============ 工具函数 ============
 
 // 模板 ID 全部来自环境变量；未配置返回空串
+//
+// 已配置模板的字段映射（2026-09-26 平台「我的模板 → 详情」逐一核实；字段名以模板为准，
+// 关键词子集保留库内原始槽位号，不重新编号）：
+//   CANCEL / MENU → 公共模板「订餐通知」：套餐=thing6（菜品名/概要）、备注=thing14（原因/状态/提交人）
+//   BIRTHDAY → 公共模板「生日祝福提醒」：姓名=thing2（寿星昵称）、温馨提示=thing3（祝福语）
+//   VOTE → 未申请模板（sendVoteNotify 无生产调用方）；将来若配置，须按所选模板重新对齐字段名
 function getTemplateIds() {
   return {
     vote: process.env.NOTIFY_VOTE_TEMPLATE_ID || '',
@@ -177,8 +183,8 @@ async function sendCancelNotify(data) {
   const results = []
   for (const openid of notifyUsers) {
     results.push(await sendOne(openid, templateId, {
-      thing1: thing(dishName, '有菜品'),
-      thing2: thing(reason)
+      thing6: thing(dishName, '有菜品'),
+      thing14: thing(reason)
     }))
   }
 
@@ -217,8 +223,8 @@ async function sendMenuDecidedNotify(data) {
   const results = []
   for (const openid of notifyUsers) {
     results.push(await sendOne(openid, templateId, {
-      thing1: thing(dishName, '今晚菜单'),
-      thing2: thing(decided ? '已加入今晚菜单' : '已移出今晚菜单')
+      thing6: thing(dishName, '今晚菜单'),
+      thing14: thing(decided ? '已加入今晚菜单' : '已移出今晚菜单')
     }))
   }
 
@@ -334,7 +340,7 @@ async function sendMenuDigest() {
       .filter(n => typeof n === 'string' && n)
     const who = submitterNames.slice(0, 2).join('、')
 
-    // thing 字段上限 20 字符：thing1 给菜品概要，thing2 给「谁交了 + 几道菜」
+    // thing 字段上限 20 字符：thing6 给菜品概要，thing14 给「谁交了 + 几道菜」
     const detail = who
       ? `${who}已交${dishIds.length > 0 ? ` ${dishIds.length} 道` : '菜单'}`
       : `共 ${dishIds.length} 道菜待确认`
@@ -342,8 +348,8 @@ async function sendMenuDigest() {
     const results = []
     for (const openid of notifyUsers) {
       results.push(await sendOne(openid, templateId, {
-        thing1: thing(summarizeDishes(dishNames), '今日菜单'),
-        thing2: thing(detail)
+        thing6: thing(summarizeDishes(dishNames), '今日菜单'),
+        thing14: thing(detail)
       }))
     }
     const okCount = results.filter(r => r.success).length
@@ -440,8 +446,8 @@ async function sendBirthdayWish() {
       for (const openid of targets) {
         // 字段名跟着模板走：模板字段变化时只改这里
         const r = await sendOne(openid, templateId, {
-          thing1: thing(person.nickname, '家人'),
-          thing2: thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
+          thing2: thing(person.nickname, '家人'),
+          thing3: thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
         })
         if (r.success) notified++
       }

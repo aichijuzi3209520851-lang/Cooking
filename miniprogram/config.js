@@ -8,8 +8,11 @@ module.exports = {
   cloudEnv: 'lcw-d5gfcge7b41bedd02',
 
   notifyTemplates: [
-    // 'VOTE_TEMPLATE_ID_HERE',      // 点菜通知模板
-    // 'CANCEL_TEMPLATE_ID_HERE',    // 撤菜通知模板
-    // 'BIRTHDAY_TEMPLATE_ID_HERE'   // 生日祝福模板（BIRTHDAY-001）
+    // 「订餐通知」：撤菜否决 / 大厨拍板 / 饭点汇总三类消息共用
+    // （字段映射：套餐=thing6 菜品名/概要，备注=thing14 原因/状态/提交人）
+    'qHILbfoPfOeZ7gqCn3z7CNblzHp7YwY5rVpJD-btjsI',
+    // 「生日祝福提醒」：生日当天向同家庭成员推送
+    // （字段映射：姓名=thing2 寿星昵称，温馨提示=thing3 祝福语）
+    'JgrRxY2uY4FQuW1sGBaljSZrKbpCEV1nH-_l6qQ9gkc'
   ]
 };
