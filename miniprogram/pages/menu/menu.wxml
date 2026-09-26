@@ -23,6 +23,13 @@
     </view>
   </view>
 
+  <!-- 家庭生日提醒（BIRTHDAY-001）：未来 7 天内有家人生日时出现。
+       纯提示、不可点击——避免制造「点了没反应」的空交互 -->
+  <view class="birthday-tip" wx:if="{{birthdayNotice}}">
+    <text class="birthday-tip-emoji">🎂</text>
+    <text class="birthday-tip-text">{{birthdayNotice}}</text>
+  </view>
+
   <!-- 米饭引导：米饭已回归「主食」分类里的普通菜品（谁想吃谁点），
        这里只在主食里确实没有米饭时提示厨师补一道 -->
   <view
@@ -115,9 +122,18 @@
         <!-- 「推荐」选项卡：季节提示 + 与点菜列表完全一致的 dish-card 排列 -->
         <block wx:if="{{selectedCategory === 'recommend'}}">
           <view class="recommend-note">
-            <view class="recommend-season" wx:if="{{recommend.seasonTip}}">
+            <view class="recommend-season" wx:if="{{recommend.seasonTip || recommend.noteText}}">
               <text class="recommend-season-emoji">{{seasonEmoji}}</text>
-              <text class="recommend-season-text">{{recommend.seasonTip}}</text>
+              <text class="recommend-season-text">{{recommend.noteText || recommend.seasonTip}}</text>
+            </view>
+            <!-- 天气 chip（WEATHER-002）：真机 IP 定位，无数据/失败时整行隐藏；直辖市时省略城市段 -->
+            <view class="recommend-weather" wx:if="{{weather}}">
+              <text class="recommend-weather-icon">{{weatherIcon}}</text>
+              <text class="recommend-weather-text">{{weather.desc}}{{weather.temp !== null ? ' ' + weather.temp + '°C' : ''}}{{weather.city ? ' · ' + weather.city : ''}}</text>
+            </view>
+            <!-- 天气链路诊断（DIAG-001）：仅非正式版且天气缺失时出现，天气恢复即消失 -->
+            <view class="recommend-weather-diag" wx:if="{{weatherDiagText}}">
+              <text class="recommend-weather-diag-text">{{weatherDiagText}}</text>
             </view>
             <!-- 未到开启门槛：给进度而不是留白，让用户知道推荐会自己来 -->
             <view wx:if="{{!recommend.ready}}" class="recommend-progress">
@@ -132,6 +148,7 @@
               id="rec-card-{{index}}"
               dish="{{item.dish}}"
               voters="{{item.voters}}"
+              reason-text="{{item.reasonText}}"
               current-user-id="{{currentUserId}}"
               user-role="{{currentRole}}"
               bind:vote="onVote"
@@ -208,4 +225,14 @@
   dish-name="{{rejectDishName}}"
   bind:confirm="onRejectConfirm"
   bind:cancel="onRejectCancel"
+/>
+<!-- 生日当天公告弹窗（BIRTHDAY-003）：一天只弹一次；寿星与家人看到的是两套文案。
+     id 供自动化测试用 selectComponent 验证事件链路（组件内部节点页面级 selector 查不到） -->
+<birthday-popup
+  id="birthday-popup"
+  visible="{{!!birthdayPopup}}"
+  title="{{birthdayPopup.title}}"
+  body="{{birthdayPopup.body}}"
+  blessing="{{birthdayPopup.blessing}}"
+  bind:close="onCloseBirthdayPopup"
 />

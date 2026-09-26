@@ -10,14 +10,18 @@
 
 /* ===== 用户信息卡片 ===== */
 .profile-card {
-  display: flex;
-  align-items: center;
   background-color: var(--surface-card);
   background-image: linear-gradient(150deg, var(--tint-1) 0%, var(--tint-3) 62%);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
   margin-bottom: var(--space-4);
   box-shadow: var(--elev-1);
+}
+
+/* 上半：头像 + 昵称/徽章；下半：生日行，用发丝线分隔 */
+.profile-card-main {
+  display: flex;
+  align-items: center;
 }
 
 /* 头像区：可见头像用固定尺寸 image（保证正圆），chooseAvatar 按钮做隐形覆盖层 */
@@ -77,7 +81,8 @@
 .profile-name-row {
   display: flex;
   align-items: center;
-  /* 单行制：昵称 + 编辑笔，不与徽章混排（徽章与家庭名在第二行） */
+  gap: var(--space-2);
+  /* 单行制：昵称 + 编辑入口，不与徽章混排（徽章与家庭名在第二行） */
   flex-wrap: nowrap;
   padding: var(--space-2) 0;
   margin: calc(var(--space-2) * -1) 0;
@@ -92,10 +97,83 @@
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   line-height: var(--lh-tight);
-  max-width: 420rpx;
+  /* 给右侧「修改」胶囊留位后再截断，避免长昵称把入口挤出屏幕 */
+  max-width: 350rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 昵称旁的「修改」胶囊（PROFILE-002）：解决「名字能点但没人知道」的发现性问题 */
+.profile-edit-chip {
+  flex-shrink: 0;
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+}
+
+.profile-edit-chip-text {
+  font-size: var(--text-mini);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent-deep);
+  line-height: 1.6;
+}
+
+/* ===== 卡片内资料行（生日） ===== */
+.profile-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72rpx;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1rpx solid var(--hairline);
+}
+
+.profile-detail-row-hover {
+  opacity: 0.75;
+}
+
+.profile-detail-label {
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+}
+
+.profile-detail-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.profile-detail-value {
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-detail-value.is-empty {
+  color: var(--color-text-tertiary);
+}
+
+/* 历法标签：公历 / 农历 */
+.profile-detail-tag {
+  flex-shrink: 0;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-mini);
+  line-height: 1.6;
+}
+
+.profile-detail-arrow {
+  font-size: 32rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1;
 }
 
 /* 第二行：身份徽章 · 家庭名 */
@@ -125,6 +203,50 @@
   font-size: var(--text-caption);
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
+}
+
+/* 可折叠分组头部：整块可点，负 margin 让高亮背景外扩不挤压文字 */
+.section-header-tappable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 calc(var(--space-1) * -1);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.section-header-hover,
+.section-header-tappable:active {
+  background: rgba(139, 110, 78, 0.06);
+}
+
+/* 展开时指向下方 → 收起时转回右方（iOS 手风琴惯例） */
+.section-chevron {
+  font-size: 30rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.section-chevron.is-collapsed {
+  transform: rotate(0deg);
+}
+
+/* 折叠体：高度 + 透明度双过渡，收起时卡片圆角随裁切自然消失 */
+.section-body {
+  overflow: hidden;
+  max-height: 900rpx;
+  opacity: 1;
+  transition:
+    max-height var(--dur-base) var(--ease-out),
+    opacity var(--dur-base) linear;
+}
+
+.section-body.is-collapsed {
+  max-height: 0;
+  opacity: 0;
 }
 
 .group-card {
@@ -195,4 +317,235 @@
   color: var(--color-text-tertiary);
   line-height: 1;
   margin-left: 4rpx;
+}
+
+/* ============================================================
+ * 生日设置弹层（BIRTHDAY-001）
+ * 半屏：公历/农历分段切换 + 月日两列 picker-view。
+ * 不用 <picker mode="date">——那会要求填年份，而生日只收月与日。
+ * ======================== */
+.sheet-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+.sheet-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.sheet-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-card);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  animation: sheet-rise var(--dur-base) var(--ease-out);
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(40rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sheet-title {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+}
+
+.sheet-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sheet-close-icon {
+  font-size: 48rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+}
+
+/* 分段控件：公历 / 农历 */
+.sheet-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 6rpx;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.sheet-tab {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-2) 0;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.sheet-tab.is-active {
+  background: var(--surface-card);
+  color: var(--color-accent-deep);
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--elev-1);
+}
+
+/* 实时预览：选到什么就显示成最终的样子（公历数字 / 农历汉字） */
+.sheet-preview {
+  text-align: center;
+  padding: var(--space-1) 0 var(--space-3);
+}
+
+.sheet-preview-text {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-deep);
+  line-height: var(--lh-tight);
+}
+
+.bd-picker {
+  width: 100%;
+  height: 380rpx;
+}
+
+.bd-picker-indicator {
+  height: 88rpx;
+  border-top: 1rpx solid var(--hairline);
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.bd-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+}
+
+.sheet-hint {
+  padding: var(--space-3) 0;
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-loose);
+}
+
+/* 可见性开关（BIRTHDAY-002）：与项目其余开关一致的手搓胶囊，
+   不用原生 <switch>——它的配色无法走主题令牌 */
+.sheet-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.sheet-share-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-share-title {
+  display: block;
+  font-size: var(--text-body-sm);
+  color: var(--color-text-primary);
+  line-height: var(--lh-normal);
+}
+
+.sheet-share-desc {
+  display: block;
+  margin-top: 2rpx;
+  font-size: var(--text-mini);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-loose);
+}
+
+.bd-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 52rpx;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.bd-switch.is-on {
+  background: var(--color-accent);
+}
+
+.bd-switch-knob {
+  position: absolute;
+  top: 6rpx;
+  left: 6rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: var(--surface-card);
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.bd-switch.is-on .bd-switch-knob {
+  transform: translateX(36rpx);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.sheet-btn {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-md);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  line-height: var(--lh-tight);
+}
+
+.sheet-btn-ghost {
+  background: var(--surface-sunken);
+  color: var(--color-text-secondary);
+}
+
+.sheet-btn-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.sheet-btn.is-disabled {
+  opacity: 0.6;
 }

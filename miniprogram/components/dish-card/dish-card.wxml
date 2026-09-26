@@ -24,8 +24,10 @@
   <view class="dish-info">
     <view class="dish-name">{{dish.name}}</view>
     <view class="dish-voters">
+      <!-- 推荐理由优先：说明「为什么推这道菜」，比空态文案有信息量 -->
+      <text wx:if="{{reasonText}}" class="dish-reason">{{reasonText}}</text>
       <avatar-group
-        wx:if="{{voterList.length > 0}}"
+        wx:elif="{{voterList.length > 0}}"
         members="{{voterList}}"
         max="{{5}}"
         size="{{40}}"

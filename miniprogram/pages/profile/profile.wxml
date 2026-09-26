@@ -1,106 +1,164 @@
 <!--pages/profile/profile.wxml-->
 <view class="container profile-page {{themeClass}}">
 
-  <!-- 用户信息卡片：轻触头像换头像，轻触昵称改昵称 -->
+  <!-- 用户信息卡片：轻触头像换头像，轻触昵称行改昵称，轻触生日行设置生日 -->
   <view class="profile-card">
-    <view class="profile-avatar-wrap">
-      <view class="profile-avatar" style="{{avatarUrl ? '' : avatarStyle}}">
-        <image
-          wx:if="{{avatarUrl}}"
-          class="profile-avatar-img"
-          src="{{avatarUrl}}"
-          mode="aspectFill"
-        />
-        <text wx:else class="profile-avatar-text">{{avatarText}}</text>
-      </view>
-      <!-- 隐形按钮覆盖在头像上，只负责接收 chooseAvatar 点击 -->
-      <button
-        class="profile-avatar-overlay"
-        open-type="chooseAvatar"
-        bindchooseavatar="onChooseAvatar"
-        aria-label="更换头像"
-      ></button>
-    </view>
-    <view class="profile-info">
-      <view class="profile-name-row" bindtap="onEditNickname" hover-class="profile-name-hover">
-        <text class="profile-name">{{nickname}}</text>
-      </view>
-      <view class="profile-meta-row">
-        <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">
-          {{roleName}}
+    <view class="profile-card-main">
+      <view class="profile-avatar-wrap">
+        <view class="profile-avatar" style="{{avatarUrl ? '' : avatarStyle}}">
+          <image
+            wx:if="{{avatarUrl}}"
+            class="profile-avatar-img"
+            src="{{avatarUrl}}"
+            mode="aspectFill"
+          />
+          <text wx:else class="profile-avatar-text">{{avatarText}}</text>
         </view>
-        <text class="profile-family" wx:if="{{currentFamily}}">{{currentFamily.name}}</text>
-        <text class="profile-family" wx:else>暂未加入家庭</text>
+        <!-- 隐形按钮覆盖在头像上，只负责接收 chooseAvatar 点击 -->
+        <button
+          class="profile-avatar-overlay"
+          open-type="chooseAvatar"
+          bindchooseavatar="onChooseAvatar"
+          aria-label="更换头像"
+        ></button>
+      </view>
+      <view class="profile-info">
+        <view class="profile-name-row" bindtap="onEditNickname" hover-class="profile-name-hover">
+          <text class="profile-name">{{nickname}}</text>
+          <!-- 显式的「修改」入口：光秃秃的昵称没人知道能点（PROFILE-002） -->
+          <view class="profile-edit-chip">
+            <text class="profile-edit-chip-text">修改</text>
+          </view>
+        </view>
+        <view class="profile-meta-row">
+          <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">
+            {{roleName}}
+          </view>
+          <text class="profile-family" wx:if="{{currentFamily}}">{{currentFamily.name}}</text>
+          <text class="profile-family" wx:else>暂未加入家庭</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 生日（BIRTHDAY-001）：公历显示数字、农历显示汉字，右侧小标签标明历法 -->
+    <view
+      class="profile-detail-row"
+      bindtap="onEditBirthday"
+      hover-class="profile-detail-row-hover"
+      aria-role="button"
+    >
+      <text class="profile-detail-label">生日</text>
+      <view class="profile-detail-right">
+        <text class="profile-detail-value {{birthdayText ? '' : 'is-empty'}}">{{birthdayText || '未设置'}}</text>
+        <text class="profile-detail-tag" wx:if="{{hasBirthday && !birthdayShared}}">仅自己可见</text>
+        <text class="profile-detail-tag" wx:elif="{{birthdayTag}}">{{birthdayTag}}</text>
+        <text class="profile-detail-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <!-- 第一组：家庭 -->
+  <!-- 第一组：家庭（可折叠） -->
   <view class="section">
-    <view class="section-header">家庭</view>
-    <view class="group-card">
-      <view class="list-item" bindtap="onFamilyManage">
-        <text class="list-item-label">家庭管理</text>
-        <text class="list-item-arrow">›</text>
-      </view>
-      <view
-        wx:if="{{isChef}}"
-        class="list-item list-item-bordered"
-        bindtap="onDishList"
-      >
-        <text class="list-item-label">菜品库管理</text>
-        <text class="list-item-arrow">›</text>
-      </view>
-      <view
-        class="list-item {{isChef ? 'list-item-bordered' : ''}}"
-        bindtap="onHistory"
-      >
-        <text class="list-item-label">历史记录</text>
-        <text class="list-item-arrow">›</text>
-      </view>
+    <view
+      class="section-header section-header-tappable"
+      bindtap="toggleSection"
+      data-section="family"
+      aria-expanded="{{expanded.family}}"
+      aria-role="button"
+      hover-class="section-header-hover"
+    >
+      <text>家庭</text>
+      <text class="section-chevron {{expanded.family ? '' : 'is-collapsed'}}">›</text>
     </view>
-  </view>
-
-  <!-- 第二组：偏好 -->
-  <view class="section">
-    <view class="section-header">偏好</view>
-    <view class="group-card">
-      <view class="list-item" bindtap="onSwitchRole">
-        <text class="list-item-label">切换身份</text>
-        <view class="list-item-right">
-          <text class="list-item-value">{{roleName}}</text>
+    <view class="section-body {{expanded.family ? '' : 'is-collapsed'}}">
+      <view class="group-card">
+        <view class="list-item" bindtap="onFamilyManage">
+          <text class="list-item-label">家庭管理</text>
+          <text class="list-item-arrow">›</text>
+        </view>
+        <view
+          wx:if="{{isChef}}"
+          class="list-item list-item-bordered"
+          bindtap="onDishList"
+        >
+          <text class="list-item-label">菜品库管理</text>
+          <text class="list-item-arrow">›</text>
+        </view>
+        <view
+          class="list-item {{isChef ? 'list-item-bordered' : ''}}"
+          bindtap="onHistory"
+        >
+          <text class="list-item-label">历史记录</text>
           <text class="list-item-arrow">›</text>
         </view>
       </view>
-      <view class="list-item list-item-bordered" bindtap="onNotifySettings">
-        <text class="list-item-label">通知设置</text>
-        <view class="list-item-right">
-          <text class="row-badge" wx:if="{{notifyOff}}">未开启</text>
+    </view>
+  </view>
+
+  <!-- 第二组：偏好（可折叠） -->
+  <view class="section">
+    <view
+      class="section-header section-header-tappable"
+      bindtap="toggleSection"
+      data-section="preference"
+      aria-expanded="{{expanded.preference}}"
+      aria-role="button"
+      hover-class="section-header-hover"
+    >
+      <text>偏好</text>
+      <text class="section-chevron {{expanded.preference ? '' : 'is-collapsed'}}">›</text>
+    </view>
+    <view class="section-body {{expanded.preference ? '' : 'is-collapsed'}}">
+      <view class="group-card">
+        <view class="list-item" bindtap="onSwitchRole">
+          <text class="list-item-label">切换身份</text>
+          <view class="list-item-right">
+            <text class="list-item-value">{{roleName}}</text>
+            <text class="list-item-arrow">›</text>
+          </view>
+        </view>
+        <view class="list-item list-item-bordered" bindtap="onNotifySettings">
+          <text class="list-item-label">通知设置</text>
+          <view class="list-item-right">
+            <text class="row-badge" wx:if="{{notifyOff}}">未开启</text>
+            <text class="list-item-arrow">›</text>
+          </view>
+        </view>
+        <view class="list-item list-item-bordered" bindtap="onThemeSettings">
+          <text class="list-item-label">主题设置</text>
           <text class="list-item-arrow">›</text>
         </view>
-      </view>
-      <view class="list-item list-item-bordered" bindtap="onThemeSettings">
-        <text class="list-item-label">主题设置</text>
-        <text class="list-item-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <!-- 第三组：其他 -->
+  <!-- 第三组：其他（可折叠） -->
   <view class="section">
-    <view class="section-header">其他</view>
-    <view class="group-card">
-      <view class="list-item" bindtap="onHelp">
-        <text class="list-item-label">使用帮助</text>
-        <text class="list-item-arrow">›</text>
-      </view>
-      <view class="list-item list-item-bordered" bindtap="onPrivacy">
-        <text class="list-item-label">隐私协议</text>
-        <text class="list-item-arrow">›</text>
-      </view>
-      <view class="list-item list-item-bordered" bindtap="onAbout">
-        <text class="list-item-label">关于</text>
-        <text class="list-item-arrow">›</text>
+    <view
+      class="section-header section-header-tappable"
+      bindtap="toggleSection"
+      data-section="other"
+      aria-expanded="{{expanded.other}}"
+      aria-role="button"
+      hover-class="section-header-hover"
+    >
+      <text>其他</text>
+      <text class="section-chevron {{expanded.other ? '' : 'is-collapsed'}}">›</text>
+    </view>
+    <view class="section-body {{expanded.other ? '' : 'is-collapsed'}}">
+      <view class="group-card">
+        <view class="list-item" bindtap="onHelp">
+          <text class="list-item-label">使用帮助</text>
+          <text class="list-item-arrow">›</text>
+        </view>
+        <view class="list-item list-item-bordered" bindtap="onPrivacy">
+          <text class="list-item-label">隐私协议</text>
+          <text class="list-item-arrow">›</text>
+        </view>
+        <view class="list-item list-item-bordered" bindtap="onAbout">
+          <text class="list-item-label">关于</text>
+          <text class="list-item-arrow">›</text>
+        </view>
       </view>
     </view>
   </view>
@@ -109,3 +167,88 @@
 
 <!-- 隐私协议授权弹窗（PRIV-001） -->
 <privacy-popup />
+
+<!-- 生日设置弹层（BIRTHDAY-001）：公历 / 农历分段切换，月 + 日两列选择
+     只收月与日、不收年份——既满足「到时提醒」，又把收集降到最少 -->
+<view wx:if="{{showBirthdaySheet}}" class="sheet-root">
+  <view class="sheet-mask" bindtap="onCloseBirthdaySheet"></view>
+  <view class="sheet-panel safe-bottom">
+    <view class="sheet-header">
+      <text class="sheet-title">设置生日</text>
+      <view class="sheet-close" bindtap="onCloseBirthdaySheet" aria-label="关闭">
+        <text class="sheet-close-icon">×</text>
+      </view>
+    </view>
+
+    <view class="sheet-tabs">
+      <view
+        class="sheet-tab {{birthdayTab === 'solar' ? 'is-active' : ''}}"
+        data-tab="solar"
+        bindtap="onBirthdayTabChange"
+      >公历</view>
+      <view
+        class="sheet-tab {{birthdayTab === 'lunar' ? 'is-active' : ''}}"
+        data-tab="lunar"
+        bindtap="onBirthdayTabChange"
+      >农历</view>
+    </view>
+
+    <view class="sheet-preview">
+      <text class="sheet-preview-text">{{sheetPreview || '请选择'}}</text>
+    </view>
+
+    <!-- 两列：月 / 日。外层 wx:for 用「代次」做 key，
+         换历法或换月时强制重建 picker-view——否则组件保留旧滚动位置（见 profile.js 注释） -->
+    <view class="bd-picker-host" wx:for="{{bdPickerEpoch}}" wx:key="*this">
+      <picker-view
+        class="bd-picker"
+        indicator-class="bd-picker-indicator"
+        value="{{bdPickerValue}}"
+        bindchange="onBirthdayPickerChange"
+      >
+        <picker-view-column>
+          <view class="bd-picker-item" wx:for="{{bdMonthOptions}}" wx:key="value">{{item.label}}</view>
+        </picker-view-column>
+        <picker-view-column>
+          <view class="bd-picker-item" wx:for="{{bdDayOptions}}" wx:key="value">{{item.label}}</view>
+        </picker-view-column>
+      </picker-view>
+    </view>
+
+    <!-- 可见性开关（BIRTHDAY-002）：平台运营规范 5.12.6 不允许向其他用户
+         显示出生日期，因此必须给用户一个可以关掉的开关 -->
+    <view class="sheet-share-row">
+      <view class="sheet-share-text">
+        <text class="sheet-share-title">在家人生日提醒中展示</text>
+        <text class="sheet-share-desc">关闭后家人看不到你的生日，你自己仍能看到</text>
+      </view>
+      <view
+        class="bd-switch {{bdShared ? 'is-on' : ''}}"
+        bindtap="onToggleShared"
+        aria-role="switch"
+        aria-checked="{{bdShared}}"
+      >
+        <view class="bd-switch-knob"></view>
+      </view>
+    </view>
+
+    <view class="sheet-hint">{{sheetHint}}</view>
+
+    <view class="sheet-actions">
+      <view
+        wx:if="{{hasBirthday}}"
+        class="sheet-btn sheet-btn-ghost"
+        bindtap="onClearBirthday"
+      >清除</view>
+      <view
+        wx:else
+        class="sheet-btn sheet-btn-ghost"
+        bindtap="onCloseBirthdaySheet"
+      >取消</view>
+      <view
+        class="sheet-btn sheet-btn-primary {{birthdaySaving ? 'is-disabled' : ''}}"
+        bindtap="onSaveBirthday"
+      >{{birthdaySaving ? '保存中…' : '保存'}}</view>
+    </view>
+  </view>
+</view>

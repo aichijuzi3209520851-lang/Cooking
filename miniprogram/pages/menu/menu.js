@@ -4,10 +4,15 @@ const {
   dishApi,
   voteApi,
   categoryApi,
-  recommendApi
+  recommendApi,
+  weatherApi
 } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
 const category = require('../../utils/category.js');
+// 推荐文案层：模板兜底 + AI 增强（AI 不可用/超时自动回落）
+const recommendCopy = require('../../utils/recommend-copy.js');
+// 生日提醒文案（BIRTHDAY-001）：云函数只给 days/nickname，文案在前端拼
+const birthdayUtil = require('../../utils/birthday.js');
 const {
   today,
   seasonEmojiOf,
@@ -65,6 +70,17 @@ Page({
     dateText: '',
     // 「今日推荐」季节提示前的季节图标（纯展示，随月份变化）
     seasonEmoji: '🍂',
+    // 天气 chip（WEATHER-002）：真机 IP 定位；模拟器无 CLIENTIP 时为 null 静默隐藏
+    weather: null,
+    weatherIcon: '',
+    // 天气链路诊断（DIAG-001）：仅非正式版、且天气缺失时非空
+    weatherDiagText: '',
+    // 家庭生日提醒条（BIRTHDAY-001）：未来 7 天内有生日时的文案，无则空串
+    birthdayNotice: '',
+    // 生日原文（BIRTHDAY-003）：关闭弹窗时要拿它的 date 写「今天已弹过」的缓存
+    birthday: null,
+    // 生日当天公告弹窗内容（BIRTHDAY-003）：{title, body, blessing} 或 null
+    birthdayPopup: null,
     loading: false,
     refreshing: false,
     page: 1,
@@ -76,7 +92,11 @@ Page({
       show: false,
       ready: false,
       items: [],
+      // 顶部文案（模板兜底 / AI 覆盖）；seasonTip 是云函数给的原句，仅作兜底
+      noteText: '',
       seasonTip: '',
+      // 文案种子的日期基准，同时用于判断 AI 结果是否还属于当天
+      date: '',
       progressText: ''
     },
     // 「推荐」选项卡的展示数据：把推荐项适配成 dish-card 的入参，
@@ -315,9 +335,16 @@ Page({
   async loadRecommend() {
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) return;
+    // 非正式版才索取天气诊断（DIAG-001）：真机上天气缺失时把原因显示在页面上，
+    // 一次截图即可定位；天气正常时该字段为空、界面无任何变化。
+    let envVersion = 'release';
     try {
-      const res = await recommendApi.today(familyId);
-      this.applyRecommend(res);
+      envVersion = (wx.getAccountInfoSync() || {}).miniProgram.envVersion || 'release';
+    } catch (e) { /* 取不到就按正式版处理：不显示诊断 */ }
+    const wantDiag = envVersion !== 'release';
+    try {
+      const res = await recommendApi.today(familyId, wantDiag);
+      this.applyRecommend(res, wantDiag);
     } catch (err) {
       // 推荐是增益功能：失败时静默隐藏，不影响点菜主流程
       console.warn('加载推荐失败', err);
@@ -325,7 +352,61 @@ Page({
     }
   },
 
-  applyRecommend(res) {
+  /**
+   * 把天气链路的诊断快照翻成一句人话（DIAG-001）。
+   * 只在「推荐已就绪但没有天气」且非正式版时显示——天气一恢复就自动消失。
+   */
+  buildWeatherDiagText(diag) {
+    if (!diag || !diag.stage) return '';
+    const ipForm = diag.hasIpv4 ? 'IPv4' : (diag.hasIpv6 ? 'IPv6' : '无IP');
+    const explain = {
+      no_client_ip: '拿不到客户端 IP（IPv6-only 用户会这样）',
+      calling: '调用 weather 云函数后未返回',
+      call_threw: '调用 weather 抛异常：' + (diag.err || ''),
+      timeout: '调用 weather 超时（>' + (diag.limit || '') + 'ms）',
+      weather_failed: 'weather 返回失败：' + (diag.errorCode || '') + ' ' + (diag.message || ''),
+      no_realtime: 'weather 响应缺实时数据',
+      cache_hit: '缓存命中（此处不应缺天气）',
+      ok: '数据正常（此处不应缺天气）'
+    };
+    return '天气诊断[' + diag.stage + ' / ' + ipForm + '] ' +
+      (explain[diag.stage] || '未知阶段');
+  },
+
+  /**
+   * 家庭生日提醒文案（BIRTHDAY-001）。
+   * 云函数只给 { days, date, names, selfIncluded }，文字在前端拼——
+   * 与项目既有约定一致：排序/计算归云函数，文案归前端。
+   */
+  buildBirthdayNoticeText(b) {
+    if (!b || typeof b.days !== 'number') return '';
+    return birthdayUtil.formatNoticeText(b.days, b.names);
+  },
+
+  /**
+   * 生日当天公告弹窗（BIRTHDAY-003）：**一天只弹一次**。
+   * 提前一天（days === 1）只出顶部提醒条，不弹窗打扰；非当天一律不弹。
+   * 去重用本地缓存、key 带日期 —— 第二天自然失效，且不需要服务端记状态。
+   */
+  pickBirthdayPopup(b) {
+    const content = birthdayUtil.buildPopupContent(b);
+    if (!content) return null;
+    const key = 'bdpopup:' + ((b && b.date) || '');
+    try {
+      if (wx.getStorageSync(key)) return null;
+    } catch (e) { /* 读缓存失败就当没弹过，宁可多弹一次也不要不弹 */ }
+    return content;
+  },
+
+  onCloseBirthdayPopup() {
+    const date = (this.data.birthday && this.data.birthday.date) || '';
+    try {
+      wx.setStorageSync('bdpopup:' + date, 1);
+    } catch (e) { /* 写失败不影响关闭 */ }
+    this.setData({ birthdayPopup: null });
+  },
+
+  applyRecommend(res, withDiag) {
     const data = res || {};
     const season = data.season || {};
     const progress = data.progress || {};
@@ -342,6 +423,12 @@ Page({
       // category 供 dish-card 解析分类插画 / emoji（不再自己算 emoji）
       category: item.category || '',
       reason: item.reason || '',
+      // 推荐理由的原始字段（云函数一直有返回，此前前端丢弃了，
+      // 导致推荐卡只能退化成「还没有人想吃」空态）
+      reasonType: item.reasonType || '',
+      festivalId: item.festivalId || '',
+      days: item.days || 0,
+      food: item.food || '',
       seasonal: !!item.seasonal,
       voted: !!votedSet[item.dishId]
     }));
@@ -358,16 +445,86 @@ Page({
       }
     }
 
+    const familyId = app.globalData.currentFamilyId || '';
+    const seedKey = familyId + '|' + (data.today || '');
+    // 节日 > 天气 > 季节/AI：顶置文案取第一个命中的确定性来源（一天一次，不折腾）
+    const fest = data.festival || null;
+    const wxw = data.weather || null;   // { city, weather, temperature, tip }
+    const fallbackNote = recommendCopy.buildSeasonNote(season.season, seedKey);
+    const termText = season.term || '';
+    let noteText;
+    let noteFromServer = false;   // 服务端已给定稿文案（节日/天气）时跳过 AI 增强
+    let noteEmoji = '';
+    if (fest) {
+      noteText = fest.tip;
+      noteEmoji = fest.emoji;
+      noteFromServer = true;
+    } else if (wxw && wxw.tip) {
+      // 有加权理由的天气才顶置文案；中性天气只显示 chip，文案回落季节
+      noteText = wxw.tip;
+      noteEmoji = recommendCopy.weatherIconOf(wxw.weather);
+      noteFromServer = true;
+    } else {
+      noteText = termText ? termText + ' · ' + fallbackNote : fallbackNote;
+    }
+
     this.setData({
       recommend: {
         show: true,
         ready: !!data.ready,
         items,
+        // 文案种子的日期基准：与 AI 缓存 key 保持一致
+        date: data.today || '',
         seasonTip: season.tip || '',
+        noteText,
         progressText
-      }
+      },
+      // 天气 chip（真机 IP 定位；模拟器无 CLIENTIP 时为 null，chip 静默隐藏）
+      weather: wxw ? {
+        city: wxw.city,
+        desc: wxw.weather,
+        temp: wxw.temperature
+      } : null,
+      weatherIcon: wxw ? recommendCopy.weatherIconOf(wxw.weather) : '',
+      // 天气缺失时的诊断文案（DIAG-001）：非正式版 + 推荐已就绪时才给，
+      // 拿到天气就置空，界面上不留痕
+      weatherDiagText: (withDiag && !wxw && data.ready)
+        ? this.buildWeatherDiagText(data.weatherDiag)
+        : '',
+    // 家庭生日提醒条（BIRTHDAY-001）：与推荐门槛无关，今天/明天有生日就显示
+    birthdayNotice: this.buildBirthdayNoticeText(data.birthday),
+    // 生日当天公告弹窗（BIRTHDAY-003）：一天只弹一次，提前一天不弹
+    birthday: data.birthday || null,
+    birthdayPopup: this.pickBirthdayPopup(data.birthday),
+      // 节日时把季节图标换成节日 emoji（中秋 🥮 / 冬至 🥟…）
+      seasonEmoji: noteEmoji || this.data.seasonEmoji
     });
     this.syncRecommendDishes();
+    // 服务端已给定稿文案（节日/天气）时跳过 AI 增强
+    if (!noteFromServer) this.loadRecommendNote(data, familyId);
+  },
+
+  /**
+   * 推荐区顶部一句话：AI 优先（按「家庭+日期」缓存一天），
+   * 失败/未开模型时 loadNote 直接返回模板，这里就覆盖成同样的内容，无副作用。
+   */
+  loadRecommendNote(data, familyId) {
+    const season = (data && data.season) || {};
+    const items = (data && data.items) || [];
+    const date = data.today || '';
+    recommendCopy.loadNote({
+      familyId,
+      date,
+      season: season.season || '',
+      term: season.term || '',
+      foods: season.foods || [],
+      dishNames: items.map(i => i.name).filter(Boolean)
+    }).then(res => {
+      if (!res || !res.text) return;
+      // 期间可能切了家庭或跨天，只对同一天的数据生效
+      if (this.data.recommend.date !== date) return;
+      this.setData({ 'recommend.noteText': res.text });
+    });
   },
 
   /**
@@ -379,6 +536,10 @@ Page({
     const map = this._voterMap || {};
     const me = this.data.currentUserId;
     const items = this.data.recommend.items || [];
+    // 理由文案的种子：家庭 + 日期 + 菜品。
+    // 同一天同一道菜稳定不变，换一天会换说法；不同菜品各自取变体，避免同句式刷屏。
+    const seedBase = (app.globalData.currentFamilyId || '') + '|' +
+      (this.data.recommend.date || '') + '|';
 
     const recommendDishes = items.map(item => {
       let voters = map[item.dishId];
@@ -389,6 +550,8 @@ Page({
       }
       return {
         dishId: item.dishId,
+        // 推荐理由文案：有理由时 dish-card 用它替换「还没有人想吃」空态
+        reasonText: recommendCopy.buildReasonText(item, seedBase + item.dishId),
         dish: {
           dishId: item.dishId,
           name: item.name,

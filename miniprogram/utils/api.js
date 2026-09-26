@@ -117,8 +117,21 @@ const historyApi = {
 };
 
 // 今日推荐（RECOMMEND-001）：综合家庭点菜频率与季节节气时令
+// withDiag=true 时（DIAG-001）服务端额外回传 weatherDiag，用于真机排查天气为何缺失
 const recommendApi = {
-  today: (familyId) => call('vote', { action: 'recommend', familyId })
+  today: (familyId, withDiag) => call('vote', withDiag
+    ? { action: 'recommend', familyId, debugWeather: true }
+    : { action: 'recommend', familyId })
+};
+
+// 天气（WEATHER-002）：云函数侧 IP 自动定位（真机）/ 显式 adcode（模拟器）
+const weatherApi = {
+  now: (adcode) => call('weather', adcode
+    ? { type: 'now', adcode }
+    : { type: 'now' }),
+  future: (adcode) => call('weather', adcode
+    ? { type: 'future', adcode }
+    : { type: 'future' })
 };
 
 // 通知相关（授权状态持久化走 login 云函数）
@@ -140,6 +153,7 @@ module.exports = {
   categoryApi,
   voteApi,
   recommendApi,
+  weatherApi,
   historyApi,
   notifyApi,
   userApi

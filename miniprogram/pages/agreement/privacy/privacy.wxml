@@ -30,6 +30,22 @@
     </view>
 
     <view class="privacy-item">
+      <view class="privacy-item-t">生日（仅月与日）</view>
+      <view class="privacy-p">
+        仅在你主动前往「我的 → 生日」设置时获取，你可以选择按公历或农历填写。
+      </view>
+      <view class="privacy-p">
+        <text class="privacy-strong">我们只保存「月」和「日」，不保存年份</text>，因此无法据此推算你的年龄，也不做任何生日营销。
+      </view>
+      <view class="privacy-p">
+        <text class="privacy-strong">用途与可见范围</text>：我们只在你的生日「前一天」于家庭菜单页提示一句、生日「当天」显示一句祝福，不做更早的预告；若家人此前开启过订阅通知，他们还会在当天收到一条同样内容的推送。其余任何时间，你的生日都不会出现在家人可见的界面里，我们也不会告知具体日期。
+      </view>
+      <view class="privacy-p">
+        <text class="privacy-strong">是否展示给家人，需要你明确同意</text>：保存生日时我们会单独征求你的同意。若你选择「仅自己可见」或事后关闭该开关，家人不会看到、也不会收到与你的生日有关的任何提示；你仍能在「我的」页看到自己的生日。你也可以随时清除生日。
+      </view>
+    </view>
+
+    <view class="privacy-item">
       <view class="privacy-item-t">菜品图片</view>
       <view class="privacy-p">
         由你主动拍照或从相册选择上传，仅用于家庭菜谱展示。不上传时会使用分类占位插画。
@@ -42,6 +58,16 @@
         仅当你主动点击「粘贴」时，我们才读取剪贴板内容，用于快速填入家人分享的家庭加入码。我们不会在后台持续读取剪贴板，也不会保存你复制的其他内容。
       </view>
     </view>
+
+    <view class="privacy-item">
+      <view class="privacy-item-t">网络地址（IP）与大致城市</view>
+      <view class="privacy-p">
+        你能在小程序里看到「今天天气」，是因为服务器会根据本次请求的网络地址（IP）判断一个大致城市，再取该城市的天气。这一步不需要你授权定位，也拿不到街道级位置。
+      </view>
+      <view class="privacy-p">
+        <text class="privacy-strong">IP 地址本身不会被我们保存</text>，它仅用于当次换算出城市，服务于推荐区的天气展示与「雨天喝热汤」这类应季推荐。若不希望使用该功能，忽略天气提示即可，其余功能不受影响。
+      </view>
+    </view>
   </view>
 
   <view class="card privacy-card">
@@ -52,6 +78,9 @@
     <view class="privacy-p">· <text class="privacy-strong">相册 / 摄像头</text>：在你上传菜品图片时申请，仅用于选取或拍摄这一张图。</view>
     <view class="privacy-p">· <text class="privacy-strong">剪贴板</text>：在你点击「粘贴家庭加入码」时申请，仅读取一次。</view>
     <view class="privacy-p">· <text class="privacy-strong">头像昵称填写能力</text>：在你点击头像或昵称时申请，由微信提供，我们不接触你的微信密码等任何其他信息。</view>
+    <view class="privacy-p">
+      <text class="privacy-strong">我们不会申请定位权限</text>。天气所依据的城市来自服务器对网络地址的粗略判断，不会调用微信的定位接口，因此不会弹出定位授权框；相应地，天气城市可能与你所在位置存在偏差，属正常现象。
+    </view>
     <view class="privacy-p privacy-note">
       说明：上述能力属于微信定义的隐私接口。若你未阅读并同意隐私协议，微信会拦截这些接口，对应功能（上传菜品图、粘贴加入码、设置头像）将暂时不可用。
     </view>
@@ -60,10 +89,13 @@
   <view class="card privacy-card">
     <view class="privacy-h">三、我们如何使用这些信息</view>
     <view class="privacy-p">
-      上述信息只用于一个目的：让你和家人能在同一个家里点菜、看到彼此点了什么。
+      上述信息只服务于一个目的：让你和家人能在同一个家里点菜、看到彼此点了什么，并在节日、生日与天气变化时给出应季提示。
     </view>
     <view class="privacy-p">
-      数据存放在微信云开发（腾讯云）的数据库中，只有同一个家庭的成员可以看到本家庭内的头像、昵称和菜品图片。其他人无法访问。
+      数据存放在微信云开发（腾讯云）的数据库中，只有同一个家庭的成员可以看到本家庭内的头像、昵称、生日和菜品图片。其他人无法访问。
+    </view>
+    <view class="privacy-p">
+      推荐区的顶部一句话可能由 AI 模型辅助生成。生成时只发送当季节气、时令食材与家中常点的菜品名称，不会发送你的 openid、昵称、头像或手机号。
     </view>
   </view>
 
@@ -76,14 +108,22 @@
       <text class="privacy-strong">存储期限</text>：账号信息与家庭数据在你使用期间持续保留；当你退出家庭、删除菜品或家庭解散时，对应数据会被同步删除，我们不做额外留存。
     </view>
     <view class="privacy-p">
-      <text class="privacy-strong">第三方共享</text>：我们不会向任何第三方出售或共享你的个人信息。仅微信云开发作为技术服务提供方承载数据存储，其使用受微信云开发服务协议约束。
+      <text class="privacy-strong">第三方共享</text>：我们不会向任何第三方出售或共享你的个人信息。仅为实现下述具体功能，我们会借助以下服务提供方处理必要的最少信息：
+    </view>
+    <view class="privacy-p">· <text class="privacy-strong">微信云开发（腾讯云）</text>：承载数据存储与云函数运行，本小程序的全部业务数据都存放于此。</view>
+    <view class="privacy-p">· <text class="privacy-strong">腾讯位置服务</text>：在你浏览推荐区时，用当次请求的网络地址换取一个大致城市与当地天气。仅传递网络地址，不含任何身份标识。</view>
+    <view class="privacy-p">· <text class="privacy-strong">AI 模型服务（腾讯云）</text>：用于生成一句应季推荐语。仅传递节气、时令食材与常点菜品名称，不含身份标识。</view>
+    <view class="privacy-p">· <text class="privacy-strong">微信内容安全接口</text>：当你提交昵称、头像、菜名或家庭名称时，我们会上送这些内容做合规校验，用于拦截违规信息。这是微信平台对含用户生成内容的小程序的强制要求。</view>
+    <view class="privacy-p privacy-note">
+      上述服务均在中华人民共和国境内处理数据，我们不进行数据出境。
     </view>
   </view>
 
   <view class="card privacy-card">
     <view class="privacy-h">五、我们不会做什么</view>
-    <view class="privacy-p">· 不收集手机号、身份证号等任何证件信息</view>
-    <view class="privacy-p">· 不获取你的地理位置、通讯录、相册全部内容或聊天记录</view>
+    <view class="privacy-p">· 不调用微信定位接口获取你的精确地理位置（天气只用网络地址粗略判断城市，见第一节）</view>
+    <view class="privacy-p">· 不收集手机号、身份证号等任何证件信息，也不获取通讯录、相册全部内容或聊天记录</view>
+    <view class="privacy-p">· 不保存你的生日年份，不据此推算年龄</view>
     <view class="privacy-p">· 不用于广告投放或用户画像</view>
     <view class="privacy-p">· 本小程序不含支付功能，不会收集任何支付信息</view>
   </view>
@@ -91,6 +131,8 @@
   <view class="card privacy-card">
     <view class="privacy-h">六、你可以随时管理自己的信息</view>
     <view class="privacy-p">· 在「我的」页轻触头像或昵称，可随时更换或删除</view>
+    <view class="privacy-p">· 在「我的 → 生日」可随时修改或清除生日；清除后不再收到生日祝福</view>
+    <view class="privacy-p">· 在「我的 → 生日」可关闭「在家人生日提醒中展示」，关闭后家人看不到你的生日、也收不到相关推送，你自己仍能看到</view>
     <view class="privacy-p">· 在「我的 → 家庭管理」可退出当前家庭，退出后你在本家庭的点菜记录会一并清理</view>
     <view class="privacy-p">· 当家庭最后一名成员退出时，该家庭及其全部数据（含菜品图片）会被自动删除</view>
     <view class="privacy-p">· <text class="privacy-strong">撤回同意</text>：你可在微信中删除本小程序（微信下拉 → 最近 → 最近使用的小程序中移除），这将同时清空你的隐私协议授权状态；再次使用时可重新选择是否同意。你也可以在小程序的授权弹窗中选择「暂不使用」</view>
@@ -99,7 +141,7 @@
   <view class="card privacy-card">
     <view class="privacy-h">七、关于未成年人</view>
     <view class="privacy-p">
-      本小程序面向家庭日常使用。若你是未成年人，建议在家人陪同下阅读本协议并使用。
+      本小程序面向家庭日常使用。若你是未成年人，建议在家人陪同下阅读本协议并使用；生日等个人信息请在家人的指导下填写。
     </view>
   </view>
 
@@ -107,6 +149,9 @@
     <view class="privacy-h">八、协议的更新</view>
     <view class="privacy-p">
       如果我们调整了信息收集方式，会更新本协议并修改顶部日期。若涉及新增收集的信息类型，我们会重新征得你的同意后再使用。
+    </view>
+    <view class="privacy-p">
+      本次更新（2026 年 9 月 26 日）新增说明了「生日（仅月与日）」与「网络地址（IP）与大致城市」两项，并补充了第三方服务提供方的共享说明。
     </view>
   </view>
 

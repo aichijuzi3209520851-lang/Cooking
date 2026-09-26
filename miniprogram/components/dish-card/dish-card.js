@@ -24,6 +24,13 @@ Component({
     userRole: {
       type: String,
       value: 'eater'
+    },
+    // 推荐理由文案（已由 utils/recommend-copy.js 渲染好的展示文本）。
+    // 仅推荐 tab 传入：有值时占用卡片副标题位，替代「还没有人想吃」空态。
+    // 点菜列表不传 → 组件行为与改动前完全一致。
+    reasonText: {
+      type: String,
+      value: ''
     }
   },
 

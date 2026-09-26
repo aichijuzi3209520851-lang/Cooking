@@ -1,0 +1,105 @@
+/* components/birthday-popup/birthday-popup.wxss
+ * 生日公告弹窗（BIRTHDAY-003）。居中公告式，不是底部弹层——
+ * 「公告」的语义是打断一下、看一眼就走，居中卡片比半屏更贴。
+ * 字号一律走 --text-* 令牌，禁止 font-size 字面量。
+ */
+.bp-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-8);
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.bp-dialog {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  background: var(--surface-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-1);
+  text-align: center;
+  animation: bp-pop var(--dur-base) var(--ease-out);
+}
+
+@keyframes bp-pop {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 顶部圆形徽标：用强调色淡底，与页面其他强调元素同源 */
+.bp-badge {
+  width: 112rpx;
+  height: 112rpx;
+  margin: 0 auto var(--space-3);
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bp-badge-emoji {
+  font-size: 56rpx;
+  line-height: 1;
+}
+
+.bp-title {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+}
+
+.bp-body {
+  margin-top: var(--space-3);
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-loose);
+}
+
+/* 品牌祝福：米黄信息块，与「推荐卡 / 引导条」同族，读起来像一句题词 */
+.bp-blessing {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
+}
+
+.bp-blessing-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-loose);
+}
+
+.bp-btn {
+  margin-top: var(--space-5);
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.bp-btn-press {
+  opacity: 0.85;
+}
+
+.bp-btn-text {
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  color: var(--color-on-accent);
+  line-height: var(--lh-tight);
+}

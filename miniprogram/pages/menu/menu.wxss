@@ -129,6 +129,36 @@
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
+/* 家庭生日提醒条（BIRTHDAY-001）：用强调色淡染区别于米黄的米饭引导条，
+   传达「喜事」语义；纯提示不可点，所以没有 press 态 */
+.birthday-tip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-wash);
+  border: 1rpx solid var(--color-accent-soft);
+  box-sizing: border-box;
+}
+
+.birthday-tip-emoji {
+  font-size: var(--text-h2);
+  line-height: 1;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+}
+
+.birthday-tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent-deep);
+  line-height: var(--lh-normal);
+}
+
 .rice-tip-press {
   opacity: 0.75;
 }
@@ -201,6 +231,38 @@
   font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
   line-height: var(--lh-normal);
+}
+
+/* 天气 chip（WEATHER-002）：季节文案下方一行小字，无数据时整行隐藏不占位 */
+.recommend-weather {
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-1);
+}
+
+.recommend-weather-icon {
+  font-size: var(--text-season);
+  line-height: var(--lh-normal);
+  margin-right: var(--space-1);
+  flex-shrink: 0;
+}
+
+.recommend-weather-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
+}
+
+/* 天气链路诊断（DIAG-001）：只出现在开发/体验版且天气缺失时，字小、颜色弱，不抢视觉 */
+.recommend-weather-diag {
+  margin-top: var(--space-1);
+}
+
+.recommend-weather-diag-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
+  opacity: 0.8;
 }
 
 /* ============================================================

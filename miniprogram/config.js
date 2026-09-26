@@ -8,7 +8,8 @@ module.exports = {
   cloudEnv: 'lcw-d5gfcge7b41bedd02',
 
   notifyTemplates: [
-    // 'VOTE_TEMPLATE_ID_HERE',    // 点菜通知模板
-    // 'CANCEL_TEMPLATE_ID_HERE'   // 撤菜通知模板
+    // 'VOTE_TEMPLATE_ID_HERE',      // 点菜通知模板
+    // 'CANCEL_TEMPLATE_ID_HERE',    // 撤菜通知模板
+    // 'BIRTHDAY_TEMPLATE_ID_HERE'   // 生日祝福模板（BIRTHDAY-001）
   ]
 };
