@@ -1,14 +1,16 @@
 // 云函数：notify
-// 订阅消息通知：点菜通知、撤菜通知
+// 订阅消息通知：点菜通知、撤菜通知、生日祝福（BIRTHDAY-001）
 // 安全约定（SEC-002）：
 //   - 仅允许云函数间调用：内部密钥必须来自环境变量 NOTIFY_INTERNAL_KEY，缺失时 fail closed；
-//   - 模板 ID 从环境变量读取（NOTIFY_VOTE_TEMPLATE_ID / NOTIFY_CANCEL_TEMPLATE_ID），缺失时 fail closed；
+//   - 模板 ID 从环境变量读取（NOTIFY_VOTE_TEMPLATE_ID / NOTIFY_CANCEL_TEMPLATE_ID /
+//     NOTIFY_MENU_TEMPLATE_ID / NOTIFY_BIRTHDAY_TEMPLATE_ID），缺失时 fail closed；
 //   - 发送前校验家庭、菜品、成员关系，不能凭内部密钥向任意用户发送；
 //   - 日志不输出密钥、完整 event 或完整用户列表。
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
 const { getTodayStr } = require('./shared/date')
 const { getDishMap } = require('./shared/db-helpers')
+const birthday = require('./shared/birthday')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -27,7 +29,8 @@ function getTemplateIds() {
   return {
     vote: process.env.NOTIFY_VOTE_TEMPLATE_ID || '',
     cancel: process.env.NOTIFY_CANCEL_TEMPLATE_ID || '',
-    menu: process.env.NOTIFY_MENU_TEMPLATE_ID || ''
+    menu: process.env.NOTIFY_MENU_TEMPLATE_ID || '',
+    birthday: process.env.NOTIFY_BIRTHDAY_TEMPLATE_ID || ''
   }
 }
 
@@ -362,6 +365,92 @@ async function sendMenuDigest() {
   return { families: familyIds.length, notified: notifiedTotal, digested: digestedIds.length }
 }
 
+// ============ 生日祝福（BIRTHDAY-001）============
+
+// 分页拉取所有「设置了生日」的用户。家庭级应用规模很小，全表扫描足够；
+// 每页 100（TCB 单次上限），并设页面上限做保护。
+async function listBirthdayUsers() {
+  const PAGE = 100
+  const MAX_PAGES = 50
+  const out = []
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const res = await db.collection('users')
+      .skip(page * PAGE)
+      .limit(PAGE)
+      .get()
+    const rows = res.data || []
+    rows.forEach(u => { if (u && u.birthday) out.push(u) })
+    if (rows.length < PAGE) break
+  }
+  return out
+}
+
+/**
+ * 生日祝福推送：当天过生日的成员 → 通知其所在家庭的其他成员。
+ * 由定时触发器调用（见 config.json 的 birthdayWish）。
+ *
+ * ⚠️ 三条硬约束，改之前先读：
+ *   1. **只在当天发**（`nextOccurrence(...).days === 0`），不做提前预告 ——
+ *      《微信小程序平台运营规范》5.12.6 不允许向其他用户显示出生日期。
+ *   2. **只广播 `shared !== false` 的生日** —— 用户必须在设置生日时明确同意展示。
+ *   3. 消息文案**不复述具体日期**（不写「9月29日」），只说「今天」。
+ *
+ * 接收方仍受订阅消息授权限制：只有 notifyEnabled 为 true 的成员能收到，
+ * 未授权的人收不到 —— 这是微信的硬限制，不是本函数的缺陷。
+ * 寿星本人不发：他自己知道，而且一次推送要消耗收件人一次宝贵的授权额度。
+ */
+async function sendBirthdayWish() {
+  const templateId = getTemplateIds().birthday
+  if (!templateId) {
+    throw new ApiError('NOTIFY_TEMPLATE_MISSING', '未配置生日祝福模板（NOTIFY_BIRTHDAY_TEMPLATE_ID）')
+  }
+
+  const today = getTodayStr()
+  const users = await listBirthdayUsers()
+  const celebrants = users.filter(u => {
+    if (!birthday.isShared(u.birthday)) return false
+    const occ = birthday.nextOccurrence(today, u.birthday)
+    return !!occ && occ.days === 0
+  })
+  if (celebrants.length === 0) {
+    return { celebrants: 0, notified: 0, total: 0 }
+  }
+
+  let notified = 0
+  let total = 0
+  for (const person of celebrants) {
+    // 同一个人可能同时在多个家庭里，逐个家庭通知
+    const mineRes = await db.collection('family_members')
+      .where({ userId: person._id })
+      .get()
+    const familyIds = [...new Set((mineRes.data || []).map(m => m.familyId))]
+    if (familyIds.length === 0) continue
+
+    for (const familyId of familyIds) {
+      const membersRes = await db.collection('family_members')
+        .where({ familyId })
+        .get()
+      // 去重：family_members 里同一用户可能存在多条记录（线上确实出现过）
+      const memberIds = [...new Set((membersRes.data || []).map(m => m.userId))]
+        .filter(id => id !== person._id)
+      if (memberIds.length === 0) continue
+
+      const targets = await filterNotifyEnabled(memberIds)
+      total += memberIds.length
+      for (const openid of targets) {
+        // 字段名跟着模板走：模板字段变化时只改这里
+        const r = await sendOne(openid, templateId, {
+          thing1: thing(person.nickname, '家人'),
+          thing2: thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
+        })
+        if (r.success) notified++
+      }
+    }
+  }
+
+  return { celebrants: celebrants.length, notified, total }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -370,17 +459,21 @@ exports.main = async (event, context) => {
 
   // 定时触发器入口（NOTIFY-003）：SCF 定时触发的上下文既无 OPENID、也不带内部密钥，
   // 通过 Type === 'Timer' 识别（与 dailyReset 的「无 OPENID 即非客户端调用」同一判据）。
-  // 这里只放行「饭点汇总」一个动作，其余调用仍必须携带内部密钥，不削弱原有约束。
+  // 这里只放行定时任务本身，其余调用仍必须携带内部密钥，不削弱原有约束。
+  // 多个触发器时按 TriggerName 路由（菜单摘要 11:00/17:00、生日祝福 09:00）。
   if (!OPENID && payload.Type === 'Timer') {
+    const triggerName = payload.TriggerName || ''
+    const job = triggerName === 'birthdayWish' ? sendBirthdayWish : sendMenuDigest
+    const jobName = triggerName === 'birthdayWish' ? 'sendBirthdayWish' : 'sendMenuDigest'
     try {
-      const data = await sendMenuDigest()
+      const data = await job()
       return { success: true, data }
     } catch (err) {
-      console.error('[notify] sendMenuDigest 失败：', err.message)
+      console.error('[notify] ' + jobName + ' 失败：', err.message)
       return {
         success: false,
         errorCode: err.errorCode || 'INTERNAL_ERROR',
-        message: err.message || '汇总通知发送失败'
+        message: err.message || '定时通知发送失败'
       }
     }
   }
@@ -415,6 +508,10 @@ exports.main = async (event, context) => {
       case 'sendMenuDigest':
         // 供内部手动触发（与定时触发器等价），便于联调与补发
         data = await sendMenuDigest()
+        break
+      case 'sendBirthdayWish':
+        // 同上：手动触发，便于联调（不需要等到第二天早上）
+        data = await sendBirthdayWish()
         break
       default:
         return {

@@ -6,6 +6,9 @@ const { getOpenid, requireMember, requireChef, requireDishInFamily } = require('
 const { getTodayStr } = require('./shared/date')
 const { getUserMap, getDishMap } = require('./shared/db-helpers')
 const season = require('./shared/season')
+const festival = require('./shared/festival')
+const weatherMap = require('./shared/weather-map')
+const birthday = require('./shared/birthday')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -565,6 +568,135 @@ const W_FREQ_DAYS = 10      // 每多「一天被点过」
 const W_FREQ_VOTES = 1      // 每多一票（同一天多人点同一道菜）
 const W_SEASON_FOOD = 60    // 菜名命中当季食材
 const W_SEASON_CATEGORY = 5 // 季节分类加权系数（乘以 season 给出的 boost 值）
+// 节日食物分（FEST-001）：中秋/冬至/元宵等传统节日，菜名命中节日食物强推。
+// 不参与冷却乘区——过节就是要吃，昨天吃过月饼今天接着推（窗口本来就只有几天）。
+const W_FESTIVAL = 80
+
+// 天气加权调用 weather 云函数的超时（WEATHER-002）。
+// ⚠️ 实测（2026-09-26，模拟器→云端）：weather 冷启动含「IP 定位 + 天气」两次 HTTPS，
+//    首次 2041ms、热调用 511ms。原来设 2000ms 恰好卡死在冷启动线上 → 真机永远拿不到天气。
+//    放宽到 4500ms（vote 自身 timeout 10s，仍留有余量）。别再往回收。
+const WEATHER_TIMEOUT_MS = 4500
+
+// 实例级天气缓存：云函数实例存活期间，同 IP 15 分钟只打一次 weather。
+// 一家人先后打开菜单页，第一个人付冷启动成本，后面的人 0ms 命中。
+const WEATHER_CACHE_TTL = 15 * 60 * 1000
+const weatherCache = new Map() // ip -> { at, value }
+
+// 上一次天气链路的诊断快照（DIAG-001）。
+// 只在调用方显式传 debugWeather:true 时随响应返回——真机上出了问题，
+// 这是唯一能拿到「云函数→云函数」这一环内部结果的手段（CLS 未开通时日志查不到）。
+let lastWeatherDiag = null
+
+/**
+ * 获取天气数据 + 加权（雨推热汤/热天凉菜…）。任何失败返回 null，推荐回退原逻辑。
+ * 链路：本函数被小程序调用时的 CLIENTIP（用户真实出口 IP）
+ *   → 透传给 weather 云函数（event.ip）→ LBS IP 定位 → adcode → 天气。
+ *
+ * @param {string=} overrideIp 仅诊断用：显式指定 IP 走同一条链路（复现真机行为）
+ *
+ * 返回结构：{ city, weather, temperature, boost, categoryBoost, reason, note }
+ *   boost 为 null = 中性天气（晴/多云/舒适温度）——**天气数据照常返回**（前端 chip 显示），
+ *   只是不参与加权。data 与 boost 解耦，别再合并（否则中性天气连 chip 都不显示）。
+ * 每个失败分支必须 console.warn：手机上看不到的东西，云端日志要能定位。
+ * ⚠️ `cloud.callFunction` 会 reject（不只是超时）——必须 try/catch，否则异常被外层
+ *    `.catch(() => null)` 静默吞掉，连 warn 都不打，故障无从定位。
+ */
+async function fetchWeatherBoost(overrideIp) {
+  const t0 = Date.now()
+  const setDiag = (stage, extra) => {
+    lastWeatherDiag = Object.assign({ stage, ms: Date.now() - t0 }, extra || {})
+  }
+
+  const wxCtx = cloud.getWXContext() || {}
+  // ⚠️ CLIENTIP 只装 IPv4。手机流量大量走 IPv6 时 CLIENTIP 为空、真实地址在 CLIENTIPV6
+  //    （官方 SDK 文档：CLIENTIP=客户端 IPv4 地址，CLIENTIPV6=客户端 IPv6 地址）。
+  //    只读 CLIENTIP 会让 IPv6 用户永远拿不到天气——真机「看不到天气」的根因之一。
+  //    LBS 的 IP 定位对 IPv6 支持很差（实测返回 LBS_IP_382: IP无法定位），
+  //    所以 IPv6 只是「聊胜于无」的兜底，真正可靠的是前端把城市/坐标传进来。
+  const ipv4 = wxCtx.CLIENTIP
+  const ipv6 = wxCtx.CLIENTIPV6
+  const clientIp = overrideIp || ipv4 || ipv6
+  if (!clientIp) {
+    setDiag('no_client_ip', { ctxKeys: Object.keys(wxCtx), source: wxCtx.SOURCE })
+    console.warn('[vote][weather] CLIENTIP/CLIENTIPV6 均为空，跳过天气')
+    return null
+  }
+
+  const cached = weatherCache.get(clientIp)
+  if (cached && Date.now() - cached.at < WEATHER_CACHE_TTL) {
+    setDiag('cache_hit', { ip: clientIp })
+    return cached.value
+  }
+
+  let res
+  // 记录客户端 IP 形态：hasIpv4/hasIpv6 能一眼看出「是不是 IPv6-only 用户」
+  setDiag('calling', { ip: clientIp, hasIpv4: !!ipv4, hasIpv6: !!ipv6 })
+  try {
+    res = await Promise.race([
+      cloud.callFunction({ name: 'weather', data: { type: 'now', ip: clientIp } }),
+      new Promise((resolve) => setTimeout(() => resolve(null), WEATHER_TIMEOUT_MS))
+    ])
+  } catch (e) {
+    setDiag('call_threw', { ip: clientIp, err: String((e && e.message) || e) })
+    console.warn('[vote][weather] 调用 weather 抛异常：', e)
+    return null
+  }
+  if (!res) {
+    setDiag('timeout', { ip: clientIp, limit: WEATHER_TIMEOUT_MS })
+    console.warn('[vote][weather] 调用 weather 超时（>' + WEATHER_TIMEOUT_MS + 'ms）')
+    return null
+  }
+  const out = res.result
+  if (!out || !out.success) {
+    setDiag('weather_failed', {
+      ip: clientIp,
+      errorCode: out ? out.errorCode : '',
+      message: out ? out.message : '空响应'
+    })
+    console.warn('[vote][weather] weather 返回失败：',
+      out ? (out.errorCode + ' ' + out.message) : '空响应')
+    return null
+  }
+  const rt = out.data && out.data.realtime && out.data.realtime[0]
+  const infos = rt && rt.infos
+  if (!infos) {
+    setDiag('no_realtime', { ip: clientIp, raw: JSON.stringify(out.data).slice(0, 300) })
+    console.warn('[vote][weather] weather 返回缺少 realtime 数据')
+    return null
+  }
+
+  const raw = {
+    // 直辖市/IP 粗粒度定位时 city 可能为空，兜底用省份
+    city: rt.city || rt.province || '',
+    weather: infos.weather || '',
+    temperature: typeof infos.temperature === 'number' ? infos.temperature : null
+  }
+  const boost = weatherMap.buildWeatherBoost(raw.weather, raw.temperature)
+  console.log('[vote][weather] 命中：', raw.city, raw.weather, raw.temperature + '°C',
+    boost ? ('加权=' + boost.id) : '中性天气不加权')
+  setDiag('ok', {
+    ip: clientIp,
+    hasIpv4: !!ipv4,
+    hasIpv6: !!ipv6,
+    city: raw.city,
+    weather: raw.weather,
+    temperature: raw.temperature
+  })
+
+  const value = {
+    city: raw.city,
+    weather: raw.weather,
+    temperature: raw.temperature,
+    boost,
+    categoryBoost: boost ? boost.categoryBoost : null,
+    reason: boost ? boost.reason : '',
+    note: boost ? boost.note : ''
+  }
+  // 只缓存成功结果：失败多为瞬时抖动，缓存住会让 15 分钟内一直看不到天气
+  weatherCache.set(clientIp, { at: Date.now(), value })
+  return value
+}
 
 // 分类 → 季节理由文案（用于「分类加权」贡献分数更高时的解释）
 const CATEGORY_SEASON_REASON = {
@@ -660,6 +792,58 @@ async function countHistoryDays(db, _, familyId, sinceDate, today, hasTodayVotes
   }
 }
 
+// 家庭生日提醒（BIRTHDAY-001）：**提前 1 天 + 当天**，不做更早的预告。
+// ⚠️ 每多提前一天，《微信小程序平台运营规范》5.12.6（不得向其他用户显示出生日期）
+//    的暴露窗口就多一天。产品要求「提前一天 + 当天弹窗」，因此这里锁死为 1，
+//    并靠「只存月日不含年份」+「不写具体日期」+「用户明示同意」三道防线兜住。
+//    不要为了「早点提醒」把它调大。
+const BIRTHDAY_LOOKAHEAD_DAYS = 1
+
+/**
+ * 挑出「今天 / 明天过生日」的家庭成员，供菜单页提醒条与当天弹窗使用。
+ * 只返回谁（昵称数组）、还剩几天、以及「我」是不是寿星——**不产出文案**
+ * （文案归前端，与项目既有约定一致）。
+ * 任何失败都返回 null —— 提醒是增益功能，不能拖垮推荐主流程。
+ */
+async function collectBirthdayNotice(familyId, today, selfId) {
+  try {
+    const membersRes = await db.collection('family_members')
+      .where({ familyId })
+      .orderBy('joinedAt', 'asc')
+      .limit(100)
+      .get()
+    const members = membersRes.data || []
+    if (!members.length) return null
+
+    // 按 userId 去重：family_members 里同一用户可能存在多条记录
+    // （实测线上就有一条随机 id + 一条 m_<familyId>_<userId> 并存的情况），
+    // 不去重会把同一个人算成「2 位家人过生日」。
+    const seen = new Set()
+    const userIds = []
+    members.forEach(m => {
+      if (!m || !m.userId || seen.has(m.userId)) return
+      seen.add(m.userId)
+      userIds.push(m.userId)
+    })
+    if (!userIds.length) return null
+
+    const userMap = await getUserMap(db, _, userIds)
+    const entries = []
+    userIds.forEach(uid => {
+      const u = userMap[uid] || {}
+      // 只把「允许展示给家人」的生日纳入提醒（BIRTHDAY-002）：
+      // 平台运营规范 5.12.6 不允许向其他用户显示出生日期，用户关掉开关即不展示
+      if (!birthday.isShared(u.birthday)) return
+      // 带上 userId：云函数要判断「我」是不是寿星，前端据此给出不同的展示内容
+      entries.push({ userId: uid, nickname: u.nickname || '', birthday: u.birthday || null })
+    })
+    return birthday.pickUpcoming(today, entries, BIRTHDAY_LOOKAHEAD_DAYS, selfId)
+  } catch (e) {
+    console.warn('[vote][birthday] 查询家庭生日失败：', e)
+    return null
+  }
+}
+
 // 今日推荐主流程
 async function recommendDishes(data, openid) {
   const { familyId } = data
@@ -671,6 +855,16 @@ async function recommendDishes(data, openid) {
 
   const today = getTodayStr()
   const ctx = season.buildSeasonContext(today)
+  // 节日识别（FEST-001）：中秋/冬至/元宵等，命中窗口期则注入节日食物与文案
+  const fest = festival.getFestival(today)
+  // 节日食物并入候选食材：matchSeasonFood 子串命中后走节日分（优先级高于季节分）
+  const allFoods = fest ? ctx.foods.concat(fest.foods) : ctx.foods
+  // 天气加权（WEATHER-002）：雨推热汤/热天凉菜…内部超时 + 全失败静默，
+  // 不影响推荐主流程。
+  // debugWeather:true 时（DIAG-001）允许用 debugIp 显式指定 IP 复现真机链路，
+  // 并把诊断快照随响应返回——真机排查用，正常调用不带。
+  const dbgWeather = data.debugWeather === true
+  const wxBoost = await fetchWeatherBoost(dbgWeather ? data.debugIp : null).catch(() => null)
 
   // 1. 候选菜品：隐藏菜品不参与推荐（隐藏通常意味着「暂时不想吃」）
   const dishRes = await db.collection('dishes')
@@ -698,6 +892,27 @@ async function recommendDishes(data, openid) {
     ready,
     // 今天已经点过的菜：前端把推荐项标成「已想吃」，避免推一道刚选好的菜
     todayDishIds,
+    // 命中的传统节日（FEST-001）：null=无节日。前端用它顶置节日提示与文案
+    festival: fest ? {
+      id: fest.id,
+      name: fest.name,
+      emoji: fest.emoji,
+      tip: fest.tip,
+      offset: fest.offset
+    } : null,
+    // 天气（WEATHER-002）：null=无天气数据（模拟器无 CLIENTIP / 获取失败 / 中性天气）。
+    // 前端推荐区显示天气 chip，noteText 可用 tip
+    weather: wxBoost ? {
+      city: wxBoost.city,
+      weather: wxBoost.weather,
+      temperature: wxBoost.temperature,
+      tip: wxBoost.note
+    } : null,
+    // 生日提醒（BIRTHDAY-001）：今天 / 明天有家人生日时才有值，其余时间为 null。
+    // { days: 0|1, date, names: [昵称...], selfIncluded }，文案由前端生成。
+    birthday: await collectBirthdayNotice(familyId, today, openid),
+    // 天气链路诊断快照（DIAG-001）：仅 debugWeather:true 时返回，正常调用为 undefined
+    weatherDiag: dbgWeather ? lastWeatherDiag : undefined,
     season: {
       season: ctx.season,
       label: ctx.seasonLabel,
@@ -723,16 +938,24 @@ async function recommendDishes(data, openid) {
     const stat = statMap[dish._id] || { days: 0, votes: 0, lastDate: '' }
     const freqScore = Math.min(stat.days, 10) * W_FREQ_DAYS +
       Math.min(stat.votes, 40) * W_FREQ_VOTES
-    const food = season.matchSeasonFood(dish.name, ctx.foods)
+    const food = season.matchSeasonFood(dish.name, allFoods)
     const foodScore = food ? W_SEASON_FOOD : 0
     const catScore = (ctx.categoryBoost[dish.category] || 0) * W_SEASON_CATEGORY
     const seasonalScore = foodScore + catScore
+    // 节日食物：命中窗口期内的节日食物（月饼/饺子/粽子/汤圆…）给独立高分
+    const isFestFood = !!(food && fest && fest.foods.indexOf(food) > -1)
+    const festivalScore = isFestFood ? W_FESTIVAL : 0
+    // 天气分类分（与季节分类同乘区口径）：负系数即降权
+    const wxMap = wxBoost && wxBoost.categoryBoost
+    const weatherCatScore = wxMap ? (wxMap[dish.category] || 0) * W_SEASON_CATEGORY : 0
 
     // 冷却：最近 COOLDOWN_DAYS 天内吃过 → 整体降权（时令分一并打折，
-    // 否则昨天刚喝过汤，今天还会被时令理由推回来）
+    // 否则昨天刚喝过汤，今天还会被时令理由推回来）。
+    // 节日分豁免冷却——过节就该吃，且窗口只有几天。
     const gap = stat.lastDate ? daysBetween(stat.lastDate, today) : -1
     const cooling = gap >= 0 && gap < COOLDOWN_DAYS
-    const score = (freqScore + seasonalScore) * (cooling ? COOLDOWN_FACTOR : 1)
+    const score = (freqScore + seasonalScore) * (cooling ? COOLDOWN_FACTOR : 1) +
+      festivalScore + weatherCatScore
 
     return {
       dishId: dish._id,
@@ -746,6 +969,9 @@ async function recommendDishes(data, openid) {
       food,
       freqScore,
       seasonalScore,
+      festivalScore,
+      isFestFood,
+      weatherCatScore,
       score
     }
   })
@@ -770,12 +996,24 @@ async function recommendDishes(data, openid) {
     }
   }
 
-  // 5. 生成推荐理由：谁对分数的贡献大就说明谁，保证「理由」与「排序」自洽
+  // 5. 生成推荐理由：谁对分数的贡献大就说明谁，保证「理由」与「排序」自洽。
+  //    节日优先级最高（festival > seasonal > frequent > diverse）：
+  //    节日当天用户最想听的就是「过节吃什么」，文案由 festival.js 按节日定稿。
   const items = picked.map(item => {
     const isSeasonal = !!(item.food || item.seasonalScore > 0)
     let reason = ''
     let reasonType = ''
-    if (item.days >= 2 && item.freqScore >= item.seasonalScore) {
+    let festivalId = ''
+    if (item.isFestFood) {
+      const meta = festival.FESTIVAL_META[fest.id]
+      reason = meta.reason ? meta.reason(item.food) : `${fest.name} · ${item.food}`
+      reasonType = 'festival'
+      festivalId = fest.id
+    } else if (item.weatherCatScore > 0 && wxBoost) {
+      // 天气理由：雨推热汤/热天凉菜…文案由 weather-map 按天气定稿
+      reason = wxBoost.reason
+      reasonType = 'weather'
+    } else if (item.days >= 2 && item.freqScore >= item.seasonalScore) {
       reason = `最近 ${FREQ_WINDOW_DAYS} 天点了 ${item.days} 次`
       reasonType = 'frequent'
     } else if (item.food) {
@@ -791,7 +1029,7 @@ async function recommendDishes(data, openid) {
       reason = '换个口味试试'
       reasonType = 'diverse'
     }
-    return { ...item, seasonal: isSeasonal, reason, reasonType }
+    return { ...item, seasonal: isSeasonal, reason, reasonType, festivalId }
   })
 
   return { ...base, items }

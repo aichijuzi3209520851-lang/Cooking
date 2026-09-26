@@ -1,0 +1,9 @@
+{
+  "name": "weather",
+  "version": "1.0.0",
+  "description": "腾讯位置服务天气代理：IP 定位 → adcode → 实时/预报天气（30 分钟缓存）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "2.6.3"
+  }
+}

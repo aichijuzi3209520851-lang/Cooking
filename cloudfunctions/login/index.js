@@ -3,6 +3,7 @@
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
 const { validateAvatarUrl } = require('./shared/validators')
+const { validateBirthday } = require('./shared/birthday')
 const { assertTextSafe, assertImageSafe } = require('./shared/security')
 
 cloud.init({
@@ -130,10 +131,14 @@ async function setNotifyStatus(data, openid) {
   }
 }
 
-// 持久化用户资料修改（PROFILE-001）：昵称 / 自定义头像
+// 持久化用户资料修改（PROFILE-001 / BIRTHDAY-001）：昵称 / 自定义头像 / 生日
 async function updateProfile(data, openid) {
   const { nickname, avatarUrl } = data
-  if (nickname === undefined && avatarUrl === undefined) {
+  // 生日（BIRTHDAY-001）：显式传 null = 清除；完全不传 = 不改动。
+  // 用 `!== undefined` 判断，比 hasOwnProperty 更稳——前端展开对象时
+  // 可能带出值为 undefined 的键，那种情况应视为「没传」，不能被当成清除。
+  const hasBirthday = data.birthday !== undefined
+  if (nickname === undefined && avatarUrl === undefined && !hasBirthday) {
     throw new ApiError('INVALID_PARAM', '没有需要更新的内容')
   }
 
@@ -163,6 +168,11 @@ async function updateProfile(data, openid) {
       cloud.deleteFile({ fileList: [oldUser.avatarUrl] }).catch(() => null)
     }
   }
+  // 生日（BIRTHDAY-001）：只存月日不存年份；传 null 表示清除。
+  // 生日不是文本 UGC，无需走内容安全；但属个人信息，会展示给同一家庭成员。
+  if (hasBirthday) {
+    updateData.birthday = validateBirthday(data.birthday)
+  }
 
   // 内容安全：昵称（文本 UGC，场景=资料）+ 自定义头像（图片 UGC）
   if (updateData.nickname !== undefined && updateData.nickname !== oldUser.nickname) {
@@ -176,7 +186,8 @@ async function updateProfile(data, openid) {
 
   return {
     nickname: updateData.nickname !== undefined ? updateData.nickname : oldUser.nickname,
-    avatarUrl: updateData.avatarUrl !== undefined ? updateData.avatarUrl : (oldUser.avatarUrl || '')
+    avatarUrl: updateData.avatarUrl !== undefined ? updateData.avatarUrl : (oldUser.avatarUrl || ''),
+    birthday: updateData.birthday !== undefined ? updateData.birthday : (oldUser.birthday || null)
   }
 }
 

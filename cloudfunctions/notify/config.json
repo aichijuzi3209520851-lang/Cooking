@@ -14,6 +14,11 @@
       "name": "menuDigestEvening",
       "type": "timer",
       "config": "0 0 17 * * * *"
+    },
+    {
+      "name": "birthdayWish",
+      "type": "timer",
+      "config": "0 0 9 * * * *"
     }
   ]
 }
