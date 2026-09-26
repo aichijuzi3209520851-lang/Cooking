@@ -128,6 +128,7 @@
 | `notify` | `NOTIFY_VOTE_TEMPLATE_ID` | 是（上线） | 点菜通知订阅消息模板 ID |
 | `notify` | `NOTIFY_CANCEL_TEMPLATE_ID` | 是（上线） | 撤菜通知订阅消息模板 ID |
 | `notify` | `NOTIFY_MENU_TEMPLATE_ID` | 否 | 拍板菜单 / 菜单提交通知模板 ID（未配置时这两类通知直接跳过，不影响其余通知） |
+| `notify` | `NOTIFY_BIRTHDAY_TEMPLATE_ID` | 否 | 生日祝福订阅消息模板 ID（BIRTHDAY-001）。未配置时 `sendBirthdayWish` fail closed，只是当天不发推送，不影响小程序内的祝福条 |
 | `notify` | `NOTIFY_MP_STATE` | 否 | 订阅消息跳转版本：`formal`（默认）/ `trial`（体验版联调，正式版收不到消息时改这里）/ `develop` |
 | `vote` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；缺失时跳过通知并记录日志（不阻塞投票主流程） |
 | `dish` | `NOTIFY_INTERNAL_KEY` | 是 | 与 notify 相同密钥；隐藏/删除菜品清票时通知被影响成员，缺失时跳过 |
@@ -166,6 +167,25 @@
 发完回写 `menu_submissions.notifiedAt` 防止重复；没有任何新提交的时间点一条都不发。
 
 未配置时不会报错，只是厨师收不到自动汇总 —— 需自行打开小程序查看（汇总 tab 仍有「有几人交了菜单」的角标提示）。
+
+### 6.3 notify 生日祝福触发器（BIRTHDAY-001）
+
+控制台 → 云函数 → `notify` → 触发器 → 再新建一个（名称与 cron 同时声明在 `cloudfunctions/notify/config.json`）：
+
+| 触发器名称 | Cron（7 段） | 说明 |
+|:---|:---|:---|
+| `birthdayWish` | `0 0 9 * * * *` | 每天 09:00 检查当天过生日的成员，向同家庭其他成员发一条生日祝福 |
+
+`notify` 的入口按 `TriggerName` 路由：`birthdayWish` 走 `sendBirthdayWish`，其余（含菜单摘要）走 `sendMenuDigest`。
+
+作用与前提（详见 `docs/deployment/privacy-agreement.md` §2.4 / §2.5）：
+
+- **只在当天发**，不做提前预告（运营规范 5.12.6 不允许向其他用户显示出生日期）；
+- **只发「明确同意展示」的人**（`users.birthday.shared !== false`）；
+- 寿星本人不发；未授权订阅消息的成员收不到（微信硬限制）；
+- 需要先申请订阅消息模板并配置 `NOTIFY_BIRTHDAY_TEMPLATE_ID`，否则该触发器 fail closed（只是不发，不报错）。
+
+未配置时小程序内的生日祝福条**照常工作**（那条走 `vote.recommend`，与推送无关）。
 
 ## 7. 订阅消息（NOTIFY-001）
 

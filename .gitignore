@@ -34,3 +34,7 @@ desktop.ini
 # ---- 本地验证产物 / 微信开发者工具测试配置 ----
 .check/
 minitest/
+.tmp-*.png
+.tmp-*.js
+# 目录形式的临时产物（如 .tmp/ 下放的验证截图/中间文件）
+.tmp/
