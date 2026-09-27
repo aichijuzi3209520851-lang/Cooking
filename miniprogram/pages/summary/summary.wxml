@@ -148,3 +148,6 @@
   bind:confirm="onRejectConfirm"
   bind:cancel="onRejectCancel"
 />
+
+<!-- 版本更新公告弹窗（每版本进入小程序弹一次，自包含组件） -->
+<changelog-popup class="cl-popup-host" />

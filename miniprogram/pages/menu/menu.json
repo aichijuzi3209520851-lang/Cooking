@@ -6,6 +6,7 @@
     "empty-state": "/components/empty-state/empty-state",
     "privacy-popup": "/components/privacy-popup/privacy-popup",
     "reject-reason": "/components/reject-reason/reject-reason",
-    "birthday-popup": "/components/birthday-popup/birthday-popup"
+    "birthday-popup": "/components/birthday-popup/birthday-popup",
+    "changelog-popup": "/components/changelog-popup/changelog-popup"
   }
 }

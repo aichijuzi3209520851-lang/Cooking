@@ -2,6 +2,7 @@
   "navigationBarTitleText": "菜单",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "empty-state": "/components/empty-state/empty-state"
+    "empty-state": "/components/empty-state/empty-state",
+    "changelog-popup": "/components/changelog-popup/changelog-popup"
   }
 }

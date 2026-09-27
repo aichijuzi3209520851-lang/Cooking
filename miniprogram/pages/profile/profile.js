@@ -1,6 +1,7 @@
 // pages/profile/profile.js
 const theme = require('../../utils/theme.js');
 const config = require('../../config.js');
+const changelog = require('../../utils/changelog.js');
 const { familyApi, notifyApi, userApi } = require('../../utils/api.js');
 const birthdayUtil = require('../../utils/birthday.js');
 const {
@@ -14,7 +15,7 @@ const {
 } = require('../../utils/util.js');
 const app = getApp();
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = changelog.getVersion();
 
 // 通知模板是否已配置（BADGE-002）：未配置时通知入口为死路，不显示引导徽标
 function notifyConfigured() {
@@ -445,6 +446,11 @@ Page({
   // 隐私协议
   onPrivacy() {
     wx.navigateTo({ url: '/pages/agreement/privacy/privacy' });
+  },
+
+  // 版本更新记录（公告模块）：查看历史版本更新内容
+  onChangelog() {
+    wx.navigateTo({ url: '/pages/changelog/changelog' });
   },
 
   // 关于

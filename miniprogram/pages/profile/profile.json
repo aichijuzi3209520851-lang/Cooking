@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "我的",
   "usingComponents": {
-    "privacy-popup": "/components/privacy-popup/privacy-popup"
+    "privacy-popup": "/components/privacy-popup/privacy-popup",
+    "changelog-popup": "/components/changelog-popup/changelog-popup"
   }
 }

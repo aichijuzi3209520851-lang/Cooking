@@ -1,0 +1,25 @@
+<!--pages/changelog/changelog.wxml-->
+<view class="container changelog-page {{themeClass}}">
+  <view
+    class="cl-card"
+    wx:for="{{releases}}"
+    wx:key="version"
+  >
+    <view class="cl-card-head">
+      <view class="cl-version-row">
+        <text class="cl-version">v{{item.version}}</text>
+        <text class="cl-current-tag" wx:if="{{item.version === currentVersion}}">当前版本</text>
+      </view>
+      <text class="cl-date">{{item.date}}</text>
+    </view>
+
+    <view class="cl-card-title">{{item.title}}</view>
+
+    <view class="cl-card-item" wx:for="{{item.items}}" wx:for-item="change" wx:key="*this">
+      <view class="cl-dot"></view>
+      <text class="cl-change">{{change}}</text>
+    </view>
+  </view>
+
+  <view class="cl-footer caption">—— 就这些，饭点见 ——</view>
+</view>

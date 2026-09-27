@@ -89,3 +89,33 @@ test('wx.showModal 按钮文案不超过 4 个字符（超长会导致整个调�
 
   assert.deepEqual(bad, [], `以下按钮文案超过 4 字符，wx.showModal 会静默失败：\n${bad.join('\n')}`);
 });
+
+test('公告模块：弹窗挂载全部 tab 页 + 我的页入口 + 版本号单源', () => {
+  // 1. 历史记录页已注册
+  const appConfig = JSON.parse(fs.readFileSync(path.join(ROOT, 'miniprogram/app.json'), 'utf8'));
+  assert.ok(appConfig.pages.includes('pages/changelog/changelog'), 'changelog 页未注册');
+
+  // 2. 四个 tab 页都注册并挂载了公告弹窗（进入小程序落在哪个 tab 都能看到）
+  for (const tab of ['menu/menu', 'summary/summary', 'menu-board/menu-board', 'profile/profile']) {
+    const json = JSON.parse(fs.readFileSync(path.join(ROOT, `miniprogram/pages/${tab}.json`), 'utf8'));
+    assert.equal(
+      json.usingComponents['changelog-popup'],
+      '/components/changelog-popup/changelog-popup',
+      `${tab} 未注册 changelog-popup`
+    );
+    const wxml = fs.readFileSync(path.join(ROOT, `miniprogram/pages/${tab}.wxml`), 'utf8');
+    assert.match(wxml, /<changelog-popup/, `${tab} 未挂载 <changelog-popup />`);
+  }
+
+  // 3. 我的页有历史记录入口
+  const profileWxml = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/profile/profile.wxml'), 'utf8');
+  assert.match(profileWxml, /版本更新记录/, '「我的」页缺少版本更新记录入口');
+  assert.match(profileWxml, /bindtap="onChangelog"/, '入口未绑定 onChangelog');
+
+  // 4. 版本号单源：profile 从 changelog 取版本，不再手写字面量
+  const profileJs = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/profile/profile.js'), 'utf8');
+  assert.match(profileJs, /changelog\.getVersion\(\)/, '版本号应从 utils/changelog.js 单源获取');
+  assert.doesNotMatch(profileJs, /'1\.\d+\.\d+'/, 'profile 页不得再硬编码版本号');
+  const changelogJs = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/changelog.js'), 'utf8');
+  assert.match(changelogJs, /getVersion/, 'changelog 缺少 getVersion 单源出口');
+});

@@ -155,6 +155,10 @@
           <text class="list-item-label">隐私协议</text>
           <text class="list-item-arrow">›</text>
         </view>
+        <view class="list-item list-item-bordered" bindtap="onChangelog">
+          <text class="list-item-label">版本更新记录</text>
+          <text class="list-item-arrow">›</text>
+        </view>
         <view class="list-item list-item-bordered" bindtap="onAbout">
           <text class="list-item-label">关于</text>
           <text class="list-item-arrow">›</text>
@@ -252,3 +256,6 @@
     </view>
   </view>
 </view>
+
+<!-- 版本更新公告弹窗（每版本进入小程序弹一次，自包含组件） -->
+<changelog-popup class="cl-popup-host" />
