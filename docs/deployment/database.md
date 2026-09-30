@@ -17,6 +17,7 @@
 | `notify_ledger` | 第一票通知台账（防并发重复通知），`_id` = `n_{date}_{familyId}_{dishId}` |
 | `rice_reports` | 今日米饭饭量上报，`_id` = `r_{date}_{familyId}_{userId}`（幂等 upsert，dailyReset 清理昨日） |
 | `menu_submissions` | 今日菜单提交记录（NOTIFY-002），`_id` = `s_{date}_{familyId}_{userId}`（每人每天一条，重复提交覆盖；dailyReset 清理昨日） |
+| `app_config` | 全局运营配置（PRIV-002），`_id` = `privacy_agreement` 存放《隐私协议》全文，控制台改文档即实时生效、无需发版 |
 
 ## 2. 数据库安全规则
 
@@ -41,6 +42,7 @@
 | `vote_history` | 家庭成员可见 | false |
 | `notify_ledger` | false（仅云函数） | false |
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
+| `app_config` | false（仅云函数，经 `login.getAppConfig` 下发） | false |
 
 > ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效，需在菜单/汇总页以轮询 todayList 替代（代码中 watcher 异常已有重连与下拉刷新兜底）。
 
@@ -57,6 +59,7 @@
 | `notify_ledger` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `rice_reports` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `menu_submissions` | （文档未列） | `{"read": false, "write": false}` | 与 `rice_reports` 一致，仅云函数 |
+| `app_config` | （文档未列） | `{"read": false, "write": false}` | 与 `notify_ledger` 一致，仅云函数（PRIV-002） |
 
 **影响**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 因无客户端读权限必然失败。
 代码已有兜底（`onError` 限次重连 → 失败后提示下拉刷新），不会崩溃，但**实时性降级为手动刷新**。
@@ -222,6 +225,20 @@
 3. CLI：`ENV_ID=xxx ./scripts/uploadCloudFunction.sh`（内部先同步，再 `tcb fn deploy`）。
 
 修改 `shared/` 下任何模块后，须重新同步并重新部署**所有** 6 个函数（全部依赖它）。
+
+> ⚠️ **CLI 3.8.4 静默失败坑（2026-09-30 实测，login 函数踩中）**：
+> 不带 `--config-file` 的 `tcb fn deploy <fn> -e <ENV> --force` 会「智能推断」配置并试图把运行时改成 `Nodejs20.19`，
+> 平台拒绝后**整个代码更新被静默回滚**——CLI 照样报 `deployed successfully`，但 `fn detail` 的 Code size 不变、
+> `fn code download` 拉回旧代码、`fn invoke` 跑的还是旧逻辑。`scripts/uploadCloudFunction.sh` 目前就是这种写法，
+> 在 CLI 3.8.4 下**不可信**。
+> 已验证可靠的更新姿势（仅改代码、不带环境变量时）：
+> 1. 建 staging 目录：只拷 `index.js` / `package.json` / `config.json` / `shared/`（**绝不含 node_modules**，云端自动装依赖）；
+> 2. staging 里放显式 `cloudbaserc.json`（`functions[0].runtime` 钉住 `"Nodejs18.15"`、`handler: "index.main"`）；
+> 3. 在 staging 目录内执行 `tcb fn deploy <fn> -e <ENV> --dir <fn> --force`（成功时日志显示 ZIP base64/COS 上传）；
+> 4. **必须验证**：`tcb fn detail` 看 Code size 是否变化 + `tcb fn invoke` 验证新逻辑（本条不验证等于没部署）。
+> ⚠️ 给 vote / notify / dish 等带环境变量的函数补 `cloudbaserc.json` 时，
+> **必须把远端现有 `envVariables` / `triggers` 完整声明进配置**——配置文件里的值会覆盖远端，漏了会清掉线上密钥/触发器。
+> 另：`tcb db nosql execute` 可用 Mongo 原生命令建集合/插文档（PRIV-002 的 `app_config` 种子即由此写入）。
 
 ## 9. 验证命令（本地可执行）
 

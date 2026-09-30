@@ -147,6 +147,12 @@ const userApi = {
   updateProfile: (fields) => call('login', { action: 'updateProfile', ...fields }, true)
 };
 
+// 全局配置下发（PRIV-002）：隐私协议等运营内容存放在 app_config 集合，
+// 控制台改文档即实时生效，无需发版；客户端读写全关，只能经云函数读取。
+const configApi = {
+  getAppConfig: () => call('login', { action: 'getAppConfig' })
+};
+
 module.exports = {
   ApiError,
   call,
@@ -159,5 +165,6 @@ module.exports = {
   weatherApi,
   historyApi,
   notifyApi,
-  userApi
+  userApi,
+  configApi
 };

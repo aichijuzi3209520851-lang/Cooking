@@ -70,7 +70,7 @@ test('CLOUD-DIR-002：各函数 shared/ 拷贝与源 shared/ 完全一致', () =
 });
 
 const DOCUMENTED_ACTIONS = {
-  login: ['login', 'setNotifyStatus', 'updateProfile'],
+  login: ['login', 'setNotifyStatus', 'updateProfile', 'getAppConfig'],
   family: ['create', 'joinByCode', 'list', 'switch', 'members', 'removeMember', 'leave', 'updateRole', 'updateMemberRole'],
   dish: ['list', 'add', 'update', 'delete', 'toggleHidden'],
   vote: ['add', 'cancel', 'chefCancel', 'decideMenu', 'todayList', 'todaySubmissions', 'submitMenu', 'recommend', 'setRice', 'getRice', 'history'],

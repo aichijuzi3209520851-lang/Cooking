@@ -1,5 +1,6 @@
 // 云函数：login
-// 登录并初始化用户信息，返回用户加入的家庭列表；同时承载用户资料类小操作（setNotifyStatus）
+// 登录并初始化用户信息，返回用户加入的家庭列表；
+// 同时承载用户资料类小操作（setNotifyStatus / updateProfile）与全局配置下发（getAppConfig）
 const cloud = require('wx-server-sdk')
 const { ApiError } = require('./shared/api-error')
 const { validateAvatarUrl } = require('./shared/validators')
@@ -191,6 +192,25 @@ async function updateProfile(data, openid) {
   }
 }
 
+// 全局配置下发（PRIV-002）：隐私协议等运营内容存放在 app_config 集合（_id 固定），
+// 在控制台改文档即实时生效，无需发版。客户端读写全关，只能经云函数读取。
+// 任何失败都返回 { privacy: null }：协议页有内置兜底文本，绝不因配置问题报错。
+async function getAppConfig() {
+  const res = await db.collection('app_config').doc('privacy_agreement').get().catch(() => null)
+  const doc = res && res.data
+  if (!doc) return { privacy: null }
+  return {
+    privacy: {
+      version: doc.version,
+      effectiveDate: doc.effectiveDate,
+      title: doc.title,
+      lead: doc.lead,
+      sections: doc.sections,
+      footer: doc.footer
+    }
+  }
+}
+
 // ============ 入口 ============
 
 exports.main = async (event, context) => {
@@ -209,6 +229,9 @@ exports.main = async (event, context) => {
         break
       case 'updateProfile':
         data = await updateProfile(event, openid)
+        break
+      case 'getAppConfig':
+        data = await getAppConfig()
         break
       default:
         return {

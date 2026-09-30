@@ -5,6 +5,12 @@
 # 依赖：已执行 `npm install -g @cloudbase/cli` 并完成 `tcb login`
 set -euo pipefail
 
+# ⚠️ CLI 3.8.4 实测坑（2026-09-30）：不带 --config-file 的 `tcb fn deploy` 会「智能推断」配置
+# （把运行时改成 Nodejs20.19），平台拒绝后**整个代码更新被静默回滚**——照样报 deployed successfully，
+# 但云端代码不变（docs/deployment/database.md §8 有完整复现与已验证的更新姿势）。
+# 在修复本脚本（显式 cloudbaserc.json + 部署后 Code size/invoke 校验）之前，
+# 请改用 §8 的 staging 目录 + cloudbaserc.json 单函数更新流程，并用 `tcb fn invoke` 验证。
+
 ENV_ID="${ENV_ID:?请先设置环境变量 ENV_ID，例如：ENV_ID=lcw-xxxxxxxx ./scripts/uploadCloudFunction.sh}"
 
 # 云函数列表。**cloudfunctions/ 下每个一级子目录都会被开发者工具当成云函数**，

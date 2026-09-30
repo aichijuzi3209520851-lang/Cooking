@@ -218,10 +218,12 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 | 文件 | 作用 |
 |:---|:---|
 | `miniprogram/utils/privacy.js` | 隐私授权状态管理：`init` / `subscribe` / `openContract` / `agree` / `disagree` |
+| `miniprogram/utils/privacy-content.js` | 《隐私协议》**内容单源**（PRIV-002）：内置兜底文本 + 云端文档归一化校验 + 本地缓存 |
 | `miniprogram/components/privacy-popup/` | 全局隐私授权弹窗（同意按钮使用 `open-type="agreePrivacyAuthorization"`） |
 | `miniprogram/app.js` | `onLaunch` 中调用 `privacy.init()`：注册 `wx.onNeedPrivacyAuthorization` 全局监听 + `wx.getPrivacySetting` 查询 |
 | `miniprogram/app.json` | `"__usePrivacyCheck__": true` |
-| `miniprogram/pages/agreement/privacy/` | 小程序内《隐私协议》页（内容与后台指引一致） |
+| `miniprogram/pages/agreement/privacy/` | 小程序内《隐私协议》页：**云端 `app_config` 实时下发 + 内置文本兜底**（见 §7） |
+| `cloudfunctions/login` | action `getAppConfig`：读取 `app_config` 集合并下发（客户端读写全关，只能经云函数读取） |
 
 **已接入弹窗的页面**（覆盖全部隐私接口调用点）：
 
@@ -277,7 +279,67 @@ fail api scope is not declared in the privacy agreement  (errno 112)
 
 ---
 
-## 7. 相关文档
+## 7. 隐私协议的实时更新（PRIV-002，2026-09-30）
+
+协议页此前整页硬编码在 WXML 里，**改一个字都要重新发版**。现在内容改为「云端下发 + 内置兜底」：
+
+```
+云开发控制台 → 数据库 → app_config 集合 → privacy_agreement 文档
+        │  （改 JSON 即生效，无需发版、无需重新上传云函数）
+        ▼
+login.getAppConfig ──读取──► app_config（客户端读写全关，仅云函数可访问）
+        │
+        ▼
+协议页 onLoad：本地缓存（上次云端版）→ 内置兜底文本 立即渲染
+        │  随后静默拉取云端最新版
+        ▼
+normalizePrivacyDoc 严格校验 ──合法──► 替换渲染 + 写本地缓存
+                     └─非法/失败─► 保持兜底内容（绝不渲染半截 JSON）
+```
+
+### 7.1 怎么改协议（日常操作，2 分钟）
+
+1. **导出现行内容**：云开发控制台 → 数据库 → `app_config` → 打开 `privacy_agreement` 文档，
+   复制全部 JSON（不要从零手写，始终基于现行版本修改，防止漏掉合规条款）；
+   若该文档尚未创建，运行 `node scripts/privacy-config.js` 生成与内置兜底一致的种子 JSON。
+2. **修改内容**：改 `sections` 里的文字；**`version` 整数 +1**；**`effectiveDate` 改为今天**（`YYYY-MM-DD`，
+   页面顶部「更新日期」就是它）。
+3. **保存**：控制台保存文档即生效。用户下次打开协议页（登录页「隐私协议」链接或「我的 → 隐私协议」）
+   就会拉到新版本并缓存。
+
+> 字段结构说明见 `miniprogram/utils/privacy-content.js` 顶部注释：
+> `sections[].blocks` 支持 `item`（小标题 + 段落）、`para`（普通段，段落可带 `strong` 加粗前缀）、
+> `note`（灰底补充说明）三种块。改坏了结构也不会出事——前端校验不过会自动回退内置文本。
+
+### 7.2 数据契约与防线
+
+| 防线 | 说明 |
+|:---|:---|
+| **归一化校验（fail closed）** | `normalizePrivacyDoc` 对 version（正整数）、effectiveDate（`YYYY-MM-DD`）、title、sections/blocks/paras 逐层校验，任何一处非法整体返回 `null`，回退内置文本——云端文档被误改坏最多导致「显示旧版」，不会渲染半截内容 |
+| **客户端读写全关** | `app_config` 规则 `{"read": false, "write": false}`（`docs/deployment/security-rules/app_config.json`），只有云函数能读，用户无法篡改下发内容 |
+| **缓存二次校验** | 本地缓存读取后**再走一遍归一化**，旧版本代码写入的缓存/被篡改的缓存同样不跳过校验 |
+| **静默降级** | 拉取失败（弱网/云函数异常/未配置集合）不打扰用户，协议页永远有内容可看 |
+| **单测锁定** | `tests/unit/privacy-content.test.js`：BUILTIN 合法性 + 合规关键条目防误删（生日/只存月日/IP/撤回同意/数据不出境）+ 校验器边界 + 缓存封装 |
+
+### 7.3 初装清单（一次性）
+
+- [ ] 控制台 → 数据库 → **新建集合 `app_config`** → 权限设置粘贴 `docs/deployment/security-rules/app_config.json`（读写全关）
+- [ ] `node scripts/privacy-config.js` → 复制输出 → `app_config` → 添加文档（`_id` 写为 `privacy_agreement`）→ 粘贴 JSON
+- [ ] 部署 `login` 云函数（含 `getAppConfig`；`login` 不涉及 shared 变更时普通上传即可）
+- [ ] 验证：小程序打开协议页 → 控制台把 `effectiveDate` 改成任意测试值 → 重新进协议页顶部日期变化 → 改回
+
+### 7.4 与微信公众平台《用户隐私保护指引》的关系
+
+本页内容是**面向用户的人话版**；微信后台《用户隐私保护指引》（`wx.openPrivacyContract` 打开的那份）
+是**平台合规事实源**，两者内容保持一致但**更新通道不同**：
+
+- 改了信息收集方式 → 先更新**微信后台指引**（§3 配置路径），再按 §7.1 更新云端协议文档；
+- 只改措辞/排版/联系方式 → 只需 §7.1，后台不用动；
+- 涉及**新增收集的信息类型**时，除以上两步外，记得在版本公告（`miniprogram/utils/changelog.js`）里提示用户。
+
+---
+
+## 8. 相关文档
 
 - 小程序隐私协议开发指南：https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/PrivacyAuthorize.html
 - 隐私保护指引内容介绍（信息类型 ↔ 接口对照）：https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/miniprogram-intro.html

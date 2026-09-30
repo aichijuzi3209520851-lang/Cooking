@@ -216,7 +216,7 @@ miniprogram-11/
 │       └── util.js               #   日期格式化、防抖节流、交互反馈、asArray 等工具
 │
 ├── cloudfunctions/               # 云函数
-│   ├── login/                    # 静默登录 + 用户资料：login/setNotifyStatus/updateProfile
+│   ├── login/                    # 静默登录 + 用户资料 + 全局配置下发：login/setNotifyStatus/updateProfile/getAppConfig
 │   ├── family/                   # 家庭：create/joinByCode/list/switch/
 │   │                             #       members/removeMember/leave/updateRole/
 │   │                             #       updateMemberRole/transferCreator
@@ -325,13 +325,14 @@ module.exports = {
 在云开发控制台 → 数据库中创建以下集合（无需手动建表结构，文档型数据库自动生成字段）：
 
 ```
-users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports  menu_submissions
+users  families  family_members  dishes  daily_votes  vote_history  notify_ledger  rice_reports  menu_submissions  app_config
 ```
 
 > `notify_ledger` 是「当日这道菜首次被点」的台账（确定性 `_id`，并发点菜只会写成功一次）。
 > `menu_submissions` 记录每个人的菜单提交，`notifiedAt` 为空表示尚未被饭点汇总通知过。
 > `rice_reports` 是原「今日米饭」饭量上报用的集合 —— **前端已下线该功能**（米饭改为「主食」分类下的普通菜品，谁想吃谁点），
 > 云函数接口与集合予以保留，`dailyReset` 仍会清理昨日数据。
+> `app_config` 存放《隐私协议》全文（`_id` = `privacy_agreement`），在控制台改文档即可实时更新协议、无需发版（见 [docs/deployment/privacy-agreement.md](docs/deployment/privacy-agreement.md) §7）。
 > 数据库安全规则与索引清单见 [docs/deployment/database.md](docs/deployment/database.md)（需控制台人工配置）。
 
 **5. 上传云函数**
@@ -434,6 +435,7 @@ tcb fn deploy weather -e <环境ID> --force
 | `notify_ledger` | 第一票通知台账 | `_id`=`n_{date}_{familyId}_{dishId}` |
 | `rice_reports` | 原「今日米饭」饭量上报（**前端已下线，接口保留**；由 dailyReset 清理昨日） | `_id`=`r_{date}_{familyId}_{userId}`、`familyId`、`userId`、`bowls`(0-5，0.5 步进)、`date` |
 | `menu_submissions` | 菜单提交记录（每人每天一条，幂等） | `_id`=`s_{date}_{familyId}_{userId}`、`familyId`、`userId`、`userName`、`date`、`dishIds`、`dishCount`、`notifiedAt`（空＝待汇总通知） |
+| `app_config` | 全局运营配置（《隐私协议》实时下发，PRIV-002） | `_id`=`privacy_agreement`、`version`、`effectiveDate`、`title`、`lead`、`sections`、`footer`（控制台改文档即全网生效） |
 
 ### 关系模型
 
@@ -465,7 +467,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 云函数 | 代码量 | Action 数 | 核心职责 | 依赖 |
 |:---|:---|:---|:---|:---|
-| `login` | 232 行 | 3 | 静默登录、通知授权状态、资料更新（昵称/头像/生日） | `wx-server-sdk` |
+| `login` | 246 行 | 4 | 静默登录、通知授权状态、资料更新（昵称/头像/生日）、全局配置下发（隐私协议） | `wx-server-sdk` |
 | `family` | 668 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 + 转让创建者 | `wx-server-sdk`、`crypto` |
 | `dish` | 470 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
 | `vote` | 1096 行 | 10 | 投票核心 + 菜单提交/拍板 + 历史 + 米饭 + 今日推荐 | `wx-server-sdk` |
@@ -484,6 +486,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `login`（缺省） | — | 自动从上下文获取 openid；返回 `openid`、`user`、`families[]`、`members[]` |
 | `setNotifyStatus` | `status, reason` | 持久化订阅消息授权结果（accepted / rejected / unknown / expired） |
 | `updateProfile` | `nickname?`, `avatarUrl?`, `birthday?` | 修改昵称 / 自定义头像 / 生日（生日只存月日不存年份；传 `null` 清除） |
+| `getAppConfig` | — | 全局配置下发（PRIV-002）：返回 `{ privacy: {...} | null }`，内容来自 `app_config` 集合（`_id`=`privacy_agreement`），控制台改文档即实时生效；未配置/读取失败返回 `null`，前端用内置兜底文本渲染 |
 
 ### family — 家庭管理
 
@@ -823,7 +826,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（257 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（273 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -869,11 +872,11 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 |:---|:---|
 | 前端页面数 | **16** 个 |
 | 自定义组件数 | **6** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup） |
-| 云函数数 | **7** 个（login 3 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
-| 数据库集合数 | **9** 个 |
+| 云函数数 | **7** 个（login 4 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
+| 数据库集合数 | **10** 个 |
 | 后端代码量 | ~**3,327** 行 JavaScript（各云函数 `index.js` 合计） |
 | 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
-| 测试 | **20** 个测试文件 / **257** 个用例（单元 105 / 契约 50 / 冒烟 4 / 白盒 98），全绿 |
+| 测试 | **21** 个测试文件 / **273** 个用例（单元 114 / 契约 53 / 冒烟 4 / 白盒 102），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
 | 插画素材 | **28** 张（空状态 4 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 12，生图模型产出） |
 | 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |
