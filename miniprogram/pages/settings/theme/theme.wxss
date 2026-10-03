@@ -151,23 +151,23 @@
 
 .pv-short {
   width: 40%;
-  background: #A2968A;
+  background: #6F675F;
 }
 
 .pv-fresh .pv-short {
-  background: #8AA392;
+  background: #5B6B60;
 }
 
 .pv-sky .pv-short {
-  background: #8FA1AC;
+  background: #5E6A71;
 }
 
 .pv-pink .pv-short {
-  background: #A98E97;
+  background: #766369;
 }
 
 .pv-dark .pv-short {
-  background: #6E645A;
+  background: #8F8377;
 }
 
 /* 强调色按钮 */

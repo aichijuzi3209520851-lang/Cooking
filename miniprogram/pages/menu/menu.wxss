@@ -375,8 +375,8 @@
 }
 
 .rail-manage-icon {
-  font-size: 30rpx;
-  line-height: 1;
+  width: 32rpx;
+  height: 32rpx;
   opacity: 0.6;
 }
 

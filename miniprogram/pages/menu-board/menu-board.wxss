@@ -1,19 +1,25 @@
 /* pages/menu-board/menu-board.wxss */
 .board-page {
   min-height: 100vh;
-  padding: 24rpx 32rpx 64rpx;
+  padding: var(--space-3) var(--space-4) var(--space-8);
   box-sizing: border-box;
+
+  /* 餐次标签：固定语义色（不随主题家族漂移，避免橙/绿被强调色冲淡） */
+  --meal-breakfast-bg: rgba(240, 130, 30, 0.12);
+  --meal-breakfast-text: #B4690E;
+  --meal-lunch-bg: rgba(31, 147, 96, 0.12);
+  --meal-lunch-text: #1F7D54;
 }
 
 .board-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 16rpx 8rpx 24rpx;
+  padding: var(--space-2) var(--space-1) var(--space-3);
 }
 
 .board-title {
-  font-weight: 800;
+  font-weight: var(--weight-bold);
 }
 
 .board-sub {
@@ -21,51 +27,51 @@
 }
 
 .board-state {
-  padding: 120rpx 0;
+  padding: calc(var(--space-12) + var(--space-3)) 0;
   text-align: center;
   color: var(--color-text-secondary);
 }
 
 .board-card {
   background: var(--surface-card);
-  border-radius: 24rpx;
-  padding: 28rpx 32rpx;
-  margin-bottom: 24rpx;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
   box-shadow: var(--shadow-card);
 }
 
 .board-section-title {
-  font-size: var(--text-md);
-  font-weight: 700;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: 20rpx;
+  margin-bottom: var(--space-2);
 }
 
 /* 全家总单 */
 .total-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--space-2);
 }
 
 .total-item {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: var(--space-1);
   background: var(--color-card-inner);
-  border-radius: 999rpx;
-  padding: 12rpx 24rpx;
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
 }
 
 .total-name {
-  font-size: var(--text-sm);
+  font-size: var(--text-body-sm);
   color: var(--color-text-primary);
 }
 
 .total-count {
   font-size: var(--text-mini);
   color: var(--color-accent);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 /* 按提交人分组 */
@@ -73,42 +79,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-2);
 }
 
 .sub-name {
-  font-size: var(--text-md);
-  font-weight: 700;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 
 .sub-meta {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-2);
 }
 
 .meal-tag {
   font-size: var(--text-mini);
-  padding: 4rpx 16rpx;
-  border-radius: 999rpx;
+  padding: 4rpx var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
   color: var(--color-accent);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .meal-breakfast {
-  background: rgba(240, 130, 30, 0.12);
-  color: #B4690E;
+  background: var(--meal-breakfast-bg);
+  color: var(--meal-breakfast-text);
 }
 
 .meal-lunch {
-  background: rgba(31, 147, 96, 0.12);
-  color: #1F7D54;
+  background: var(--meal-lunch-bg);
+  color: var(--meal-lunch-text);
 }
 
 .meal-dinner {
-  background: rgba(217, 58, 43, 0.10);
+  background: var(--color-accent-soft);
   color: var(--color-accent);
 }
 
@@ -120,13 +126,13 @@
 .sub-dishes {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: var(--space-1);
 }
 
 .sub-dish {
-  font-size: var(--text-sm);
+  font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
   background: var(--color-card-inner);
-  border-radius: 12rpx;
-  padding: 8rpx 20rpx;
+  border-radius: var(--radius-xs);
+  padding: var(--space-1) var(--space-2);
 }

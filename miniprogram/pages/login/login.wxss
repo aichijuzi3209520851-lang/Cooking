@@ -248,10 +248,14 @@
 }
 
 .login-button {
-  width: 100%;
+  /* 原生 button UA 样式对 width/margin 带 !important，必须同级 !important 才能覆盖，
+     否则按钮退化为基础宽度（约 184px）并出现 57px 自动外边距，无法撑满登录面板 */
+  width: 100% !important;
   box-sizing: border-box;
   height: 96rpx;
   padding: 0; /* 覆盖原生 button 默认左右内边距，避免文字偏移与宽度溢出 */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;

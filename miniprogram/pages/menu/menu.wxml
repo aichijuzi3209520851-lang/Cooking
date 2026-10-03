@@ -105,7 +105,11 @@
           hover-class="rail-manage-press"
           bindtap="onOpenCategoryManager"
         >
-          <text class="rail-manage-icon">⚙️</text>
+          <image
+            class="rail-manage-icon"
+            src="{{isDark ? '/images/icons/manage-dark.svg' : '/images/icons/manage.svg'}}"
+            mode="aspectFit"
+          />
           <text class="rail-manage-text">分类管理</text>
         </view>
       </view>

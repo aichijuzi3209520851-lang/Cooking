@@ -89,7 +89,7 @@
   font-size: var(--text-mini);
   font-weight: var(--weight-medium);
   color: var(--color-gold);
-  background: rgba(230, 162, 60, 0.14);
+  background: var(--color-gold-soft);
   border-radius: var(--radius-pill);
   padding: 2rpx 12rpx;
   line-height: var(--lh-normal);

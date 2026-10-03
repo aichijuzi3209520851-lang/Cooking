@@ -27,7 +27,7 @@ page {
   /* ---- 文本层级（4 级，逐级降低关注度） ---- */
   --color-text-primary: #241B12;    /* 标题、菜品名 */
   --color-text-secondary: #6B5F52;  /* 正文、说明 */
-  --color-text-tertiary: #A2968A;   /* 辅助信息、占位 */
+  --color-text-tertiary: #6F675F;   /* 辅助信息、占位（浅色主题下 WCAG AA ≥4.5） */
   --color-text-inverse: #FFFFFF;    /* 压在深色/强调色上的文本 */
 
   /* ---- 表面层级（关键：与页面底色拉开明度差，卡片才「浮」得起来） ---- */
@@ -59,7 +59,8 @@ page {
   --color-success: #2F9E6E;
   --color-warning: #E6A23C;
   --color-danger: #E02020;
-  --color-gold: #E6A23C;
+  --color-gold: #8A6124;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
+  --color-gold-soft: rgba(138, 97, 36, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #FDEBD2;           /* 米黄信息块（推荐卡、引导条、统计栏） */
 
   /* ---- 图片滤镜（深色模式压暗，手动浅色可还原） ---- */
@@ -185,7 +186,7 @@ page {
   page {
     --color-text-primary: #F7F1E9;
     --color-text-secondary: #ADA093;
-    --color-text-tertiary: #8A7D70;
+    --color-text-tertiary: #8F8377;
     --color-text-inverse: #1A1510;
 
     --surface-page: #14100C;
@@ -213,6 +214,7 @@ page {
     --color-warning: #D9A648;
     --color-danger: #FF5A4E;
     --color-gold: #D9A648;
+    --color-gold-soft: rgba(217, 166, 72, 0.16);
     --color-cream: #2E2418;
 
     --img-filter: brightness(0.88);
@@ -242,7 +244,7 @@ page {
 .theme-dark {
   --color-text-primary: #F7F1E9;
   --color-text-secondary: #ADA093;
-  --color-text-tertiary: #8A7D70;
+  --color-text-tertiary: #8F8377;
   --color-text-inverse: #1A1510;
 
   --surface-page: #14100C;
@@ -270,6 +272,7 @@ page {
   --color-warning: #D9A648;
   --color-danger: #FF5A4E;
   --color-gold: #D9A648;
+  --color-gold-soft: rgba(217, 166, 72, 0.16);
   --color-cream: #2E2418;
 
   --img-filter: brightness(0.88);
@@ -298,7 +301,7 @@ page {
 .theme-warm {
   --color-text-primary: #241B12;
   --color-text-secondary: #6B5F52;
-  --color-text-tertiary: #A2968A;
+  --color-text-tertiary: #6F675F;
   --color-text-inverse: #FFFFFF;
 
   --surface-page: #F3E9DA;
@@ -325,7 +328,8 @@ page {
   --color-success: #2F9E6E;
   --color-warning: #E6A23C;
   --color-danger: #E02020;
-  --color-gold: #E6A23C;
+  --color-gold: #8A6124;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
+  --color-gold-soft: rgba(138, 97, 36, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #FDEBD2;
 
   --img-filter: none;
@@ -355,7 +359,7 @@ page {
 .theme-fresh {
   --color-text-primary: #17251B;
   --color-text-secondary: #556B5C;
-  --color-text-tertiary: #8AA392;
+  --color-text-tertiary: #5B6B60;
 
   --surface-page: #DDEBE0;     /* 明显偏冷偏绿，与暖米底拉开 */
   --surface-card: #FBFEFC;     /* 带一丝冷白的卡片 */
@@ -381,7 +385,8 @@ page {
   --color-success: #1F9360;
   --color-warning: #D99B33;
   --color-danger: #D94A3D;
-  --color-gold: #D99B33;
+  --color-gold: #825D1F;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
+  --color-gold-soft: rgba(130, 93, 31, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #E2F3E7;      /* 薄荷信息块 */
 
   --img-filter: none;
@@ -410,7 +415,7 @@ page {
 .theme-sky {
   --color-text-primary: #14212B;
   --color-text-secondary: #52646F;
-  --color-text-tertiary: #8FA1AC;
+  --color-text-tertiary: #5E6A71;
 
   --surface-page: #DCEAF6;     /* 云蓝底 */
   --surface-card: #FBFDFF;     /* 冷白云卡 */
@@ -436,7 +441,8 @@ page {
   --color-success: #2F9E6E;
   --color-warning: #D99B33;
   --color-danger: #D94A3D;
-  --color-gold: #D99B33;
+  --color-gold: #825D1F;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
+  --color-gold-soft: rgba(130, 93, 31, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #E0EFF8;      /* 淡蓝信息块 */
 
   --img-filter: none;
@@ -465,7 +471,7 @@ page {
 .theme-pink {
   --color-text-primary: #2B1720;
   --color-text-secondary: #745560;
-  --color-text-tertiary: #A98E97;
+  --color-text-tertiary: #766369;
 
   --surface-page: #F8E3EA;     /* 樱粉底 */
   --surface-card: #FFFBFC;
@@ -491,7 +497,8 @@ page {
   --color-success: #2F9E6E;
   --color-warning: #D99B33;
   --color-danger: #E04050;
-  --color-gold: #D99B33;
+  --color-gold: #825D1F;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
+  --color-gold-soft: rgba(130, 93, 31, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #FBE4EC;      /* 粉信息块 */
 
   --img-filter: none;
@@ -628,6 +635,9 @@ page {
   border: none;
   padding: 0 var(--space-6);
   box-sizing: border-box;
+  /* 覆盖原生 button 的 auto 外边距，保证 width:100%（btn-block）真正撑满容器 */
+  margin-left: 0;
+  margin-right: 0;
   transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
