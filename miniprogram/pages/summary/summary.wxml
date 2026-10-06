@@ -12,6 +12,11 @@
     </view>
   </view>
 
+  <!-- 实时同步降级提示（T6）：watch 重试用尽后显示，数据已自动改为轮询刷新 -->
+  <view wx:if="{{syncDegraded}}" class="sync-degraded-tip">
+    实时同步不可用，已切换为自动刷新
+  </view>
+
   <!-- 无家庭 -->
   <block wx:if="{{!hasFamily}}">
     <empty-state
@@ -59,10 +64,12 @@
               />
               <view wx:else class="dish-thumb-placeholder">
                 <image
-                  wx:if="{{item.category}}"
+                  wx:if="{{item.categoryImage}}"
                   class="dish-thumb-cat"
-                  src="/images/category/cat-{{item.category}}.svg"
+                  src="{{item.categoryImage}}"
                   mode="aspectFit"
+                  binderror="onThumbError"
+                  data-index="{{dishIndex}}"
                 />
                 <text wx:else class="dish-thumb-emoji">{{item.categoryEmoji}}</text>
               </view>

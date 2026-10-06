@@ -2,6 +2,7 @@
 const theme = require('../../utils/theme.js');
 const { voteApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
+const category = require('../../utils/category.js');
 const {
   today,
   getAvatarGradient,
@@ -15,6 +16,8 @@ const {
 const app = getApp();
 
 const WATCH_RETRY_LIMIT = 3;
+// watch 降级后的轮询间隔（毫秒）。20s 是体验与云调用成本的折中
+const POLL_INTERVAL = 20000;
 // 投票人头像折叠阈值：超过此数默认收起，防止单卡被头像流撑高（点「+N」展开全部）
 const VOTER_PREVIEW_LIMIT = 4;
 
@@ -34,6 +37,8 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
+    // 实时同步降级标记：watch 失败后为 true，界面提示并改用轮询
+    syncDegraded: false,
     // 「+N」展开状态：dishId → true 时显示全部投票人
     expandedVoters: {},
   },
@@ -43,6 +48,7 @@ Page({
   },
 
   async onShow() {
+    this._pageVisible = true;
     theme.applyTheme(this);
 
     // 等待登录完成后再加载数据（AUTH-001）
@@ -66,16 +72,22 @@ Page({
     this.setToday();
     this.loadData();
     this.setupWatcher();
+    // 若此前已降级为轮询，回到本页时恢复轮询（onHide 会停表；degradeToPolling 自身防重入）
+    if (this.data.syncDegraded) this.degradeToPolling();
     this.scheduleMidnightRefresh();
   },
 
   onHide() {
+    this._pageVisible = false;
     this.closeWatcher();
+    this.stopPolling();
     this.clearMidnightTimer();
   },
 
   onUnload() {
+    this._pageVisible = false;
     this.closeWatcher();
+    this.stopPolling();
     this.clearMidnightTimer();
   },
 
@@ -142,12 +154,14 @@ Page({
         },
         onError: (err) => {
           console.error('汇总监听异常', err);
+          // 有限次数重连
           if ((this._watchRetries || 0) < WATCH_RETRY_LIMIT) {
             this._watchRetries = (this._watchRetries || 0) + 1;
             setTimeout(() => this.setupWatcher(), 1000 * this._watchRetries);
-          } else {
-            console.warn('汇总监听重连失败，请下拉刷新');
+            return;
           }
+          // 重试用尽：不再静默，降级为轮询并让用户看见
+          this.degradeToPolling();
         }
       });
     } catch (err) {
@@ -167,6 +181,27 @@ Page({
         // ignore
       }
       this.watcher = null;
+    }
+  },
+
+  /**
+   * 实时同步降级：watch 重试用尽后改为轮询。
+   * 原实现只打 console.warn，用户完全无感 —— 这里补上可见提示 + 自动刷新。
+   */
+  degradeToPolling() {
+    if (this._pollTimer) return;
+    this.setData({ syncDegraded: true });
+    this._pollTimer = setInterval(() => {
+      // 页面不可见时不发无用请求
+      if (this._pageVisible === false) return;
+      this.loadData();
+    }, POLL_INTERVAL);
+  },
+
+  stopPolling() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer);
+      this._pollTimer = null;
     }
   },
 
@@ -207,6 +242,8 @@ Page({
         }));
         return {
           ...item,
+          // 仅内置 5 类有插画，自定义分类返回空串 → WXML 自动回退 emoji，不会裂图
+          categoryImage: category.imageOf(item.category),
           voters,
           votersShow: voters.slice(0, VOTER_PREVIEW_LIMIT),
           votersExtra: Math.max(voters.length - VOTER_PREVIEW_LIMIT, 0)
@@ -362,6 +399,13 @@ Page({
     const index = e.currentTarget.dataset.index;
     if (index === undefined) return;
     this.setData({ [`summaryList[${index}].imageUrl`]: '' });
+  },
+
+  // 分类插画加载失败：置空 categoryImage，WXML 自动回退 emoji 占位（裂图兜底）
+  onThumbError(e) {
+    const idx = e.currentTarget.dataset.index;
+    if (typeof idx !== 'number') return;
+    this.setData({ [`summaryList[${idx}].categoryImage`]: '' });
   },
 
   // 成员头像加载失败：清空 avatarUrl 回退渐变首字

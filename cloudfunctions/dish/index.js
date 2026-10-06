@@ -372,6 +372,8 @@ async function addCategory(data, openid) {
     throw new ApiError('CATEGORY_LIMIT', `分类数量已达上限（${CATEGORY_MAX} 个）`)
   }
   const safeName = assertCategoryName(categories, name)
+  // 分类名是家庭级 UGC、全家可见，必须过内容安全（对齐菜品名/家庭名的处理）
+  await assertTextSafe(cloud, safeName, openid, { label: '分类名称' })
   const emoji = ALLOWED_EMOJI.indexOf(data.emoji) > -1 ? data.emoji : matchEmoji(safeName)
 
   const next = categories.concat([{ key: buildCustomKey(), name: safeName, emoji }])

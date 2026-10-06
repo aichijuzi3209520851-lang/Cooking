@@ -21,6 +21,11 @@
     </view>
   </view>
 
+  <!-- 实时同步降级提示（T6）：watch 重试用尽后显示，数据已自动改为轮询刷新 -->
+  <view wx:if="{{syncDegraded}}" class="sync-degraded-tip">
+    实时同步不可用，已切换为自动刷新
+  </view>
+
   <!-- 家庭生日提醒（BIRTHDAY-001）：未来 7 天内有家人生日时出现。
        纯提示、不可点击——避免制造「点了没反应」的空交互 -->
   <view class="birthday-tip" wx:if="{{birthdayNotice}}">

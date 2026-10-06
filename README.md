@@ -182,6 +182,7 @@ miniprogram-11/
 │   │   ├── empty-state/          #   空状态引导组件（插画优先、emoji 兜底）
 │   │   ├── privacy-popup/        #   隐私协议授权弹窗
 │   │   ├── birthday-popup/       #   生日当天祝福弹窗（寿星/家人两套文案）
+│   │   ├── changelog-popup/      #   版本更新公告弹窗（每版本弹一次，自包含）
 │   │   └── reject-reason/        #   一票否决原因选择弹窗
 │   ├── pages/
 │   │   ├── login/                # 登录首屏：沉浸式品牌页、漂浮动效、微信快捷登录
@@ -265,6 +266,7 @@ miniprogram-11/
 | **privacy-popup** | `components/privacy-popup/` | 隐私授权弹窗 | 由 `utils/privacy.js` 驱动，隐私接口调用前统一弹出（PRIV-001） |
 | **reject-reason** | `components/reject-reason/` | 一票否决原因弹窗 | 预设短语 + 自定义输入，≤20 字；仅用于当次通知，不落库 |
 | **birthday-popup** | `components/birthday-popup/` | 生日当天祝福弹窗 | 纯展示组件（BIRTHDAY-003），「一天只弹一次」由页面缓存控制 |
+| **changelog-popup** | `components/changelog-popup/` | 版本更新公告弹窗 | 每版本进入小程序弹一次（本地缓存标记），关闭后同版本不再弹；数据来自 `login.getAppConfig` |
 
 ### 工具模块
 
@@ -871,7 +873,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 指标 | 数值 |
 |:---|:---|
 | 前端页面数 | **16** 个 |
-| 自定义组件数 | **6** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup） |
+| 自定义组件数 | **7** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup / changelog-popup） |
 | 云函数数 | **7** 个（login 4 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
 | 数据库集合数 | **10** 个 |
 | 后端代码量 | ~**3,327** 行 JavaScript（各云函数 `index.js` 合计） |

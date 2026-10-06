@@ -88,6 +88,17 @@
   margin-left: 2rpx;
 }
 
+/* ===== 实时同步降级提示（T6）：米黄信息块，弱存在感但可读 ===== */
+.sync-degraded-tip {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  background: var(--color-cream);
+  text-align: center;
+}
+
 /* ===== 米饭引导条（原「今日米饭」日报卡下线后的一次性引导）
    极淡一条，不抢推荐与菜品列表的注意力 ===== */
 .rice-tip {

@@ -9,6 +9,7 @@ const season = require('./shared/season')
 const festival = require('./shared/festival')
 const weatherMap = require('./shared/weather-map')
 const birthday = require('./shared/birthday')
+const { assertTextSafe } = require('./shared/security')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
@@ -205,6 +206,8 @@ async function chefCancel(data, openid) {
   }
 
   const normalizedReason = normalizeReason(reason)
+  // 否决原因是 UGC，且会作为订阅消息正文推送给家人，必须过内容安全
+  await assertTextSafe(cloud, normalizedReason, openid, { label: '否决原因' })
 
   // 通知受影响用户（await 确保函数返回前通知已发出，失败不影响主流程结果）
   if (affectedUserIds.length > 0) {

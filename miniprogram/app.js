@@ -1,6 +1,7 @@
 // app.js
 const config = require('./config.js');
 const privacy = require('./utils/privacy.js');
+const api = require('./utils/api.js');
 
 App({
   globalData: {
@@ -129,45 +130,38 @@ App({
   async _doLogin() {
     this.loginFailed = false;
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'login',
-        data: {}
-      });
-      if (res.result && res.result.success) {
-        const data = res.result.data;
-        this.globalData.openid = data.openid;
-        this.globalData.userInfo = data.user;
-        this.globalData.families = data.families || [];
-        this.globalData.currentFamilyId = data.user.currentFamilyId || null;
-        // 服务端主题字段映射到家族：dark→夜间，light→温馨，其余→跟随系统
-        const serverTheme = data.user.theme;
-        this.globalData.themeFamily =
-          serverTheme === 'dark' ? 'dark' :
-          serverTheme === 'light' ? 'warm' :
-          (this.globalData.themeFamily || 'system');
+      // 走统一入口：错误码与实时日志由 utils/api.js 统一处理
+      const data = await api.login();
+      this.globalData.openid = data.openid;
+      this.globalData.userInfo = data.user;
+      this.globalData.families = data.families || [];
+      this.globalData.currentFamilyId = data.user.currentFamilyId || null;
+      // 服务端主题字段映射到家族：dark→夜间，light→温馨，其余→跟随系统
+      const serverTheme = data.user.theme;
+      this.globalData.themeFamily =
+        serverTheme === 'dark' ? 'dark' :
+        serverTheme === 'light' ? 'warm' :
+        (this.globalData.themeFamily || 'system');
 
-        // 服务端已修正失效的 currentFamilyId（AUTH-001）
-        // 获取当前家庭的角色
-        if (this.globalData.currentFamilyId) {
-          const member = (data.members || []).find(
-            m => m.familyId === this.globalData.currentFamilyId
-          );
-          this.globalData.currentRole = member ? member.role : null;
-        } else {
-          this.globalData.currentRole = null;
-        }
-
-        // 服务端登录结果覆盖缓存
-        this.saveCache();
-        this.loginFailed = false;
+      // 服务端已修正失效的 currentFamilyId（AUTH-001）
+      // 获取当前家庭的角色
+      if (this.globalData.currentFamilyId) {
+        const member = (data.members || []).find(
+          m => m.familyId === this.globalData.currentFamilyId
+        );
+        this.globalData.currentRole = member ? member.role : null;
       } else {
-        this.loginFailed = true;
-        this._lastLoginError = (res.result && res.result.message) || '登录失败';
+        this.globalData.currentRole = null;
       }
+
+      // 服务端登录结果覆盖缓存
+      this.saveCache();
+      this.loginFailed = false;
     } catch (err) {
       console.error('登录失败', err);
       this.loginFailed = true;
-      this._lastLoginError = '网络异常，请重试';
+      // 优先展示服务端错误码对应的文案，其次用 ApiError.message
+      this._lastLoginError = (err && err.message) || '登录失败';
     } finally {
       if (this._resolveLogin) {
         this._resolveLogin();

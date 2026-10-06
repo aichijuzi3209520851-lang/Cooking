@@ -24,6 +24,8 @@ const app = getApp();
 
 const PAGE_SIZE = 50;
 const WATCH_RETRY_LIMIT = 3;
+// watch 降级后的轮询间隔（毫秒）。20s 是体验与云调用成本的折中
+const POLL_INTERVAL = 20000;
 
 // 「推荐」是左侧导航第一个伪分类：点进去在右侧看今日推荐，排列与点菜列表一致
 // （同一套 dish-card）。伪 key 只活在导航里，不会写进菜品的 category 字段。
@@ -83,6 +85,8 @@ Page({
     birthdayPopup: null,
     loading: false,
     refreshing: false,
+    // 实时同步降级标记：watch 失败后为 true，界面提示并改用轮询
+    syncDegraded: false,
     page: 1,
     hasMore: true,
     // 左侧导航选中项自动滚入视野（分类多时避免选中项在可视区外）
@@ -115,6 +119,7 @@ Page({
   },
 
   async onShow() {
+    this._pageVisible = true;
     theme.applyTheme(this);
 
     // 等待登录完成后再做路由决策，避免冷启动时按空 globalData 跳转
@@ -143,21 +148,38 @@ Page({
     this.setToday();
     // 先用本地缓存渲染左侧导航（避免首帧分类栏空白），再拉云端分类表纠偏
     this.syncCachedCategories();
-    this.loadCategories();
+
+    // 脏标记：同一天 + 同一家庭 + 页面未卸载过 → 从子页返回时跳过全量重拉，
+    // 避免每次 onShow 都打 5~6 个云调用（推荐接口尤其重）。
+    // familyId 复用上方已声明的常量
+    const dirty = this._loadedKey !== familyId + '|' + this.data.todayDate;
+
+    if (dirty) {
+      this.loadCategories();
+      this.loadRecommend();
+      this.checkRiceDish();
+      this.setupWatcher();
+      this._loadedKey = familyId + '|' + this.data.todayDate;
+    }
+
+    // 投票数据始终刷新（成本低，且是主流程正确性所需）
     this.loadData(true, true);
-    this.loadRecommend();
-    this.checkRiceDish();
-    this.setupWatcher();
+    // 若此前已降级为轮询，回到本页时恢复轮询（onHide 会停表；degradeToPolling 自身防重入）
+    if (this.data.syncDegraded) this.degradeToPolling();
     this.scheduleMidnightRefresh();
   },
 
   onHide() {
+    this._pageVisible = false;
     this.closeWatcher();
+    this.stopPolling();
     this.clearMidnightTimer();
   },
 
   onUnload() {
+    this._pageVisible = false;
     this.closeWatcher();
+    this.stopPolling();
     this.clearMidnightTimer();
   },
 
@@ -183,6 +205,7 @@ Page({
     const delay = next.getTime() - now.getTime();
     this._midnightTimer = setTimeout(() => {
       this.setToday();
+      this._loadedKey = null;          // 跨天强制重拉（脏标记失效）
       this.setupWatcher();
       this.loadData(true, true);
       this.loadRecommend();            // 推荐依据的是「今天」，跨日需重算
@@ -231,13 +254,14 @@ Page({
         },
         onError: (err) => {
           console.error('点菜监听异常', err);
-          // 有限次数重连，失败后依赖下拉刷新兜底
+          // 有限次数重连
           if ((this._watchRetries || 0) < WATCH_RETRY_LIMIT) {
             this._watchRetries = (this._watchRetries || 0) + 1;
             setTimeout(() => this.setupWatcher(), 1000 * this._watchRetries);
-          } else {
-            console.warn('点菜监听重连失败，请使用下拉刷新');
+            return;
           }
+          // 重试用尽：不再静默，降级为轮询并让用户看见
+          this.degradeToPolling();
         }
       });
     } catch (err) {
@@ -257,6 +281,27 @@ Page({
         // ignore
       }
       this.watcher = null;
+    }
+  },
+
+  /**
+   * 实时同步降级：watch 重试用尽后改为轮询。
+   * 原实现只打 console.warn，用户完全无感 —— 这里补上可见提示 + 自动刷新。
+   */
+  degradeToPolling() {
+    if (this._pollTimer) return;
+    this.setData({ syncDegraded: true });
+    this._pollTimer = setInterval(() => {
+      // 页面不可见时不发无用请求
+      if (this._pageVisible === false) return;
+      this.loadData(true);
+    }, POLL_INTERVAL);
+  },
+
+  stopPolling() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer);
+      this._pollTimer = null;
     }
   },
 
@@ -604,6 +649,8 @@ Page({
 
       // 统一契约：todayList -> { date, groups, submitCount }，由 dto 归一化
       const { date, groups, submitCount } = dto.normalizeTodayList(voteData);
+      // 记住厨师角标口径（提交人数），供乐观更新复用
+      this._submitCount = submitCount;
       const dishList = (dishResult && Array.isArray(dishResult.list)) ? dishResult.list : [];
       const total = (dishResult && dishResult.total) || 0;
 
@@ -788,7 +835,11 @@ Page({
     this._voterMap[dishId] = voters;
     this.syncRecommendDishes();
 
-    refreshSummaryBadge(stats.dishCount);
+    // 角标口径必须与 loadData 一致：厨师看「今日提交人数」，其余人看「已点菜数」。
+    // 投票不改变提交人数，厨师侧沿用最近一次已知的 submitCount，避免角标跳变。
+    refreshSummaryBadge(this.data.isChef
+      ? (this._submitCount || 0)
+      : stats.dishCount);
   },
 
   // 金牌大厨一票否决（NOTIFY-002）：先选原因，再执行否决并通知投过票的家人

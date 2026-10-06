@@ -35,6 +35,17 @@
   color: var(--color-text-secondary);
 }
 
+/* ===== 实时同步降级提示（T6）：米黄信息块，弱存在感但可读 ===== */
+.sync-degraded-tip {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  background: var(--color-cream);
+  text-align: center;
+}
+
 /* ===== 汇总卡片 ===== */
 .summary-list {
   padding-top: var(--space-1);
