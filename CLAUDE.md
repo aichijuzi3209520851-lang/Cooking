@@ -12,9 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **开发/编译**：微信开发者工具导入仓库根目录（`miniprogramRoot: miniprogram/`，`cloudfunctionRoot: cloudfunctions/`），点击「编译」。冷启动入口页是 `pages/login/login`（用户在登录页点击「微信快捷登录」后才路由到菜单/欢迎页）。
 - **本地验证**（全部零依赖，Node ≥18）：
-  - `npm run check:syntax` — 全部 JS 语法检查（151 个文件，进程内 `vm.Script` 解析，零子进程）
+  - `npm run check:syntax` — 全部 JS 语法检查（159 个文件，进程内 `vm.Script` 解析，零子进程）
   - `npm run lint` — JSON 合法性、硬编码密钥/占位模板 ID 扫描、依赖版本固定性、本地资源引用检查、**shared 模块同步校验**
-  - `npm test` — 全部测试（当前 257 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
+  - `npm test` — 全部测试（当前 273 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
   - 跑单个测试：`node --test tests/unit/dto.test.js`
   - `npm run predeploy` — 部署前完整门禁
 - **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset` `weather`）：
@@ -34,20 +34,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   `birthdayWish` = `0 0 9 * * * *`（名称与 cron 见 `cloudfunctions/notify/config.json`，**入口按 TriggerName 路由**）。
   未配置饭点触发器时「总菜单汇总」不会自动发给厨师；未建 `birthdayWish` 或未配 `NOTIFY_BIRTHDAY_TEMPLATE_ID` 时生日祝福静默不推送（fail closed）。
 - **云环境 ID**：在 `miniprogram/config.js` 的 `cloudEnv`（当前 `lcw-d5gfcge7b41bedd02`），`app.js` 从 config 读取；必须与控制台环境一致。
-- **数据库集合**：首次部署需在控制台手动创建 9 个集合（`users` `families` `family_members` `dishes` `daily_votes` `vote_history` `notify_ledger` `rice_reports` `menu_submissions`）+ 索引/安全规则/存储权限，全部清单见 `docs/deployment/database.md`（规则文件在 `docs/deployment/security-rules/*.json`）。
+- **数据库集合**：首次部署需在控制台手动创建 10 个集合（`users` `families` `family_members` `dishes` `daily_votes` `vote_history` `notify_ledger` `rice_reports` `menu_submissions` `app_config`）+ 索引/安全规则/存储权限，全部清单见 `docs/deployment/database.md`（规则文件在 `docs/deployment/security-rules/*.json`）。
 
 ## 架构
 
 ### 前端（miniprogram/）
 
 - `app.js`：`wx.cloud.init`（env 来自 `config.js`）+ 登录就绪态 `waitForLogin()` / `retryLogin()` / `refreshUser()`（页面必须等待登录完成后再做路由决策）+ `appCache` 本地缓存（服务端登录结果覆盖缓存）。
-- `app.json`：首个页面是 `pages/login/login`（契约测试 `tests/contracts/miniprogram.test.js` 强制此顺序，调整页面顺序需同步改测试）；共 16 个页面 = 3 个 tabBar 页（`menu`/`summary`/`profile`）+ 13 个普通页。新增页面后 `npm run check:routes` 会校验所有跳转路径是否命中已注册页面。
+- `app.json`：首个页面是 `pages/login/login`（契约测试 `tests/contracts/miniprogram.test.js` 强制此顺序，调整页面顺序需同步改测试）；共 18 个页面 = 4 个 tabBar 页（`menu`/`summary`/`menu-board`/`profile`）+ 14 个普通页。新增页面后 `npm run check:routes` 会校验所有跳转路径是否命中已注册页面。
 - **所有云函数调用经 `utils/api.js` 的 `call()` 封装**：信封 `{success, data}` / `{success: false, errorCode, message}`；失败 reject `ApiError(errorCode)`，**不自动 toast**（页面用 `util.showApiError` 单次提示）；错误经 `wx.getRealtimeLogManager` 上报。新增接口先加到这里。
 - `utils/dto.js`：**纯函数 DTO 转换层**（可单测）：`normalizeTodayList` 统一 `{date, groups}` 契约、`buildMenuList(dishList, groups, category)` / `buildSummaryList` / `calcVoteStats`。**展示层一律使用 `dishId`，禁止页面再猜测 `_id`/`list`/`Array.isArray`**。
 - `utils/category.js`：**菜品分类的唯一数据源**（纯函数可单测）：内置 5 类默认值、`matchEmoji`（名称→图标）、当前家庭分类表的内存缓存（`setFamilyCategories` / `getCategories` / `hasFamilyCategories` / `clear`）、渲染解析（`resolve` / `nameOf` / `emojiOf` / `imageOf` / `withAll`）。**页面与组件禁止再各自硬编码分类 map**——`dto.js` 与 `dish-card` 均已改为经它解析，未知分类回退「其他 + 🍽️」而不是抛错。
-- `utils/util.js`：`showApiError`、`normalizeJoinCode`、`asArray`（跨组件数组对象化兜底）等通用工具；`utils/theme.js`：主题家族管理（**5 个家族** warm/fresh/sky/pink/dark + 跟随系统，旧「accent 色」体系已废除）；`utils/birthday.js`（生日展示与文案，纯函数）、`utils/privacy.js`（隐私授权 PRIV-001）、`utils/recommend-copy.js` + `utils/ai.js`（推荐文案：稳定种子模板兜底 + CloudBase AI 增强，AI 只写文案不参与排序）。
+- `utils/util.js`：`showApiError`、`normalizeJoinCode`、`asArray`（跨组件数组对象化兜底）等通用工具；`utils/theme.js`：主题家族管理（**5 个家族** warm/fresh/sky/pink/dark + 跟随系统，旧「accent 色」体系已废除）；`utils/birthday.js`（生日展示与文案，纯函数）、`utils/privacy.js`（隐私授权 PRIV-001）、`utils/changelog.js`（版本数据单源 + 弹窗只弹一次）、`utils/recommend-copy.js` + `utils/ai.js`（推荐文案：稳定种子模板兜底 + CloudBase AI 增强，AI 只写文案不参与排序）。
 - `config.js`：`cloudEnv` + `notifyTemplates`（订阅消息模板 ID 留空时通知功能自动停用）。
-- `components/`：`avatar-group`、`dish-card`、`empty-state`、`privacy-popup`、`reject-reason`、`birthday-popup`（生日当天弹窗，纯展示）。无第三方 UI 库。
+- `components/`：`avatar-group`、`dish-card`、`empty-state`、`privacy-popup`、`reject-reason`、`birthday-popup`（生日当天弹窗，纯展示）、`changelog-popup`（版本更新公告弹窗，数据单源 `utils/changelog.js`）。无第三方 UI 库。
 - 分类管理是**独立页面** `pages/dishes/categories/categories`（不是弹层组件）：图标选择需要一屏铺开 5×5 方阵，半屏弹层里只能挤成横向滚动条，用户看不全也不好点。同样受 `guardChefPage()` 保护。
   图标方阵的原则是**「一个类型一个图标」而非「一种食物一个图标」**（水果只放 🍎 一个，
   不放苹果/橙子/西瓜一整行）——用户挑的是分类类型的图标，同族食物对分类是同一个东西；
@@ -83,8 +83,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |:---|:---|
 | `login` | 用户档案（不存在则创建，并发冲突重读）+ 家庭/成员列表（统一 `familyId` DTO）+ `setNotifyStatus`（订阅授权结果）+ `updateProfile`（昵称/头像/生日，含内容安全与旧头像清理）；`currentFamilyId` 失效自动修正 |
 | `family` | create / joinByCode（原子容量闸门 `memberCount < 10` 条件更新 + 确定性成员 `_id` 幂等 + 失败补偿；连续失败冷却 SEC-003）/ list / switch / members / removeMember / leave（创建者非末位禁止退出；末位退出自动解散并级联清理含云存储图片）/ updateRole / updateMemberRole / transferCreator |
-| `dish` | list（分页 + 按家庭动态分类过滤；`includeHidden=true` 仅 chef，用于恢复隐藏菜品）/ add / update（替换图片删旧图）/ delete / toggleHidden（隐藏时清理当日投票）/ **categories**（分类列表 + 各分类菜品数，家庭成员可读）/ **addCategory** / **removeCategory**（后两者仅 chef；要求分类下无菜品、至少保留 1 个分类、总数 ≤ 24）。add/update 的分类合法性按家庭配置表判定，不再用静态 5 类白名单 |
-| `vote` | add / cancel / **chefCancel**（仅清当日投票、**不隐藏菜品**，可附原因通知受影响成员）/ **submitMenu**（`menu_submissions` 幂等 upsert，入队待汇总）/ **decideMenu**（拍板/移出今晚菜单，拍板通知全家）/ todayList（返回 `{date, groups[], submitCount}`）/ history（按 `date` 查询）/ setRice / getRice（米饭接口保留、前端 UI 已下线）/ **recommend**（今日推荐，见下）。点菜只写 `notify_ledger` 台账、**不再即时推送**（见「订阅消息策略」） |
+| `dish` | list（分页 + 按家庭动态分类过滤；`includeHidden=true` 仅 chef，用于恢复隐藏菜品）/ add / update（替换图片删旧图）/ delete / toggleHidden（隐藏时清理当日投票）/ **categories**（分类列表 + 各分类菜品数，家庭成员可读）/ **addCategory** / **removeCategory**（后两者仅 chef；要求分类下无菜品、至少保留 1 个分类、总数 ≤ 24；分类名经内容安全检测）。add/update 的分类合法性按家庭配置表判定，不再用静态 5 类白名单 |
+| `vote` | add / cancel / **chefCancel**（仅清当日投票、**不隐藏菜品**，可附原因通知受影响成员；自定义原因经内容安全检测）/ **submitMenu**（`menu_submissions` 幂等 upsert，入队待汇总）/ **decideMenu**（拍板/移出今晚菜单，拍板通知全家）/ todayList（返回 `{date, groups[], submitCount}`）/ history（按 `date` 查询）/ setRice / getRice（米饭接口保留、前端 UI 已下线）/ **recommend**（今日推荐，见下）。点菜只写 `notify_ledger` 台账、**不再即时推送**（见「订阅消息策略」） |
 | `notify` | 订阅消息，两种入口：① 云函数内部调用（`internalKey === process.env.NOTIFY_INTERNAL_KEY`，**代码无默认值，缺失 fail closed**）；② **定时触发器**（无 OPENID 且 `event.Type === 'Timer'`），按 `TriggerName` 路由：`birthdayWish` → `sendBirthdayWish`，其余 → `sendMenuDigest`。模板 ID 走环境变量；发送前校验家庭/菜品/成员关系 |
 | `weather` | LBS 天气代理（WEATHER-002）：显式 `adcode`/`location` 或按调用方真实出口 IP（`event.ip` → `CLIENTIP`/`CLIENTIPV6`）定位后查实时/预报天气；`LBS_KEY` 走环境变量（缺失返回 `CONFIG_MISSING`）；天气缓存 30 分钟、IP→adcode 6 小时；**不引用 shared** |
 | `dailyReset` | 定时归档：投票 → `vote_history`（`h_{voteId}` 派生 `_id` + `set` upsert，重复运行幂等）→ 清空热数据 → 重置 `isHidden`（限定 `updatedAt <= resetWindow`）；手动入口需 `ALLOW_MANUAL_RUN=true` |
@@ -125,7 +125,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 云函数 action 清单以各函数 `exports.main` 的 switch 分支为准，前端以 `utils/api.js` 为准。
 - 共享模块是**拷贝模型**（不是 `file:` npm 依赖，`cloud-shared` 已废弃）：改 `shared/` 后必须同步拷贝到 6 个函数目录再部署（见常用操作与 `docs/deployment/database.md` §8）；**不需要** `npm install` 云函数。
-- 数据库安全规则：当前环境 `lcw-d5gfcge7b41bedd02` **不支持 `get()` 跨集合规则**，已退化为客户端读写全关、仅云函数访问（前端 watcher 必然失效，靠下拉刷新/重进兜底）——见 `docs/deployment/database.md` §2.1，不要按 §2 的理想规则想当然。
+- 数据库安全规则：当前环境 `lcw-d5gfcge7b41bedd02` **不支持 `get()` 跨集合规则**，已退化为客户端读写全关、仅云函数访问——`watch()` 失败后已自动**降级为 20s 轮询并在页面显示提示条**（`menu`/`summary`，`syncDegraded`），下拉刷新仍是兜底——见 `docs/deployment/database.md` §2.1，不要按 §2 的理想规则想当然。
 - 未实现/待配置功能（订阅消息模板 ID 与定时触发器、`LBS_KEY`）在 README「未完成功能」中明确标注；**扫码加入家庭已决定不做**，昵称头像授权已实现——不要把未配置当未实现。
 
 ## 参考

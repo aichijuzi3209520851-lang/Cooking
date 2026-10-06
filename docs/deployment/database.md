@@ -44,7 +44,7 @@
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 | `app_config` | false（仅云函数，经 `login.getAppConfig` 下发） | false |
 
-> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效，需在菜单/汇总页以轮询 todayList 替代（代码中 watcher 异常已有重连与下拉刷新兜底）。
+> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06）：watch 重试用尽后改为 20s 轮询 `todayList` 并在页面显示「实时同步不可用」提示条（menu/summary），下拉刷新仍是兜底。
 
 ### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-09-16 核对）
 
@@ -62,8 +62,8 @@
 | `app_config` | （文档未列） | `{"read": false, "write": false}` | 与 `notify_ledger` 一致，仅云函数（PRIV-002） |
 
 **影响**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 因无客户端读权限必然失败。
-代码已有兜底（`onError` 限次重连 → 失败后提示下拉刷新），不会崩溃，但**实时性降级为手动刷新**。
-如需恢复实时监听，可选方案：改由云函数返回数据 + 前端定时轮询 `vote.todayList`（见 §2 退化说明）。
+代码已有兜底（`onError` 限次重连 → 重试用尽后**自动降级为 20s 轮询并显示提示条**，2026-10-06 起），不会崩溃，实时性降级为准实时。
+如需恢复真正的实时监听，需在控制台放开 `daily_votes` 的成员可读规则（依赖 `get()` 跨集合校验能力）。
 
 ## 3. 数据库索引清单
 

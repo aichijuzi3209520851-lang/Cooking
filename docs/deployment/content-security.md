@@ -11,6 +11,8 @@
 |:---|:---|:---|:---|
 | 文本 | 家庭名称 | `security.msgSecCheck`（scene=2） | `cloudfunctions/family/index.js` → `createFamily` |
 | 文本 | 菜品名称 | `security.msgSecCheck`（scene=2） | `cloudfunctions/dish/index.js` → `addDish` / `updateDish` |
+| 文本 | 分类名称（家庭级 UGC，全家可见） | `security.msgSecCheck`（scene=2） | `cloudfunctions/dish/index.js` → `addCategory`（2026-10-06 补齐，对齐菜品名/家庭名） |
+| 文本 | 否决原因（自定义文本，作为订阅消息正文推送） | `security.msgSecCheck`（scene=2） | `cloudfunctions/vote/index.js` → `chefCancel`（2026-10-06 补齐） |
 | 文本 | 用户昵称 | `security.msgSecCheck`（scene=1 资料） | `cloudfunctions/login/index.js` → `updateProfile` |
 | 图片 | 菜品图片 | `security.imgSecCheck`（scene=2） | `cloudfunctions/dish/index.js` → `addDish` / `updateDish` |
 | 图片 | 自定义头像 | `security.imgSecCheck`（scene=1 资料） | `cloudfunctions/login/index.js` → `updateProfile` |
@@ -51,16 +53,19 @@
    | `dish` | `security.msgSecCheck`、`security.imgSecCheck` |
    | `login` | `security.msgSecCheck`、`security.imgSecCheck` |
    | `family` | `security.msgSecCheck` |
+   | `vote` | `security.msgSecCheck`（2026-10-06 新增 config.json，随否决原因检测一起引入） |
 
-3. **重新部署这 3 个云函数**（开发者工具右键「上传并部署：云端安装依赖」，或 CLI `tcb fn deploy dish/login/family`）。
+3. **重新部署这 4 个云函数**（开发者工具右键「上传并部署：云端安装依赖」，或 CLI `tcb fn deploy dish/login/family/vote`）。
    ⚠️ 只更新代码不生效——`config.json` 的权限声明随部署上传。
-4. （可选）在生产环境给 `dish` / `login` / `family` 配置环境变量 `SEC_CHECK_STRICT=true` 开启严格模式。
+4. （可选）在生产环境给 `dish` / `login` / `family` / `vote` 配置环境变量 `SEC_CHECK_STRICT=true` 开启严格模式。
 
 ---
 
 ## 4. 验证清单
 
 - [ ] 创建家庭时输入明显违规词 → 返回 `CONTENT_RISKY`，家庭未创建
+- [ ] 新增分类输入违规词 → 返回 `CONTENT_RISKY`，分类未创建（2026-10-06）
+- [ ] 大厨撤菜填自定义违规原因 → 返回 `CONTENT_RISKY`，撤菜中止（2026-10-06）
 - [ ] 新增菜品时上传违规图片 → 返回 `CONTENT_RISKY`，菜品未创建
 - [ ] 正常内容可正常创建（确认没有误杀）
 - [ ] 云函数日志出现 `[security]` 前缀的调用记录（异常时会打印 errCode）

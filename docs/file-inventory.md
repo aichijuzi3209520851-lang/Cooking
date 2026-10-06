@@ -1,6 +1,6 @@
-# 文件分类清单（2026-09-29 盘点）
+# 文件分类清单（2026-09-29 盘点，2026-10-06 复核更新）
 
-> 盘点范围：git 内全部 375 个文件（工作区当时干净，无未跟踪文件）。
+> 盘点范围：git 内全部文件。10-06 复核：分享封面 TODO 已解决、空状态插画 4→5、新增品牌资产与 UI 审查截图目录、已完成的任务单 `docs/fix-orders-glm.md` 已删除。
 > 状态标记：✅ 在用（动它会影响运行/门禁）　🟢 活文档（需随代码更新）　🟡 参考（一次性，留着备查）　📦 归档（历史记录，基本不会再动）　⚠️ 过时（与现状不符，决定清理时优先看）
 >
 > 结论先行：**没有发现"纯垃圾"文件**——所有文件要么在运行/测试链路上，要么是文档和设计源。
@@ -24,7 +24,7 @@
 | `login` | ✅ 首页（契约测试锁定必须排第一） |
 | `menu` / `summary` / `profile` / `menu-board` | ✅ 4 个 tabBar tab（点菜/汇总/我的/菜单看板） |
 | `welcome` / `role` | ✅ 引导 + 角色选择 |
-| `family/create` / `family/join` / `family/manage` | ✅ 建家/加入码加入/家庭管理（manage.js 有一处 TODO：分享封面图 `images/share/invite-cover.png` **尚未生成**，文件目前不存在） |
+| `family/create` / `family/join` / `family/manage` | ✅ 建家/加入码加入/家庭管理（~~分享封面 TODO~~ 已解决：改用 `images/brand/brand-mark.png` 作分享封面） |
 | `dishes/list` / `dishes/edit` / `dishes/categories` | ✅ 菜品列表/编辑/分类管理（整页） |
 | `history` | ✅ 历史记录（含版本更新历史） |
 | `changelog` | ✅ 版本更新公告页（v1.3.0 新增） |
@@ -41,11 +41,12 @@
 ### 图片（`images/`，全部有代码引用）
 | 目录 | 内容 | 状态 |
 |:---|:---|:---|
-| `tabbar/`（22 个 png） | 4 个默认图标 + 4 主题 × 4 图标 active（warm/fresh/sky/pink/dark） | ✅ `utils/theme.js` 引用全部 5 套主题，一个都不能删 |
+| `tabbar/`（24 个 png） | 4 个灰色默认图标 + 4 图标 × 5 主题 active（warm/fresh/sky/pink/dark） | ✅ `utils/theme.js` 引用全部 5 套主题，一个都不能删 |
 | `category/`（5 svg） | 分类图标 | ✅ 与云函数 `ALLOWED_EMOJI` 两端一致性有测试锁定 |
-| `empty/`（4 svg） | 空状态插画 | ✅ |
+| `empty/`（5 svg） | 空状态插画（新增 `empty-board.svg` 菜罩，看板空态用） | ✅ |
+| `brand/`（2 文件） | `brand-mark.png` 品牌标（欢迎/角色页 + 分享封面）+ `paper-texture.jpg` 纸纹肌理（欢迎页/帮助页背景淡染） | ✅ 2026-10-06 启用；**登录页视觉经用户明确要求保持原样，未使用品牌资产，勿动** |
 | `login/`（7 svg） | 登录页蔬菜插画 | ✅ |
-| `share/` | 分享封面 | ⚠️ 目录不存在，仅 manage.js TODO 中提到，属待补资产而非废弃文件 |
+| `share/` | 分享封面 | ⚠️ 已废弃该计划：分享封面改用 `images/brand/brand-mark.png`，此目录不再需要 |
 
 ---
 
@@ -108,7 +109,8 @@
 | `deployment/security-rules/`（9 个 json） | 数据库/存储安全规则，控制台直接粘贴用 |
 | `whitebox-test-plan.md` | 白盒测试设计（README 链接） |
 | `theme-system-plan.md` / `ui-audit-plan.md` / `login-animation-plan.md` / `image-asset-generation-brief.md` / `tabbar-icon-brief.md` | README「设计文档」表里链接的 5 个专项文档 |
-| 根目录 `project.md` | **AI 协作开发全记录**（09-26~27），含踩坑经验全集和当前状态快照，参考价值很高 |
+| 根目录 `project.md` | **AI 协作开发全记录**（09-26 起，含阶段 11：隐私实时更新 / UI 方案 B / T1-T8 修复），含踩坑经验全集和当前状态快照，参考价值很高 |
+| 根目录 `小程序项目档案.md` | 项目档案（页面/组件/接口清单、待办与提审记录），每轮交付前更新 |
 
 ### 🟡 / 📦 历史档案（一次性报告或已落地的方案，已定格，无随动需求）
 | 文件 | 说明 | 建议 |
@@ -154,4 +156,4 @@
 1. **最安全**：`docs/smoke-test-report-2026-09-14.md`、`docs/compose/workbuddy-commit-guide.md`（纯任务快照，零引用）。
 2. **先扫一眼再决定**：security 系列三份审计（可能有未修复遗留项）、`product-review-2026-09-06.md`、`code-health-audit.md`（findings 是否已全部消化）。
 3. **别删**：`design/svg` 的 tabBar 源图标虽然过时，但它是唯一的设计源；`shared/` 拷贝、`tests/` 全部、`images/tabbar/` 全部主题都在运行链路上。
-4. **待补而非待删**：`images/share/invite-cover.png`（manage.js TODO）。
+4. ~~待补而非待删：`images/share/invite-cover.png`~~ 已解决（改用 `images/brand/brand-mark.png`）。

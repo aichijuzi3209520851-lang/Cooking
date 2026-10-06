@@ -61,8 +61,8 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单（餐次自选，缺省中餐）后**立即实时合并推送**给大厨，饭点定时器（11:00/17:00）转为兜底补发；即时推送还有「撤菜」「拍板」。消息跳转落点是「菜单」看板页 `pages/menu-board/menu-board`（`vote.todaySubmissions` 数据源）。
 - 数据库 10 个集合（含 `menu_submissions`、`rice_reports`、`app_config`）。米饭前端已下线，云函数接口保留，`dailyReset` 仍会清理。《隐私协议》全文存 `app_config`（`_id`=`privacy_agreement`）：控制台改文档即实时生效、无需发版（`login.getAppConfig` 下发，前端 `utils/privacy-content.js` 内置兜底，手册 `docs/deployment/privacy-agreement.md` §7）。
 - 部署：先同步 `shared` → 再传 7 个函数（`weather` 无 shared，但也需上传）。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
-- 当前环境安全规则**不支持 `get()` 跨集合**，已退化为客户端读写全关、仅云函数访问（`docs/deployment/database.md` §2.1）。
-- 待配置：订阅消息模板 ID + `NOTIFY_*`/`LBS_KEY` 环境变量 + 4 个定时触发器——见 README「未完成功能」。**扫码加入家庭已决定不做**（加入方式＝6 位加入码 + 分享卡片）。
+- 当前环境安全规则**不支持 `get()` 跨集合**，已退化为客户端读写全关、仅云函数访问（`docs/deployment/database.md` §2.1）；watch 失败已自动降级为 20s 轮询并在页面提示（`menu`/`summary` 的 `syncDegraded`）。
+- 已配置（2026-09-27，真机验证过）：订阅消息模板 ID、`NOTIFY_*` 环境变量、4 个定时触发器、`config.js` 模板段。**仍待配置：`LBS_KEY`**（weather；缺失时天气加权静默降级）。**扫码加入家庭已决定不做**（加入方式＝6 位加入码 + 分享卡片）。
 
 ## 参考
 

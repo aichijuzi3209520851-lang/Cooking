@@ -104,13 +104,13 @@
 - **五大主题家族 + 跟随系统**：温馨暖调（辣椒红×暖米）/ 清新绿意（葱青绿×薄荷白）/ 晴空浅蓝（晴空蓝×云白）/ 樱粉（樱花粉×奶白）/ 静谧夜间（暖黑「深夜食堂」）
 - **跟随系统实时联动**：系统切深浅色，小程序不重启即时切换（`wx.onThemeChange`）
 - **全量联动**：内容区配色、导航栏、tabBar 选中图标与文字色、下拉刷新底色、原生弹窗确认色随家族整体切换
-- 主题设置页为 4 张纯 CSS 色卡预览（所见即所得），点击立即全页生效；偏好本地持久化 + 云端同步
+- 主题设置页为 6 张纯 CSS 色卡预览（跟随系统 + 5 家族，所见即所得），点击立即全页生效；偏好本地持久化 + 云端同步
 
 ### 7. 视觉体验
 - **登录页**：沉浸式自定义导航 + 7 个食物图标漂浮动效 + 重力感应视差（倾斜手机，漂浮层与品牌区反向位移）
 - **tabBar**：面性圆润风格图标（碗筷/清单/人形），选中态颜色随主题家族切换
-- **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史）与菜品分类占位图均为定制 SVG 插画，裂图自动回退 emoji
-- **交互细节**：投票成功弹跳动效 + 震动反馈、菜单页首屏骨架屏、下拉刷新、实时数据监听（watcher）多端同步
+- **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史/看板无提交）与菜品分类占位图均为定制 SVG 插画，裂图自动回退 emoji
+- **交互细节**：投票成功弹跳动效 + 震动反馈、菜单/汇总/看板/历史页首屏骨架屏、下拉刷新、实时同步（数据库 watch 多端监听；权限受限环境自动降级 20s 轮询并在页面提示）
 
 ### 8. 生日提醒与祝福（BIRTHDAY-001）
 - 生日**只存月日、不存年份**（最小化收集），支持公历 / 农历（1900-2100 农历换算，前端展示「腊月廿九」这类汉字）
@@ -118,7 +118,7 @@
 - `notify` 的 `birthdayWish` 触发器（每日 09:00）向同家庭其他成员发祝福；只广播「明确同意展示」（`shared` 开关）的生日，寿星本人不收
 
 ### 9. 分享邀请
-- 家庭管理页支持分享给好友/群与朋友圈，卡片携带 6 位加入码，接收方点开自动填码加入
+- 家庭管理页支持分享给好友/群与朋友圈，卡片携带 6 位加入码与品牌封面图，接收方点开自动填码加入
 
 ---
 
@@ -168,13 +168,14 @@
 miniprogram-11/
 ├── miniprogram/                  # 小程序前端
 │   ├── app.js                    # 应用入口：云环境初始化、静默登录、全局状态
-│   ├── app.json                  # 页面路由、TabBar（点菜/汇总/我的）、窗口配置
-│   ├── app.wxss                  # 全局设计系统：三主题家族变量、通用组件样式
+│   ├── app.json                  # 页面路由、TabBar（点菜/汇总/菜单/我的）、窗口配置
+│   ├── app.wxss                  # 全局设计系统：五主题家族变量、字阶/间距/图标令牌、通用组件样式
 │   ├── sitemap.json
 │   ├── images/                   # 图片素材（生图模型产出 + 开发整合）
-│   │   ├── tabbar/               #   导航图标（PNG，4 配色 × 3 图标，随主题切换）
+│   │   ├── tabbar/               #   导航图标（PNG，4 图标 × 1 灰色常态 + 5 主题选中态）
 │   │   ├── login/                #   登录页漂浮 SVG 图标（7 个食物造型）
-│   │   ├── empty/                #   空状态插画（无家庭/空菜谱/无人点菜/无历史）
+│   │   ├── empty/                #   空状态插画（无家庭/空菜谱/无人点菜/无历史/看板无提交）
+│   │   ├── brand/                #   品牌资产（brand-mark 品牌标 + paper-texture 纸纹肌理）
 │   │   └── category/             #   菜品分类占位插画（荤/素/汤/主食/凉菜）
 │   ├── components/               # 自定义组件
 │   │   ├── avatar-group/         #   成员头像组（自动生成暖色渐变头像）
@@ -193,13 +194,15 @@ miniprogram-11/
 │   │   │   ├── join/             #   通过 6 位加入码加入（输满自动提交）
 │   │   │   └── manage/           #   家庭管理（成员、角色、加入码复制）
 │   │   ├── menu/                 # [Tab] 点菜首页：左侧分类导航（✨推荐/全部/家庭分类…）+ 菜品流
-│   │   ├── summary/              # [Tab] 汇总页：当日投票结果
+│   │   ├── summary/              # [Tab] 汇总页：当日投票结果、拍板、吸底提交菜单
+│   │   ├── menu-board/           # [Tab] 菜单看板：全家总单 + 按人分组明细（订阅消息落点）
 │   │   ├── profile/              # [Tab] 我的：家庭/角色/主题/历史入口
 │   │   ├── dishes/
 │   │   │   ├── list/             #   菜谱管理列表（金牌大厨）
 │   │   │   ├── edit/             #   菜品新增/编辑表单
 │   │   │   └── categories/       #   分类管理整页：增删家庭分类 + 5×5 图标方阵
 │   │   ├── history/              # 历史菜单回看（日期选择器）
+│   │   ├── changelog/            # 版本更新记录页（与 changelog-popup 同一数据源）
 │   │   ├── help/                 # 使用帮助（按真实点击路径编写的分步指引）
 │   │   ├── agreement/
 │   │   │   └── privacy/          #   用户隐私协议页
@@ -214,7 +217,8 @@ miniprogram-11/
 │       ├── privacy.js            #   隐私授权管理（onNeedPrivacyAuthorization 统一弹窗）
 │       ├── recommend-copy.js     #   推荐文案层（稳定种子模板 + AI 增强，失败自动回落）
 │       ├── ai.js                 #   CloudBase AI 大模型接入（无 Key、不可用即降级）
-│       └── util.js               #   日期格式化、防抖节流、交互反馈、asArray 等工具
+│       ├── changelog.js          #   版本数据单源（RELEASES）+ 弹窗只弹一次/广播关闭
+│       └── util.js               #   日期格式化、防抖节流、头像渐变统一生成、asArray 等工具
 │
 ├── cloudfunctions/               # 云函数
 │   ├── login/                    # 静默登录 + 用户资料 + 全局配置下发：login/setNotifyStatus/updateProfile/getAppConfig
@@ -239,6 +243,7 @@ miniprogram-11/
 ├── docs/                         # 项目文档
 │   ├── deployment/               #   部署文档与数据库安全规则
 │   ├── history/                  #   历史规划归档（任务清单、Plan-Do-Check 执行记录）
+│   ├── file-inventory.md         #   全仓库文件分类清单（活文档，随结构变化更新）
 │   ├── theme-system-plan.md      #   主题系统方案与实施记录
 │   ├── ui-audit-plan.md          #   UI/UX 审查与优化方案
 │   ├── login-animation-plan.md   #   登录页动效方案
@@ -275,7 +280,8 @@ miniprogram-11/
 | `utils/api.js` | 统一云函数调用封装 | 自定义 `ApiError` 类型（携带稳定 `errorCode`），不做自动 toast，由页面统一处理 |
 | `utils/category.js` | 菜品分类唯一数据源 | **纯函数、零依赖**；内置 5 类默认值 + 当前家庭分类表的内存缓存（`setFamilyCategories` / `getCategories`），页面与组件统一经 `emojiOf` / `nameOf` / `imageOf` 解析，禁止各自硬编码分类 map；图标方阵 `EMOJI_PICKER`（25 个，按类型组织）须与云函数 `ALLOWED_EMOJI` 保持同步 |
 | `utils/dto.js` | DTO 转换层 | **纯函数、零依赖**，`normalizeTodayList`/`buildMenuList`/`buildSummaryList` 等，可在 Node 环境直接 `require` 测试 |
-| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、头像颜色生成、家族感知弹窗确认色、`showApiError` 统一错误展示、`asArray` 跨组件数组归一化（分类枚举已迁至 `utils/category.js`） |
+| `utils/util.js` | 通用工具 | 日期格式化、防抖/节流、头像渐变统一生成（`getAvatarGradient`，全站唯一实现，dish-card/历史/家庭管理共用）、家族感知弹窗确认色、`showApiError` 统一错误展示、`asArray` 跨组件数组归一化（分类枚举已迁至 `utils/category.js`） |
+| `utils/changelog.js` | 版本数据单源 | `RELEASES` 数组随发版维护；`getVersion()` 供「关于」页展示，杜绝版本号多处硬编码 |
 | `utils/theme.js` | 主题家族管理 | 家族解析（跟随系统→深浅映射）、导航/tabBar/窗口联动、主题 class 下发、旧字段缓存迁移 |
 | `utils/birthday.js` | 生日展示与文案 | 公历数字/农历汉字渲染、提醒条与弹窗文案（寿星/家人两套）；纯函数，可单测 |
 | `utils/privacy.js` | 隐私授权管理 | `onNeedPrivacyAuthorization` 统一弹窗、低版本降级、隐私拦截错误识别（PRIV-001） |
@@ -514,7 +520,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `delete` | `dishId` | 删除菜品，级联清理当日投票与关联图片（**仅家庭创建者**，不可逆操作） |
 | `toggleHidden` | `dishId, isHidden` | 切换隐藏状态（隐藏时清理当日投票） |
 | `categories` | `familyId` | 分类列表 + 各分类菜品数（家庭成员可读；数量用于面板展示与删除提示） |
-| `addCategory` | `familyId, name, emoji?` | 新增分类（**仅金牌大厨**）。名称 ≤6 字、家庭内不重名、总数 ≤24；`emoji` 未传时按名称自动匹配 |
+| `addCategory` | `familyId, name, emoji?` | 新增分类（**仅金牌大厨**）。名称 ≤6 字、家庭内不重名、总数 ≤24，并经内容安全检测（UGC）；`emoji` 未传时按名称自动匹配 |
 | `removeCategory` | `familyId, categoryKey` | 删除分类（**仅金牌大厨**）。要求该分类下无菜品、且至少保留 1 个分类 |
 
 ### 错误码约定
@@ -550,7 +556,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 |:---|:---|:---|
 | `add` | `familyId, dishId` | 投一票（确定性 `_id` 幂等，重复返回 `VOTE_ALREADY_EXISTS`） |
 | `cancel` | `familyId, dishId` | 干饭能手撤回自己的票（不扣减累计 `cookCount`） |
-| `chefCancel` | `familyId, dishId, reason?` | 金牌大厨否决任意投票（仅清当日投票，菜品保留、可再点），可附原因并通知受影响成员 |
+| `chefCancel` | `familyId, dishId, reason?` | 金牌大厨否决任意投票（仅清当日投票，菜品保留、可再点），可附原因并通知受影响成员；自定义原因经内容安全检测后才进订阅消息 |
 | `submitMenu` | `familyId` | 提交今日菜单（`menu_submissions` 幂等 upsert，入队等待饭点汇总；重复提交＝更新并重新入队） |
 | `decideMenu` | `familyId, dishId, decided` | 拍板 / 移出今晚菜单（仅 chef）；拍板时通知全家 |
 | `todayList` | `familyId` | 当日投票结果，返回 `{ date, groups[], submitCount }`（group 含 `dishId/dishName/category/imageUrl/isHidden/decided/voters[]`） |
@@ -658,7 +664,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 类型 | 字段 | 接口 |
 |:---|:---|:---|
-| 文本 | 家庭名称、菜品名称、昵称 | `security.msgSecCheck` |
+| 文本 | 家庭名称、菜品名称、分类名称、否决原因（订阅消息正文）、昵称 | `security.msgSecCheck` |
 | 图片 | 菜品图片、自定义头像 | `security.imgSecCheck` |
 
 统一封装在 `shared/security.js`；命中违规抛 `CONTENT_RISKY` 终止写入；审核接口异常默认 fail-open（记日志放行），可通过 `SEC_CHECK_STRICT=true` 切换为 fail-closed。完整说明见 [docs/deployment/content-security.md](docs/deployment/content-security.md)。
@@ -707,7 +713,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 全站使用 `var(--color-*)` 语义化 token，主题以「家族」为单位整体切换：
 
-- 三大家族：`.theme-warm`（温馨暖调）/ `.theme-fresh`（清新绿意）/ `.theme-dark`（静谧夜间），每套含背景/卡片/文字/强调色/阴影全量令牌
+- 五大家族：`.theme-warm`（温馨暖调）/ `.theme-fresh`（清新绿意）/ `.theme-sky`（晴空浅蓝）/ `.theme-pink`（樱粉）/ `.theme-dark`（静谧夜间），每套含背景/卡片/文字/强调色/阴影全量令牌
 - 运行时由 `utils/theme.js` 统一决策并在页面根节点挂 class；`@media (prefers-color-scheme: dark)` 仅作冷启动首帧兜底，两套定义保持一致
 - 导航栏 / tabBar（含选中图标）/ 窗口底色 / 下拉刷新样式经 `wx.set*` API 与内容区同步切换；跟随系统时监听 `wx.onThemeChange` 实时响应
 - 暖色阴影体系：浅色 `rgba(160, 110, 60, 0.08)` 暖棕色调阴影，深色改用发丝描边保持卡片层级，强化餐饮品牌感
@@ -747,9 +753,9 @@ users (1) ──── (N) family_members (N) ──── (1) families
 ```
 干饭能手浏览菜谱 → 点菜投票 → 实时票数更新
                                 │
-                   写 notify_ledger 当日台账（不即时推送）
+                   写 notify_ledger 当日台账（点菜不推送）
                                 │
-              饭点前 11:00 / 17:00 合并一条汇总发给厨师
+        提交菜单 → 立即合并一条实时推给大厨（11:00/17:00 触发器兜底补发）
                                 │
 金牌大厨查看汇总 → 可一票否决（清当日投票 + 通知受影响成员，菜品保留）
                                 │
@@ -790,7 +796,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 - **tabBar**：面性圆润图标（碗筷/清单/人形，生图模型产出），暖灰普通态 + 家族色选中态，随主题切换
 - **登录页**：沉浸式自定义导航、7 个食物 SVG 漂浮动效（4 组错帧轨迹）、加速度计重力视差
 - **插画体系**：空状态与分类占位使用定制扁平绘本风 SVG，`empty-state` 组件插画优先、emoji 兜底
-- **骨架屏**：菜单页首屏加载占位，消除空状态闪现
+- **骨架屏**：菜单/汇总/看板/历史页首屏加载占位，消除空状态闪现
 - **触控热区**：高频小按钮统一 `::after` 外扩至 ≥88rpx（44px）
 
 ### 设计原则
@@ -872,7 +878,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 
 | 指标 | 数值 |
 |:---|:---|
-| 前端页面数 | **16** 个 |
+| 前端页面数 | **18** 个（4 个 tabBar + 14 个普通页） |
 | 自定义组件数 | **7** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup / changelog-popup） |
 | 云函数数 | **7** 个（login 4 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
 | 数据库集合数 | **10** 个 |
@@ -880,7 +886,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
 | 测试 | **21** 个测试文件 / **273** 个用例（单元 114 / 契约 53 / 冒烟 4 / 白盒 102），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
-| 插画素材 | **28** 张（空状态 4 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 12，生图模型产出） |
+| 插画素材 | **41** 张（空状态 5 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 24）+ 品牌资产 2（brand-mark/纸纹） |
 | 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |
 | 主题方案 | **5** 大主题家族 + 跟随系统（导航/tabBar/弹窗全量联动） |
 | 字阶体系 | **10** 档 `--text-*` 令牌（22/24/26/28/30/38/40/42/52/68rpx），页面一律走令牌 |
@@ -893,7 +899,8 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 
 | 功能 | 状态 | 说明 |
 |:---|:---|:---|
-| 订阅消息通知 | 依赖配置 | 模板 ID 需在微信公众平台申请并配置环境变量 + `miniprogram/config.js`，否则通知自动停用；饭点汇总与生日祝福还需给 `notify` 配三个定时触发器（见 [部署文档](docs/deployment/database.md) §6.2 / §6.3） |
+| 天气加权（LBS） | 依赖配置 | `weather` 云函数需配置 `LBS_KEY`（腾讯位置服务 Key）；未配置时天气 chip 与天气加权静默降级，不影响主流程 |
+| 订阅消息通知 | ✅ 已配置 | 模板 ID、`NOTIFY_*` 环境变量与 4 个定时触发器已于 2026-09-27 配置完成并端到端验证（体验版真机收到推送）；正式发布时把 `NOTIFY_MP_STATE` 改为 `formal` |
 | 扫码加入家庭 | 已决定不做 | 不实现二维码生成与 `wx.scanCode` 加入流程；加入方式为 6 位加入码 + 分享卡片邀请 |
 
 > 已于 2026-09 完成：分类占位插画（`images/category/`）、空状态插画（`images/empty/`）、tabBar 图标（`images/tabbar/`）、登录页漂浮素材（`images/login/`），以及**用户自定义昵称与头像**（微信头像昵称填写能力 + 云存储 `avatars/{openid}/` 路径；需在控制台存储规则中放行该前缀的本人写入）。
