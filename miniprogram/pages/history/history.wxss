@@ -1,7 +1,10 @@
-/* pages/history/history.wxss */
+/* pages/history/history.wxss
+ * 与全局系统同频：日期条用 .card，间距走 --space-*，字重走 --weight-*，
+ * 头像渐变统一由 utils/util.js#getAvatarGradient 提供（同人同色）
+ */
 .history-page {
-  padding-top: 24rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-6);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -11,8 +14,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 32rpx;
-  margin-bottom: 24rpx;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .date-arrow {
@@ -22,8 +25,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-card-inner);
-  transition: all 0.2s ease;
+  background: var(--surface-sunken);
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
   position: relative;
 }
 
@@ -48,7 +51,7 @@
 }
 
 .date-arrow-icon {
-  font-size: 48rpx;
+  font-size: var(--icon-sm);
   color: var(--color-accent);
   line-height: 1;
   margin-top: -4rpx;
@@ -62,56 +65,45 @@
 
 .date-text {
   font-size: var(--text-h3);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   letter-spacing: 1rpx;
 }
 
-/* 历史卡片 */
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.history-card {
-  padding: 28rpx 32rpx;
-  margin-bottom: 0;
-}
-
+/* 历史卡片：.card 自带 32rpx 内边距与 24rpx 卡距，不再另起一套 */
 .history-dish-name-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 20rpx;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .history-dish-name {
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
 }
 
 /* 拍板标识：今晚实际做了这道菜 */
 .history-decided-chip {
-  padding: 4rpx 16rpx;
+  padding: 4rpx var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
   color: var(--color-accent-deep);
   font-size: var(--text-caption);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .voters-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 24rpx 32rpx;
+  gap: var(--space-3) var(--space-4);
 }
 
 .voter-item {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: var(--space-2);
 }
 
 .voter-avatar {
@@ -126,11 +118,72 @@
 
 .voter-avatar-text {
   font-size: var(--text-body-sm);
-  font-weight: 600;
-  color: #FFFFFF;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-inverse);
 }
 
 .voter-name {
   font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
+}
+
+/* 加载失败态：区分于空态，给明确的重试入口 */
+.history-error {
+  padding: var(--space-10) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.history-error-text {
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.history-retry-btn {
+  margin-top: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  height: 68rpx;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+}
+
+/* 加载骨架（与历史卡同形，避免加载完成时跳动） */
+.skeleton-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
+}
+
+.skeleton-line {
+  height: 32rpx;
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-line-title {
+  width: 45%;
+}
+
+.skeleton-line-short {
+  width: 30%;
+  margin-bottom: 0;
+}
+
+.skeleton-shimmer {
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }

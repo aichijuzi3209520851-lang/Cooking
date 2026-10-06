@@ -19,6 +19,10 @@ const PRESET_REASONS = [
 const REASON_MAX = 20
 
 Component({
+  options: {
+    addGlobalClass: true
+  },
+
   properties: {
     visible: { type: Boolean, value: false },
     dishName: { type: String, value: '' }

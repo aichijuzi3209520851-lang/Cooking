@@ -34,7 +34,8 @@
           <view class="badge {{isChef ? 'badge-chef' : 'badge-eater'}}">
             {{roleName}}
           </view>
-          <text class="profile-family" wx:if="{{currentFamily}}">{{currentFamily.name}}</text>
+          <!-- 家庭名加「家庭」前缀：裸放一串字符（尤其纯数字家庭名）没人知道是什么 -->
+          <text class="profile-family" wx:if="{{currentFamily}}">家庭 · {{currentFamily.name}}</text>
           <text class="profile-family" wx:else>暂未加入家庭</text>
         </view>
       </view>

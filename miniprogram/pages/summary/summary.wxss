@@ -38,6 +38,8 @@
 /* ===== 汇总卡片 ===== */
 .summary-list {
   padding-top: var(--space-1);
+  /* 给吸底提交条让位，最后一卡不被遮住 */
+  padding-bottom: calc(240rpx + env(safe-area-inset-bottom));
 }
 
 .summary-card {
@@ -91,7 +93,7 @@
 }
 
 .dish-thumb-emoji {
-  font-size: 48rpx;
+  font-size: var(--icon-sm);
   line-height: 1;
 }
 
@@ -163,7 +165,7 @@
 .voter-avatar-text {
   font-size: var(--text-mini);
   font-weight: var(--weight-semibold);
-  color: #FFFFFF;
+  color: var(--color-text-inverse);
   line-height: 1;
 }
 
@@ -173,7 +175,21 @@
   line-height: 1.2;
 }
 
-/* 右侧热度：数字与标签左对齐成组，避免与信息区错位 */
+/* +N 折叠 chip：与头像同高，点按展开全部投票人 */
+.voter-extra {
+  display: flex;
+  align-items: center;
+  height: 48rpx;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--color-text-secondary);
+  font-size: var(--text-mini);
+  font-weight: var(--weight-semibold);
+  box-sizing: border-box;
+}
+
+/* 右侧热度：数字用专用档 --text-num（42），不与页面标题（h1 52）打架 */
 .dish-heat {
   display: flex;
   flex-direction: column;
@@ -184,7 +200,7 @@
 }
 
 .heat-num {
-  font-size: var(--text-h1);
+  font-size: var(--text-num);
   font-weight: var(--weight-black);
   /* 用 num-strong 而非 accent：金色等浅强调色下依然 ≥3:1 */
   color: var(--color-num-strong);
@@ -194,7 +210,7 @@
 .heat-label {
   font-size: var(--text-mini);
   color: var(--color-text-secondary);
-  margin-top: 6rpx;
+  margin-top: var(--space-1);
 }
 
 /* 金牌大厨操作行：主操作（定菜）撑满左侧，破坏性操作（撤下）靠右且不抢焦点 */
@@ -207,16 +223,16 @@
   gap: var(--space-3);
 }
 
-/* 拍板按钮：主操作，撑满剩余宽度（与全局按钮同高 72rpx） */
+/* 拍板按钮：主操作，撑满剩余宽度（与全局按钮体系对齐：84rpx / body-sm / semibold） */
 .decide-btn {
   flex: 1;
-  height: 72rpx;
-  line-height: 68rpx;
+  height: 84rpx;
+  line-height: 80rpx;
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
   border: 2rpx solid var(--color-accent);
   color: var(--color-accent-deep);
-  font-size: var(--text-caption);
+  font-size: var(--text-body-sm);
   font-weight: var(--weight-semibold);
   text-align: center;
   box-sizing: border-box;
@@ -249,31 +265,40 @@
   opacity: 0.6;
 }
 
-/* ===== 提交今日菜单（NOTIFY-002）：汇总今日点菜并通知金牌大厨 ===== */
-/* 统计信息已上移到顶部英雄区，底部只保留提交操作与安全区留白 */
+/* ===== 提交今日菜单（NOTIFY-002）：吸底常驻操作条 =====
+   固定在 tabBar 上方，长列表滚到哪都能提交；顶部发丝线与页面内容分层 */
 .submit-bar {
-  padding: var(--space-6) var(--space-4) var(--space-3);
-  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface-page);
+  border-top: 1rpx solid var(--hairline);
+  box-sizing: border-box;
 }
 
 .submit-btn {
-  height: 92rpx;
-  line-height: 92rpx;
+  height: 96rpx;
+  line-height: 96rpx;
   text-align: center;
-  border-radius: 46rpx;
-  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: var(--color-on-accent);
   font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-  box-shadow: var(--shadow-accent);
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--elev-accent);
 }
 
 .submit-btn-hover {
   opacity: 0.88;
 }
 
+/* 禁用态与其他按钮同一语言：可读灰（旧版 opacity 洗白导致文案不可读） */
 .submit-btn.is-disabled {
-  opacity: 0.45;
+  background: var(--surface-sunken);
+  color: var(--color-text-tertiary);
   box-shadow: none;
 }
 
@@ -282,4 +307,50 @@
   text-align: center;
   font-size: var(--text-caption);
   color: var(--color-text-tertiary);
+}
+
+/* ===== 首屏加载骨架（形状与 summary-card 对齐，避免加载完成时跳动） ===== */
+.skeleton-card {
+  display: flex;
+  align-items: center;
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
+}
+
+.skeleton-thumb {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+}
+
+.skeleton-line {
+  height: 32rpx;
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-line-short {
+  width: 40%;
+  margin-bottom: 0;
+}
+
+.skeleton-shimmer {
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }

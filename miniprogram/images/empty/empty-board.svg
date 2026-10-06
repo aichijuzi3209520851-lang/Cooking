@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 空状态：今天还没有提交的菜单 —— 托盘上扣着菜罩（答案还没揭晓） -->
+  <!-- 托盘（暖棕木纹感，与 empty-summary 圆桌同族） -->
+  <ellipse cx="256" cy="372" rx="185" ry="44" fill="#8B5E3C"/>
+  <ellipse cx="256" cy="368" rx="185" ry="42" fill="#A0704A"/>
+  <ellipse cx="256" cy="366" rx="160" ry="34" fill="none" stroke="#6B4528" stroke-width="3" opacity="0.35"/>
+  <!-- 菜罩穹顶（奶油白，与盘子同族） -->
+  <path d="M 116 342
+           C 116 220, 176 158, 256 158
+           C 336 158, 396 220, 396 342
+           Z"
+        fill="#FDF3E3"/>
+  <!-- 罩体左侧高光 -->
+  <path d="M 150 300
+           C 152 232, 196 182, 244 172
+           C 200 190, 168 236, 164 300
+           Z"
+        fill="#FFFFFF" opacity="0.65"/>
+  <!-- 罩底沿 -->
+  <rect x="108" y="336" width="296" height="18" rx="9" fill="#E8DDC8"/>
+  <!-- 透气孔三枚 -->
+  <circle cx="216" cy="230" r="7" fill="#E8DDC8"/>
+  <circle cx="256" cy="216" r="7" fill="#E8DDC8"/>
+  <circle cx="296" cy="230" r="7" fill="#E8DDC8"/>
+  <!-- 罩顶提钮（品牌红，与 tab 选中色同源） -->
+  <circle cx="256" cy="150" r="14" fill="#D93A2B"/>
+  <circle cx="256" cy="146" r="5" fill="#FFFFFF" opacity="0.5"/>
+</svg>

@@ -1,7 +1,7 @@
 <!--components/birthday-popup/birthday-popup.wxml-->
 <!--生日当天公告弹窗（BIRTHDAY-003）：寿星与家人看到的是两套文案，
     由 utils/birthday.js#buildPopupContent 生成后从页面传进来。-->
-<view wx:if="{{visible}}" class="bp-mask" catchtouchmove="onCatchMove">
+<view wx:if="{{visible}}" class="overlay-mask bp-mask" catchtouchmove="onCatchMove">
   <view class="bp-dialog">
 
     <view class="bp-badge">

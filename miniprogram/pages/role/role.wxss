@@ -1,7 +1,7 @@
 /* pages/role/role.wxss */
 .role-page {
-  padding-top: 48rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -9,12 +9,15 @@
 }
 
 .role-header {
-  margin-bottom: 56rpx;
+  margin-bottom: var(--space-8);
 }
 
 .role-subtitle {
-  margin-top: 16rpx;
+  display: block;
+  margin-top: var(--space-2);
   font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
 .role-cards {
@@ -24,25 +27,32 @@
 .role-card {
   display: flex;
   align-items: center;
-  background: var(--color-card);
+  background: var(--surface-card);
   border-radius: var(--radius-lg);
-  padding: 40rpx 32rpx;
-  margin-bottom: 24rpx;
+  padding: var(--space-5) var(--space-4);
+  margin-bottom: var(--space-3);
   border: 3rpx solid transparent;
-  transition: all 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   position: relative;
+  box-shadow: var(--elev-1);
+}
+
+/* 卡片按压反馈：旧版点了毫无反应，是全组交互质感最弱的一处 */
+.role-card-press {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 .role-card-selected {
   border-color: var(--color-accent);
-  background: var(--color-card-inner);
+  background: var(--surface-sunken);
   box-shadow: 0 0 0 6rpx var(--color-accent-soft);
 }
 
-.role-emoji {
-  font-size: 80rpx;
-  line-height: 1;
-  margin-right: 32rpx;
+.role-icon-img {
+  width: 84rpx;
+  height: 84rpx;
+  margin-right: var(--space-4);
   flex-shrink: 0;
 }
 
@@ -53,11 +63,13 @@
 }
 
 .role-name {
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-1);
 }
 
 .role-desc {
   font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
 .role-check {
@@ -74,10 +86,10 @@
 .role-check-icon {
   color: var(--color-on-accent);
   font-size: var(--text-body-sm);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .role-footer {
-  padding-top: 32rpx;
+  padding-top: var(--space-4);
   margin-top: auto;
 }

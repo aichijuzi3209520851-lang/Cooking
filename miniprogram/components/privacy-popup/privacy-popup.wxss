@@ -1,17 +1,7 @@
 /* components/privacy-popup/privacy-popup.wxss */
-/* 复用 app.wxss 的主题变量，跟随暖/清/夜等多套主题 */
+/* 遮罩/层级走 app.wxss 弹层基类 .overlay-mask；此处只留弹窗自身布局 */
 
 .pp-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--space-4, 32rpx);
   box-sizing: border-box;
 }
@@ -20,10 +10,10 @@
   width: 100%;
   max-width: 600rpx;
   background: var(--surface-raised, #ffffff);
-  border-radius: 28rpx;
+  border-radius: var(--radius-lg, 32rpx);
   padding: var(--space-6, 48rpx) var(--space-5, 40rpx) var(--space-5, 40rpx);
   box-sizing: border-box;
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.16);
+  box-shadow: var(--elev-3);
 }
 
 .pp-title {
@@ -50,8 +40,8 @@
 }
 
 .pp-link {
-  color: var(--color-primary, #d93a2b);
-  font-weight: 500;
+  color: var(--color-accent, #d93a2b);
+  font-weight: var(--weight-medium, 500);
 }
 
 .pp-tip {
@@ -59,7 +49,7 @@
   font-size: var(--text-caption);
   color: var(--color-text-tertiary, #a2968a);
   background: var(--surface-sunken, #fbf5ec);
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm, 16rpx);
   padding: var(--space-3, 24rpx);
 }
 
@@ -71,11 +61,12 @@
 
 .pp-btn {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 84rpx;
+  line-height: 84rpx;
   text-align: center;
-  border-radius: 44rpx;
+  border-radius: var(--radius-pill);
   font-size: var(--text-body);
+  font-weight: var(--weight-semibold, 600);
   box-sizing: border-box;
 }
 
@@ -86,7 +77,7 @@
 
 .pp-btn-primary {
   color: var(--color-on-accent, #ffffff);
-  background: var(--color-primary, #d93a2b);
+  background: linear-gradient(135deg, var(--color-accent, #d93a2b), var(--color-accent-deep, #a32318));
   border: none;
   padding: 0;
 }

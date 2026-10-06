@@ -9,7 +9,12 @@
   padding-top: 120rpx;
   padding-bottom: calc(env(safe-area-inset-bottom) + 80rpx);
   box-sizing: border-box;
-  background-color: var(--color-bg-secondary);
+  /* 与登录页同一渐变氛围（上一页是光晕+漂浮食材，这一页素底会像换了 App） */
+  background:
+    linear-gradient(180deg, var(--surface-page) 0%, var(--surface-card) 55%, var(--color-cream) 100%),
+    url('/images/brand/paper-texture.jpg');
+  background-size: 100% 100%, 360rpx 323rpx;
+  background-blend-mode: normal, multiply;
 }
 
 .welcome-content {
@@ -20,19 +25,19 @@
   justify-content: center;
 }
 
-.welcome-emoji {
-  font-size: 144rpx;
-  line-height: 1;
-  margin-bottom: 48rpx;
+.welcome-mark-img {
+  width: 168rpx;
+  height: 168rpx;
+  margin-bottom: var(--space-6);
 }
 
 .welcome-title {
   font-size: var(--text-display);
-  font-weight: 800;
+  font-weight: var(--weight-black);
   color: var(--color-text-primary);
   letter-spacing: 2rpx;
-  line-height: 1.2;
-  margin-bottom: 24rpx;
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-3);
 }
 
 .welcome-title-highlight {
@@ -42,7 +47,7 @@
 .welcome-subtitle {
   font-size: var(--text-body);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   letter-spacing: 1rpx;
 }
 
@@ -54,13 +59,13 @@
 }
 
 .welcome-btn {
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-3);
 }
 
 .welcome-footer {
   font-size: var(--text-caption);
   color: var(--color-text-tertiary);
-  margin-top: 24rpx;
+  margin-top: var(--space-3);
   text-align: center;
   letter-spacing: 2rpx;
 }
@@ -75,8 +80,8 @@
 
 .welcome-login-error-text {
   font-size: var(--text-body-sm);
-  color: var(--color-primary);
-  margin-bottom: 32rpx;
+  color: var(--color-danger);
+  margin-bottom: var(--space-4);
   text-align: center;
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }

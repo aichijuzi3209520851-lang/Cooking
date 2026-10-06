@@ -5,6 +5,10 @@
 // 「每天只弹一次」由页面（menu.js）用本地缓存控制，组件保持无状态、可复用。
 // 内容由 utils/birthday.js#buildPopupContent 生成——寿星与家人看到的是两套文案。
 Component({
+  options: {
+    addGlobalClass: true
+  },
+
   properties: {
     visible: { type: Boolean, value: false },
     title: { type: String, value: '' },

@@ -3,28 +3,20 @@
  * 「公告」的语义是打断一下、看一眼就走，居中卡片比半屏更贴。
  * 字号一律走 --text-* 令牌，禁止 font-size 字面量。
  */
+/* 遮罩/层级走 app.wxss 弹层基类 .overlay-mask；此处只留弹窗自身布局 */
 .bp-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--space-8);
+  padding: var(--space-4);
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.45);
 }
 
 .bp-dialog {
   width: 100%;
+  max-width: 600rpx;
   box-sizing: border-box;
   padding: var(--space-6) var(--space-5) var(--space-5);
   background: var(--surface-card);
   border-radius: var(--radius-xl);
-  box-shadow: var(--elev-1);
+  box-shadow: var(--elev-3);
   text-align: center;
   animation: bp-pop var(--dur-base) var(--ease-out);
 }
@@ -53,7 +45,7 @@
 }
 
 .bp-badge-emoji {
-  font-size: 56rpx;
+  font-size: var(--icon-md);
   line-height: 1;
 }
 

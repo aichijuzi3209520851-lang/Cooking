@@ -4,7 +4,7 @@ const { voteApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
 const {
   today,
-  getAvatarColor,
+  getAvatarGradient,
   getAvatarText,
   previewImage,
   markSummarySeen,
@@ -15,6 +15,8 @@ const {
 const app = getApp();
 
 const WATCH_RETRY_LIMIT = 3;
+// 投票人头像折叠阈值：超过此数默认收起，防止单卡被头像流撑高（点「+N」展开全部）
+const VOTER_PREVIEW_LIMIT = 4;
 
 Page({
   data: {
@@ -32,6 +34,8 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
+    // 「+N」展开状态：dishId → true 时显示全部投票人
+    expandedVoters: {},
   },
 
   onLoad() {
@@ -195,17 +199,19 @@ Page({
         this.setupWatcher();
       }
 
-      const summaryList = dto.buildSummaryList(groups).map(item => ({
-        ...item,
-        voters: item.voters.map(member => {
-          const colors = getAvatarColor(member.nickname || '');
-          return {
-            ...member,
-            avatarText: getAvatarText(member.nickname || ''),
-            avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`
-          };
-        })
-      }));
+      const summaryList = dto.buildSummaryList(groups).map(item => {
+        const voters = item.voters.map(member => ({
+          ...member,
+          avatarText: getAvatarText(member.nickname || ''),
+          avatarStyle: `background: ${getAvatarGradient(member.nickname || '')};`
+        }));
+        return {
+          ...item,
+          voters,
+          votersShow: voters.slice(0, VOTER_PREVIEW_LIMIT),
+          votersExtra: Math.max(voters.length - VOTER_PREVIEW_LIMIT, 0)
+        };
+      });
 
       const stats = dto.calcVoteStats(summaryList);
       this.setData({
@@ -339,6 +345,16 @@ Page({
       console.error('撤下失败', err);
       showApiError(err, '撤下失败');
     }
+  },
+
+  // 展开/收起某道菜的完整投票人列表（+N 折叠的开关）
+  onToggleVoters(e) {
+    const dishId = e.currentTarget.dataset.id;
+    if (!dishId) return;
+    const expanded = this.data.expandedVoters;
+    this.setData({
+      [`expandedVoters.${dishId}`]: !expanded[dishId]
+    });
   },
 
   // 菜品图加载失败：清空 imageUrl 回退 emoji 占位（裂图兜底）

@@ -1,8 +1,8 @@
 <!--pages/role/role.wxml-->
 <view class="container role-page {{themeClass}}">
   <view class="role-header">
-    <view class="title-lg">选择你的身份</view>
-    <view class="caption role-subtitle">在不同家庭可以有不同身份哦</view>
+    <view class="title-h1">选择你的身份</view>
+    <view class="role-subtitle">在不同家庭可以有不同身份哦</view>
   </view>
 
   <view class="role-cards">
@@ -11,11 +11,13 @@
       class="role-card {{selectedRole === 'chef' ? 'role-card-selected' : ''}}"
       data-role="chef"
       bindtap="onSelectRole"
+      hover-class="role-card-press"
+      hover-stay-time="60"
     >
-      <view class="role-emoji">🍳</view>
+      <image class="role-icon-img" src="/images/brand/brand-mark.png" mode="aspectFit" />
       <view class="role-info">
         <view class="title-sm role-name">金牌大厨</view>
-        <view class="caption role-desc">管理菜品库，决定今天做什么</view>
+        <view class="role-desc">管理菜品库，决定今天做什么</view>
       </view>
       <view class="role-check" wx:if="{{selectedRole === 'chef'}}">
         <view class="role-check-icon">✓</view>
@@ -27,11 +29,13 @@
       class="role-card {{selectedRole === 'eater' ? 'role-card-selected' : ''}}"
       data-role="eater"
       bindtap="onSelectRole"
+      hover-class="role-card-press"
+      hover-stay-time="60"
     >
-      <view class="role-emoji">🍚</view>
+      <image class="role-icon-img" src="/images/login/rice.svg" mode="aspectFit" />
       <view class="role-info">
         <view class="title-sm role-name">干饭能手</view>
-        <view class="caption role-desc">点菜就完事了，等开饭！</view>
+        <view class="role-desc">点菜就完事了，等开饭！</view>
       </view>
       <view class="role-check" wx:if="{{selectedRole === 'eater'}}">
         <view class="role-check-icon">✓</view>

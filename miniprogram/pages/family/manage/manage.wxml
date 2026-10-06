@@ -24,7 +24,7 @@
 
   <!-- 切换家庭 -->
   <view class="section" wx:if="{{families.length > 1}}">
-    <view class="section-title caption">切换家庭</view>
+    <view class="section-title">切换家庭</view>
     <view class="card family-list-card">
       <view
         class="family-list-item {{item.familyId === currentFamily.familyId ? 'family-list-item-active' : ''}}"
@@ -46,7 +46,7 @@
 
   <!-- 家庭成员 -->
   <view class="section">
-    <view class="section-title caption">家庭成员（{{members.length}}）</view>
+    <view class="section-title">家庭成员（{{members.length}}）</view>
     <view class="card member-list-card">
       <view class="member-item" wx:for="{{members}}" wx:key="userId">
         <view class="member-avatar" style="{{item.avatarUrl ? '' : item.avatarStyle}}">

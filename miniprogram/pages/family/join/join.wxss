@@ -1,6 +1,6 @@
 /* pages/family/join/join.wxss */
 .join-page {
-  padding-top: 56rpx;
+  padding-top: var(--space-6);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,15 +12,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 80rpx;
+  margin-bottom: var(--space-10);
 }
 
 .join-title {
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-2);
 }
 
 .join-tip {
   font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
 /* 6位字母数字输入 */
@@ -29,7 +31,7 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 64rpx;
+  margin-bottom: var(--space-8);
 }
 
 .code-boxes {
@@ -41,13 +43,13 @@
 .code-box {
   width: 76rpx;
   height: 84rpx;
-  background: var(--color-card-inner);
+  background: var(--surface-sunken);
   border: 3rpx solid var(--color-border);
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   box-sizing: border-box;
 }
 
@@ -62,7 +64,7 @@
 
 .code-digit {
   font-size: var(--text-num);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
 }
 
@@ -83,16 +85,26 @@
 }
 
 .join-loading {
-  margin-top: 48rpx;
+  margin-top: var(--space-6);
 }
 
-/* 主操作按钮区：与验证码框同宽，底部避让安全区 */
-.join-footer {
-  width: 560rpx;
-  margin-top: 8rpx;
-}
-
-.join-hint {
-  margin-top: 20rpx;
+.join-loading-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
   text-align: center;
+}
+
+/* 主操作按钮：与全 App 一致撑满容器（旧版 560rpx 定宽与其他页按钮并排穿帮） */
+.join-footer {
+  width: 100%;
+  margin-top: var(--space-1);
+}
+
+/* 粘贴提示上移到按钮上方：这是本页唯一的快捷操作说明 */
+.join-hint {
+  margin-bottom: var(--space-3);
+  text-align: center;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
 }

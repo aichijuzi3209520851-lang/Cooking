@@ -1,28 +1,48 @@
-/* pages/menu-board/menu-board.wxss */
+/* pages/menu-board/menu-board.wxss
+ * 四 tab 中「答案页」：hero 与点菜/汇总同一语言（淡染 + h1），
+ * 「今晚全家想吃」答案卡用强调色淡染突出，提交明细弱化为次级层。
+ */
+
 .board-page {
   min-height: 100vh;
-  padding: var(--space-3) var(--space-4) var(--space-8);
+  padding-bottom: var(--space-8);
   box-sizing: border-box;
 
-  /* 餐次标签：固定语义色（不随主题家族漂移，避免橙/绿被强调色冲淡） */
+  /* 餐次标签：固定语义色（不随主题家族漂移，避免橙/绿被强调色冲淡）；
+     深色主题在下方 .theme-dark 块提亮文字色保证对比度 */
   --meal-breakfast-bg: rgba(240, 130, 30, 0.12);
   --meal-breakfast-text: #B4690E;
   --meal-lunch-bg: rgba(31, 147, 96, 0.12);
   --meal-lunch-text: #1F7D54;
 }
 
-.board-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-1) var(--space-3);
+/* 深色主题：餐次文字提亮到 AA 可读档 */
+.theme-dark.board-page,
+.board-page.theme-dark {
+  --meal-breakfast-text: #E8A15C;
+  --meal-lunch-text: #7BC96F;
+}
+
+/* ===== 顶部英雄区（与 menu/summary 同款：全出血淡染 + 底部大圆角） ===== */
+.board-hero {
+  margin: 0 calc(var(--space-4) * -1) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: linear-gradient(160deg, var(--tint-1) 0%, var(--tint-2) 55%, var(--tint-3) 100%);
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
 }
 
 .board-title {
-  font-weight: var(--weight-bold);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-black);
+  color: var(--color-text-primary);
+  letter-spacing: -0.5rpx;
+  line-height: var(--lh-tight);
 }
 
 .board-sub {
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
   color: var(--color-text-secondary);
 }
 
@@ -32,49 +52,91 @@
   color: var(--color-text-secondary);
 }
 
-.board-card {
-  background: var(--surface-card);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-3);
-  box-shadow: var(--shadow-card);
+.board-retry {
+  margin-top: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  height: 68rpx;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
 }
 
-.board-section-title {
-  font-size: var(--text-h3);
+/* ===== 今晚的答案：全家总单（强调卡） ===== */
+.board-answer {
+  background: var(--color-accent-wash);
+  border: 1rpx solid var(--color-accent-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  box-sizing: border-box;
+}
+
+.answer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.answer-title {
+  font-size: var(--text-h2);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
+  line-height: var(--lh-tight);
 }
 
-/* 全家总单 */
+.answer-count {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
 .total-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
+/* 菜名 chip：卡上浮起的白色胶囊，被点人数用数字强调色 */
 .total-item {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  background: var(--color-card-inner);
+  background: var(--surface-raised);
   border-radius: var(--radius-pill);
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: var(--elev-1);
 }
 
 .total-name {
   font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
   color: var(--color-text-primary);
 }
 
 .total-count {
   font-size: var(--text-mini);
-  color: var(--color-accent);
+  color: var(--color-num-strong);
   font-weight: var(--weight-bold);
 }
 
-/* 按提交人分组 */
+/* ===== 提交明细 ===== */
+.board-detail-title {
+  margin-bottom: var(--space-3);
+}
+
+.board-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
+}
+
 .sub-head {
   display: flex;
   align-items: center;
@@ -132,7 +194,49 @@
 .sub-dish {
   font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
-  background: var(--color-card-inner);
+  background: var(--surface-sunken);
   border-radius: var(--radius-xs);
   padding: var(--space-1) var(--space-2);
+}
+
+/* ===== 加载骨架（形状与 board-card 对齐） ===== */
+.skeleton-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--elev-1);
+  box-sizing: border-box;
+}
+
+.skeleton-line {
+  height: 32rpx;
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+}
+
+.skeleton-line-title {
+  width: 45%;
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-chip-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.skeleton-chip {
+  width: 160rpx;
+  height: 56rpx;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+}
+
+.skeleton-shimmer {
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }

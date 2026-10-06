@@ -1,7 +1,7 @@
 /* pages/family/create/create.wxss */
 .create-page {
-  padding-top: 56rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -12,39 +12,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 72rpx;
+  margin-bottom: var(--space-8);
 }
 
 .create-emoji {
-  font-size: 96rpx;
+  font-size: var(--icon-hero);
   line-height: 1;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-3);
 }
 
 .create-title {
-  margin-bottom: 12rpx;
+  margin-bottom: var(--space-1);
 }
 
 .create-tip {
   font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
 }
 
 .create-form {
   width: 100%;
 }
 
-.form-label {
-  font-size: var(--text-body-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: 16rpx;
-  padding-left: 8rpx;
-}
-
-.form-input {
-  margin-bottom: 16rpx;
+/* 表单标签走全局 .field-label 规格（caption 24 + semibold），不再另起 26rpx 一套 */
+.create-label {
+  padding-left: var(--space-1);
 }
 
 .create-footer {
   margin-top: auto;
-  padding-top: 32rpx;
+  padding-top: var(--space-4);
 }

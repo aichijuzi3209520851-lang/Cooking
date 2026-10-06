@@ -61,7 +61,7 @@
       </view>
 
       <!-- 编辑按钮 -->
-      <view class="dish-edit" catchtap="onEditTap" data-id="{{item._id}}">
+      <view class="btn btn-soft btn-sm dish-edit" catchtap="onEditTap" data-id="{{item._id}}">
         <text>编辑</text>
       </view>
     </view>

@@ -104,6 +104,9 @@ function getRoleEmoji(role) {
 
 /**
  * 生成头像渐变色（根据昵称）
+ * 全 App 头像底色的唯一实现：dish-card 的 avatar-group 与
+ * 历史/家庭管理页的内联头像都从这里取色（同一个人在哪个页面都同色）。
+ * 新增消费方请 require 本函数，不要再复制色板或哈希算法。
  */
 function getAvatarColor(name) {
   const colors = [
@@ -122,6 +125,14 @@ function getAvatarColor(name) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length];
+}
+
+/**
+ * 头像渐变的完整 CSS 值（供内联 style 使用，统一 135deg 方向）
+ */
+function getAvatarGradient(name) {
+  const [from, to] = getAvatarColor(name);
+  return `linear-gradient(135deg, ${from}, ${to})`;
 }
 
 /**
@@ -322,6 +333,7 @@ module.exports = {
   getRoleName,
   getRoleEmoji,
   getAvatarColor,
+  getAvatarGradient,
   getAvatarText,
   getConfirmColor,
   previewImage,

@@ -5,6 +5,10 @@
 const privacy = require('../../utils/privacy.js');
 
 Component({
+  options: {
+    addGlobalClass: true
+  },
+
   data: {
     visible: false,
     contractName: '《小程序用户隐私保护指引》',

@@ -1,56 +1,61 @@
 /* pages/family/manage/manage.wxss */
 .manage-page {
-  padding-top: 32rpx;
-  padding-bottom: 48rpx;
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-6);
   min-height: 100vh;
   box-sizing: border-box;
 }
 
 /* 家庭信息卡片 */
 .family-card {
-  padding: 40rpx 32rpx;
+  padding: var(--space-5) var(--space-4);
 }
 
 .family-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-4);
 }
 
 .family-name {
   font-size: var(--text-h2);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   flex: 1;
 }
 
 .family-code-section {
-  background: var(--color-card-inner);
+  background: var(--surface-sunken);
   border-radius: var(--radius-md);
-  padding: 28rpx 32rpx;
-  margin-bottom: 24rpx;
-  transition: opacity 0.15s ease;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .family-code-section:active {
   opacity: 0.7;
 }
 
-/* 邀请家人：分享卡片入口（open-type=share） */
+/* 邀请家人：分享卡片入口（open-type=share）。
+   原生 button 的 UA 样式对 width/margin 带 !important，须同级覆盖才能撑满卡片 */
 .invite-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 88rpx;
-  margin-top: 4rpx;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+  height: 96rpx;
+  margin-top: var(--space-1);
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: var(--color-on-accent);
   font-size: var(--text-body);
-  font-weight: 500;
-  box-shadow: var(--shadow-accent);
-  transition: transform 0.12s ease, opacity 0.12s ease;
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--elev-accent);
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
 .invite-btn::after {
@@ -63,18 +68,20 @@
 }
 
 .invite-hint {
-  margin-top: var(--spacing-sm);
+  margin-top: var(--space-2);
   text-align: center;
   color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+  line-height: var(--lh-normal);
 }
 
 .family-code-label {
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-1);
 }
 
 .family-code {
-  font-size: var(--text-h1);
-  font-weight: 700;
+  font-size: var(--text-num);
+  font-weight: var(--weight-black);
   color: var(--color-accent);
   letter-spacing: 16rpx;
   /* 补偿末字符后的字距，使视觉居中 */
@@ -88,12 +95,16 @@
 
 /* 区域 */
 .section {
-  margin-top: 32rpx;
+  margin-top: var(--space-5);
 }
 
+/* 区块标题与全局规格一致（h2 40 bold）；旧版覆写成 26rpx 灰字导致三卡层级全靠阴影硬撑 */
 .section-title {
-  padding: 0 8rpx 16rpx;
-  font-size: var(--text-body-sm);
+  padding: 0 var(--space-1) var(--space-2);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--lh-tight);
 }
 
 /* 家庭列表 */
@@ -106,9 +117,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 32rpx;
+  padding: var(--space-4);
   border-bottom: 1rpx solid var(--color-separator);
-  transition: background 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .family-list-item:last-child {
@@ -116,7 +127,7 @@
 }
 
 .family-list-item:active {
-  background: var(--color-bg-tertiary);
+  background: var(--surface-sunken);
 }
 
 .family-list-item-active {
@@ -129,9 +140,9 @@
 
 .family-list-name {
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 6rpx;
+  margin-bottom: var(--space-1);
 }
 
 .family-list-role {
@@ -139,8 +150,8 @@
 }
 
 .family-list-check {
-  font-size: 36rpx;
-  font-weight: 700;
+  font-size: var(--icon-xs);
+  font-weight: var(--weight-bold);
   color: var(--color-accent);
 }
 
@@ -153,7 +164,7 @@
 .member-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 32rpx;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1rpx solid var(--color-separator);
 }
 
@@ -170,7 +181,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-right: 24rpx;
+  margin-right: var(--space-3);
 }
 
 .member-avatar-img {
@@ -180,9 +191,9 @@
 }
 
 .member-avatar-text {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #FFFFFF;
+  font-size: var(--icon-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-inverse);
 }
 
 .member-info {
@@ -194,14 +205,14 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: var(--space-2);
 }
 
 .member-name {
   font-size: var(--text-body);
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-right: 12rpx;
+  margin-right: var(--space-2);
 }
 
 .member-badge {
@@ -216,13 +227,14 @@
 .member-actions {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
 .member-action-btn {
-  font-size: var(--text-body-sm);
-  padding: 14rpx 24rpx;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
   line-height: 1.4;
   position: relative;
@@ -240,7 +252,7 @@
 
 .member-action-transfer {
   color: var(--color-text-secondary);
-  background: var(--color-bg-tertiary);
+  background: var(--surface-sunken);
 }
 
 .member-action-toggle {
@@ -249,8 +261,8 @@
 }
 
 .member-action-remove {
-  color: var(--color-primary-red);
-  background: rgba(224, 32, 32, 0.10);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .member-action-btn:active {
@@ -259,22 +271,22 @@
 
 /* 告别按钮：暖红描边胶囊，委婉不刺眼 */
 .exit-section {
-  margin-top: 56rpx;
+  margin-top: var(--space-8);
   display: flex;
   justify-content: center;
 }
 
 .exit-btn {
   min-width: 420rpx;
-  height: 88rpx;
-  line-height: 84rpx;
-  padding: 0 56rpx;
+  height: 96rpx;
+  line-height: 92rpx;
+  padding: 0 var(--space-8);
   background: transparent;
-  border: 2rpx solid rgba(224, 32, 32, 0.30);
+  border: 2rpx solid var(--color-danger-border);
   border-radius: var(--radius-pill);
-  color: var(--color-primary-red) !important;
+  color: var(--color-danger) !important;
   font-size: var(--text-body);
-  font-weight: 500;
+  font-weight: var(--weight-semibold);
 }
 
 .exit-btn-hover {
@@ -282,6 +294,9 @@
   transform: scale(0.98);
 }
 
+/* 禁用态：可读灰（描边转中性，文字保持可读） */
 .exit-btn[disabled] {
-  opacity: 0.4;
+  opacity: 1;
+  color: var(--color-text-tertiary) !important;
+  border-color: var(--color-border);
 }

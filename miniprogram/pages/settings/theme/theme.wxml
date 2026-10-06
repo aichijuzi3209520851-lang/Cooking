@@ -1,7 +1,7 @@
 <!--pages/settings/theme/theme.wxml-->
 <view class="container theme-page {{themeClass}}">
 
-  <!-- 外观主题：4 张色卡，预览块还原「页面底 + 卡片 + 强调色」三层真实关系 -->
+  <!-- 外观主题：6 张色卡，预览块还原「页面底 + 卡片 + 强调色」三层真实关系 -->
   <view class="section">
     <view class="section-head">
       <view class="section-title">外观主题</view>
@@ -53,7 +53,7 @@
   <!-- 色板说明：强调色的实际落点 -->
   <view class="section">
     <view class="section-title">强调色落点</view>
-    <view class="swatch-row">
+    <view class="card swatch-row">
       <view class="swatch-item">
         <view class="swatch-dot swatch-accent"></view>
         <text class="swatch-label">主按钮 / 选中态</text>

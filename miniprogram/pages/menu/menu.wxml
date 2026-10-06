@@ -1,24 +1,22 @@
 <!--pages/menu/menu.wxml-->
 <view class="container menu-page {{themeClass}}">
 
-  <!-- 顶部英雄区：主题签名色淡染，强化首屏视觉层级 -->
+  <!-- 顶部英雄区：主题签名色淡染。
+       首屏锚点是「今天」（点菜这件事的时间语境），品牌名交给导航栏，
+       家庭归属收进右侧切换胶囊 —— 不再三处重复（导航栏/大标题/日期行） -->
   <view class="menu-hero">
     <view class="header">
       <view class="header-left">
-        <view class="header-title">筷点吃饭</view>
-        <view class="header-sub">
-          <text>{{dateText}}</text>
-          <text wx:if="{{currentFamily}}" class="header-dot">·</text>
-          <text wx:if="{{currentFamily}}" class="header-family">{{currentFamily.name}}</text>
-        </view>
+        <view class="header-title">{{dateText}}</view>
       </view>
       <view
         class="header-right"
         wx:if="{{currentFamily}}"
+        hover-class="header-right-press"
         catchtap="onFamilyTap"
       >
         <text class="switch-text">{{currentFamily.name}}</text>
-        <text class="switch-arrow">›</text>
+        <text class="switch-arrow icon-chevron">›</text>
       </view>
     </view>
   </view>
@@ -40,7 +38,7 @@
   >
     <image class="rice-tip-icon" src="/images/category/cat-staple.svg" mode="aspectFit" />
     <text class="rice-tip-text">主食里还没有米饭，点这里加一道</text>
-    <text class="rice-tip-arrow">›</text>
+    <text class="rice-tip-arrow icon-chevron">›</text>
   </view>
 
   <!-- 今日推荐（RECOMMEND-001）已收进左侧导航首个「推荐」选项卡，
@@ -123,17 +121,18 @@
         bindrefresherrefresh="onRefresh"
         enable-back-to-top
       >
-        <!-- 「推荐」选项卡：季节提示 + 与点菜列表完全一致的 dish-card 排列 -->
+        <!-- 「推荐」选项卡：语境一行带过（季节文案 + 天气 chip），让位给菜品卡片 -->
         <block wx:if="{{selectedCategory === 'recommend'}}">
           <view class="recommend-note">
-            <view class="recommend-season" wx:if="{{recommend.seasonTip || recommend.noteText}}">
-              <text class="recommend-season-emoji">{{seasonEmoji}}</text>
-              <text class="recommend-season-text">{{recommend.noteText || recommend.seasonTip}}</text>
-            </view>
-            <!-- 天气 chip（WEATHER-002）：真机 IP 定位，无数据/失败时整行隐藏；直辖市时省略城市段 -->
-            <view class="recommend-weather" wx:if="{{weather}}">
-              <text class="recommend-weather-icon">{{weatherIcon}}</text>
-              <text class="recommend-weather-text">{{weather.desc}}{{weather.temp !== null ? ' ' + weather.temp + '°C' : ''}}{{weather.city ? ' · ' + weather.city : ''}}</text>
+            <!-- 季节文案 + 天气（WEATHER-002）合并为一行：主文案在左、天气胶囊在右；
+                 天气无数据/失败时胶囊隐藏，真机 IP 定位，直辖市时省略城市段 -->
+            <view class="recommend-context" wx:if="{{recommend.seasonTip || recommend.noteText || weather}}">
+              <text class="recommend-context-emoji" wx:if="{{recommend.seasonTip || recommend.noteText}}">{{seasonEmoji}}</text>
+              <text class="recommend-context-text" wx:if="{{recommend.seasonTip || recommend.noteText}}">{{recommend.noteText || recommend.seasonTip}}</text>
+              <view class="recommend-weather-chip" wx:if="{{weather}}" hover-class="none">
+                <text class="recommend-weather-icon">{{weatherIcon}}</text>
+                <text class="recommend-weather-text">{{weather.desc}}{{weather.temp !== null ? ' ' + weather.temp + '°' : ''}}{{weather.city ? ' · ' + weather.city : ''}}</text>
+              </view>
             </view>
             <!-- 天气链路诊断（DIAG-001）：仅非正式版且天气缺失时出现，天气恢复即消失 -->
             <view class="recommend-weather-diag" wx:if="{{weatherDiagText}}">

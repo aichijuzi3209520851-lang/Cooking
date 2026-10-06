@@ -18,7 +18,7 @@
 
   <view class="login-brand" style="transform: translate3d({{px * -8}}rpx, {{py * -8}}rpx, 0);">
     <view class="login-mark">
-      <text class="login-mark-emoji">🍳</text>
+      <image class="login-mark-img" src="/images/brand/brand-mark.png" mode="aspectFit" />
       <view class="login-mark-spark login-mark-spark-one"></view>
       <view class="login-mark-spark login-mark-spark-two"></view>
     </view>

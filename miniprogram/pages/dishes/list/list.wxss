@@ -172,18 +172,11 @@
   color: var(--color-text-tertiary);
 }
 
-/* 编辑按钮：淡底胶囊，与「删除」等危险操作明确区分 */
+/* 编辑按钮：全局 .btn-soft .btn-sm 淡底胶囊，此处只留定位与热区 */
 .dish-edit {
   flex-shrink: 0;
-  padding: 14rpx var(--space-4);
   margin-left: var(--space-1);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent-deep);
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-pill);
   position: relative;
-  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 /* 热区外扩至 ≥88rpx（44px） */

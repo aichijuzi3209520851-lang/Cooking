@@ -15,7 +15,7 @@
         <text class="cate-row-meta">{{item.dishCount > 0 ? item.dishCount + ' 道菜' : '暂无菜品'}}</text>
       </view>
       <view
-        class="cate-del {{item.dishCount > 0 || categories.length <= 1 ? 'cate-del-off' : ''}}"
+        class="btn btn-soft btn-sm cate-del {{item.dishCount > 0 || categories.length <= 1 ? 'cate-del-off' : ''}}"
         hover-class="cate-del-press"
         data-key="{{item.key}}"
         data-name="{{item.name}}"

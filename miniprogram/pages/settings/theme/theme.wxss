@@ -6,20 +6,12 @@
   box-sizing: border-box;
 }
 
-/* ===== 区块头 ===== */
+/* ===== 区块头 =====
+   .section-head/.section-title 消费 app.wxss 全局类（h2 40），
+   此处只补「标题与计数基线对齐」的微调；旧版本地覆写成 body 30 导致
+   同一 App 出现两种区块标题字号 */
 .section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--space-3);
   padding: 0 var(--space-1);
-}
-
-.section-title {
-  font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-  line-height: var(--lh-tight);
 }
 
 .current-tag {
@@ -273,10 +265,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  background: var(--surface-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  box-shadow: var(--elev-1);
 }
 
 .swatch-item {

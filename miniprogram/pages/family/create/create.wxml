@@ -2,12 +2,12 @@
 <view class="container create-page {{themeClass}}">
   <view class="create-header">
     <view class="create-emoji">🏠</view>
-    <view class="title-md create-title">创建你的家庭</view>
-    <view class="caption create-tip">创建后你将默认成为金牌大厨</view>
+    <view class="title-h1 create-title">创建你的家庭</view>
+    <view class="create-tip">创建后你将默认成为金牌大厨</view>
   </view>
 
   <view class="create-form">
-    <view class="form-label">家庭名称</view>
+    <view class="field-label create-label">家庭名称</view>
     <input
       class="input form-input"
       placeholder="给你的家庭起个名字，如：姐姐的家"

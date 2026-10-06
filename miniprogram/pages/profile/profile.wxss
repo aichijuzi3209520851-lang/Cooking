@@ -2,7 +2,7 @@
  * 结构：用户卡（带主题淡染） → 分组列表（发丝线内缩 32rpx 对齐标题）
  */
 .profile-page {
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
   padding-bottom: var(--space-12);
   min-height: 100vh;
   box-sizing: border-box;
@@ -67,9 +67,9 @@
 }
 
 .profile-avatar-text {
-  font-size: 44rpx;
+  font-size: var(--icon-sm);
   font-weight: var(--weight-semibold);
-  color: #FFFFFF;
+  color: var(--color-text-inverse);
   line-height: 1;
 }
 
@@ -107,7 +107,7 @@
 /* 昵称旁的「修改」胶囊（PROFILE-002）：解决「名字能点但没人知道」的发现性问题 */
 .profile-edit-chip {
   flex-shrink: 0;
-  padding: 2rpx 14rpx;
+  padding: 2rpx var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
 }
@@ -162,7 +162,7 @@
 /* 历法标签：公历 / 农历 */
 .profile-detail-tag {
   flex-shrink: 0;
-  padding: 2rpx 12rpx;
+  padding: 2rpx var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--surface-sunken);
   color: var(--color-text-tertiary);
@@ -171,7 +171,7 @@
 }
 
 .profile-detail-arrow {
-  font-size: 32rpx;
+  font-size: var(--icon-xs);
   color: var(--color-text-tertiary);
   line-height: 1;
 }
@@ -195,14 +195,16 @@
 
 /* ===== 分组列表 ===== */
 .section {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
+/* 分组标题回归全局区块标题规格（h2 40）：旧版私自降为 24rpx 灰字，
+   与「设置分组走 h2」的设计系统约定冲突 */
 .section-header {
   padding: 0 var(--space-2) var(--space-2);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
 }
 
 /* 可折叠分组头部：整块可点，负 margin 让高亮背景外扩不挤压文字 */
@@ -218,12 +220,12 @@
 
 .section-header-hover,
 .section-header-tappable:active {
-  background: rgba(139, 110, 78, 0.06);
+  background: var(--color-accent-wash);
 }
 
 /* 展开时指向下方 → 收起时转回右方（iOS 手风琴惯例） */
 .section-chevron {
-  font-size: 30rpx;
+  font-size: var(--icon-xs);
   color: var(--color-text-tertiary);
   line-height: 1;
   transform: rotate(90deg);
@@ -313,7 +315,7 @@
 }
 
 .list-item-arrow {
-  font-size: 36rpx;
+  font-size: var(--icon-xs);
   color: var(--color-text-tertiary);
   line-height: 1;
   margin-left: 4rpx;
@@ -330,7 +332,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .sheet-mask {
@@ -339,7 +341,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-mask);
 }
 
 .sheet-panel {
@@ -388,7 +390,7 @@
 }
 
 .sheet-close-icon {
-  font-size: 48rpx;
+  font-size: var(--icon-md);
   color: var(--color-text-tertiary);
   line-height: 1;
 }
@@ -546,6 +548,8 @@
   color: var(--color-on-accent);
 }
 
+/* 禁用态与其他按钮同一语言：可读灰，压「可点性」不压「可读性」 */
 .sheet-btn.is-disabled {
-  opacity: 0.6;
+  background: var(--surface-sunken);
+  color: var(--color-text-tertiary);
 }

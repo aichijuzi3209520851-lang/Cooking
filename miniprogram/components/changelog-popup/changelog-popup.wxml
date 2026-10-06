@@ -1,6 +1,6 @@
 <!--components/changelog-popup/changelog-popup.wxml-->
 <!--本版本未展示过更新说明时展示；关闭后写入本地标记，同版本不再弹。-->
-<view wx:if="{{visible}}" class="cl-mask" catchtouchmove="onCatchMove">
+<view wx:if="{{visible}}" class="overlay-mask cl-mask" catchtouchmove="onCatchMove">
   <view class="cl-dialog">
 
     <view class="cl-badge">新版本</view>

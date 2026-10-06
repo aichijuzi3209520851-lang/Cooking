@@ -59,12 +59,23 @@ page {
   --color-success: #2F9E6E;
   --color-warning: #E6A23C;
   --color-danger: #E02020;
+  --color-danger-soft: rgba(224, 32, 32, 0.08);   /* 错误条/危险按钮淡底 */
+  --color-danger-border: rgba(224, 32, 32, 0.24); /* 错误条/危险按钮描边 */
   --color-gold: #8A6124;                    /* 金色文字，浅色下保证 WCAG AA ≥4.5 */
   --color-gold-soft: rgba(138, 97, 36, 0.14); /* 金色淡底（徽章背景） */
   --color-cream: #FDEBD2;           /* 米黄信息块（推荐卡、引导条、统计栏） */
 
   /* ---- 图片滤镜（深色模式压暗，手动浅色可还原） ---- */
   --img-filter: none;
+
+  /* ---- 图标/符号专用档：箭头、勾选、关闭、emoji 图标等非正文字符 ---- */
+  --icon-xs: 32rpx;   /* 行内箭头 ›、rail 分类 emoji */
+  --icon-sm: 44rpx;   /* 卡片缩略 emoji、勾选 */
+  --icon-md: 56rpx;   /* FAB 加号、弹窗关闭 × */
+  --icon-hero: 96rpx; /* 引导页表意 emoji（创建家庭 🏠 等） */
+
+  /* ---- 遮罩：弹层共用中性黑，明暗主题同值（遮罩只管压暗背景，不参与主题情绪） ---- */
+  --color-mask: rgba(20, 14, 8, 0.45);
 
   /* ============================================================
    * 3a. 间距：8pt 栅格（1pt = 2rpx @750rpx 设计稿）
@@ -635,9 +646,10 @@ page {
   border: none;
   padding: 0 var(--space-6);
   box-sizing: border-box;
-  /* 覆盖原生 button 的 auto 外边距，保证 width:100%（btn-block）真正撑满容器 */
-  margin-left: 0;
-  margin-right: 0;
+  /* 覆盖原生 button 的 auto 外边距：UA 样式带 !important，此处必须同级覆盖，
+     否则 <button class="btn"> 会退化为约 184px 基础宽度 + 57px 自动外边距 */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -710,12 +722,19 @@ page {
 }
 
 .btn-block {
-  width: 100%;
+  /* 同上：UA 的 width:auto 带 !important，block 撑满必须同级覆盖 */
+  width: 100% !important;
 }
 
+/* 禁用态：可读灰（旧版 opacity:0.4 把按钮文案也洗没了，用户不知道按钮写着什么）。
+   压低的是「可点性」而非「可读性」：底色回落 sunken、文字用三级灰、去掉投影与按压 */
 .btn-disabled,
 .btn[disabled] {
-  opacity: 0.4;
+  background: var(--surface-sunken);
+  color: var(--color-text-tertiary);
+  border: 1rpx solid var(--color-border);
+  box-shadow: none;
+  opacity: 1;
   pointer-events: none;
 }
 
@@ -747,6 +766,16 @@ page {
   font-size: var(--text-h2);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
+  line-height: var(--lh-tight);
+}
+
+/* 内页页面主标题（h1 52）：引导流/设置页的页内大标题专用。
+   display 68 只留给登录页品牌主标题，内页越级使用会与导航栏标题打架 */
+.title-h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.5rpx;
   line-height: var(--lh-tight);
 }
 
@@ -928,7 +957,10 @@ page {
 /* ===== 深色模式：菜品/头像图片压暗走令牌，手动浅色时可正确还原 ===== */
 .dish-thumb-img,
 .voter-avatar-img,
-.profile-avatar-img {
+.profile-avatar-img,
+.login-mark-img,
+.welcome-mark-img,
+.role-icon-img {
   filter: var(--img-filter);
 }
 
@@ -955,9 +987,42 @@ page {
 }
 
 .fab-icon {
-  font-size: 56rpx;
+  font-size: var(--icon-md);
   color: var(--color-on-accent);
   font-weight: 300;
   line-height: 1;
   margin-top: -4rpx;
+}
+
+/* ============================================================
+ * 弹层基类：全 App 遮罩浓度、层级（z=1000）、出现动效统一
+ * 组件需声明 addGlobalClass 才能消费；面板尺寸/圆角仍归各弹层自有样式
+ * ============================================================ */
+.overlay-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-mask);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 底部抽屉变体：贴底、自带安全区 */
+.overlay-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+/* 行内箭头 ›：统一规格与颜色（旧版同页 30/32/36/48rpx 四档并存） */
+.icon-chevron {
+  font-size: var(--icon-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1;
 }

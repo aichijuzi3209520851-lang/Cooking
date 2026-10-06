@@ -60,15 +60,9 @@
   color: var(--color-text-tertiary);
 }
 
+/* 删除按钮：全局 .btn-soft .btn-sm 淡底胶囊，此处只留定位 */
 .cate-del {
   flex-shrink: 0;
-  padding: 12rpx var(--space-4);
-  border-radius: var(--radius-pill);
-  background: var(--color-accent-soft);
-  color: var(--color-accent-deep);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
-  line-height: 1.3;
 }
 
 .cate-del-press {

@@ -1,42 +1,45 @@
-/* pages/agreement/privacy/privacy.wxss */
+/* pages/agreement/privacy/privacy.wxss
+ * 长文排版：章节标题 h3（38）与正文 body-sm（26）拉开可扫读的层级差，
+ * 行高统一走 --lh-* 令牌，间距全部 --space-*（旧 --spacing-* 别名已迁移）
+ */
 .privacy-page {
-  padding: var(--spacing-md) var(--spacing-md) var(--spacing-xl);
+  padding: var(--space-3) var(--space-3) var(--space-8);
 }
 
 .privacy-card {
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .privacy-title {
   font-size: var(--text-h2);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  line-height: 1.4;
+  line-height: var(--lh-tight);
 }
 
 .privacy-date {
-  margin-top: var(--spacing-xs);
+  margin-top: var(--space-1);
   color: var(--color-text-tertiary);
 }
 
 .privacy-lead {
-  margin-top: var(--spacing-md);
+  margin-top: var(--space-3);
   font-size: var(--text-body-sm);
-  line-height: 1.75;
+  line-height: var(--lh-loose);
   color: var(--color-text-secondary);
 }
 
 .privacy-h {
-  font-size: var(--text-body);
-  font-weight: 600;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  line-height: 1.5;
-  margin-bottom: var(--spacing-sm);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-2);
 }
 
 .privacy-item {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--space-3);
 }
 
 .privacy-item:last-child {
@@ -45,10 +48,10 @@
 
 .privacy-item-t {
   font-size: var(--text-body-sm);
-  font-weight: 500;
+  font-weight: var(--weight-semibold);
   color: var(--color-accent-deep);
-  line-height: 1.6;
-  margin-bottom: 6rpx;
+  line-height: var(--lh-loose);
+  margin-bottom: var(--space-1);
 }
 
 .privacy-p {
@@ -59,24 +62,24 @@
 
 /* 需要用户注意的关键词（权限名、存储期限、撤回同意等） */
 .privacy-strong {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--color-text-primary);
 }
 
 /* 补充说明块：用于解释隐私接口被拦截等平台机制 */
 .privacy-note {
-  margin-top: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  margin-top: var(--space-2);
+  padding: var(--space-2);
   font-size: var(--text-caption);
-  line-height: 1.7;
+  line-height: var(--lh-loose);
   color: var(--color-text-tertiary);
   background: var(--surface-sunken);
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
 }
 
 .privacy-footer {
-  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-lg);
+  padding: var(--space-2) var(--space-2) var(--space-4);
   text-align: center;
   color: var(--color-text-tertiary);
-  line-height: 1.7;
+  line-height: var(--lh-loose);
 }

@@ -1,17 +1,7 @@
 /* components/changelog-popup/changelog-popup.wxss */
-/* 复用 app.wxss 的主题变量，跟随暖/清/空/粉/夜五套主题 */
+/* 遮罩/层级走 app.wxss 弹层基类 .overlay-mask；此处只留弹窗自身布局 */
 
 .cl-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--space-4, 32rpx);
   box-sizing: border-box;
 }
@@ -21,10 +11,10 @@
   max-width: 600rpx;
   max-height: 80vh;
   background: var(--surface-raised, #ffffff);
-  border-radius: 28rpx;
+  border-radius: var(--radius-lg, 32rpx);
   padding: var(--space-6, 48rpx) var(--space-5, 40rpx) var(--space-5, 40rpx);
   box-sizing: border-box;
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.16);
+  box-shadow: var(--elev-3);
   display: flex;
   flex-direction: column;
   animation: cl-pop 200ms ease-out;
@@ -50,17 +40,17 @@
 .cl-badge {
   align-self: flex-start;
   font-size: var(--text-mini, 22rpx);
-  font-weight: 600;
+  font-weight: var(--weight-semibold, 600);
   color: var(--color-on-accent, #ffffff);
-  background: var(--color-primary, #d93a2b);
-  border-radius: 999rpx;
+  background: var(--color-accent, #d93a2b);
+  border-radius: var(--radius-pill);
   padding: 4rpx 20rpx;
   margin-bottom: var(--space-3, 24rpx);
 }
 
 .cl-title {
-  font-size: var(--text-h3, 36rpx);
-  font-weight: 700;
+  font-size: var(--text-h3, 38rpx);
+  font-weight: var(--weight-bold, 700);
   color: var(--color-text-primary, #241b12);
   line-height: 1.35;
 }
@@ -88,12 +78,12 @@
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: var(--color-primary, #d93a2b);
+  background: var(--color-accent, #d93a2b);
   margin-top: 16rpx;
 }
 
 .cl-item-text {
-  font-size: var(--text-body-sm, 28rpx);
+  font-size: var(--text-body-sm, 26rpx);
   line-height: 1.7;
   color: var(--color-text-secondary, #6b5f52);
 }
@@ -104,14 +94,14 @@
 
 .cl-btn {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 84rpx;
+  line-height: 84rpx;
   text-align: center;
-  border-radius: 44rpx;
+  border-radius: var(--radius-pill);
   font-size: var(--text-body, 30rpx);
-  font-weight: 600;
+  font-weight: var(--weight-semibold, 600);
   color: var(--color-on-accent, #ffffff);
-  background: var(--color-primary, #d93a2b);
+  background: linear-gradient(135deg, var(--color-accent, #d93a2b), var(--color-accent-deep, #a32318));
   box-sizing: border-box;
 }
 

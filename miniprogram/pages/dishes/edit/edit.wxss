@@ -13,7 +13,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 56rpx;
+  margin-bottom: var(--space-8);
 }
 
 .image-uploader-wrap {
@@ -47,11 +47,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
+  gap: var(--space-2);
 }
 
 .image-placeholder-icon {
-  font-size: 64rpx;
+  font-size: var(--icon-md);
   line-height: 1;
 }
 
@@ -67,7 +67,8 @@
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  /* 压在菜品照片上的删除钮：走全局遮罩令牌（深浅主题同值） */
+  background: var(--color-mask);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,27 +85,27 @@
 }
 
 .image-delete-icon {
-  color: #FFFFFF;
-  font-size: 36rpx;
+  color: var(--color-text-inverse);
+  font-size: var(--icon-xs);
   line-height: 1;
   margin-top: -4rpx;
 }
 
 .image-tip {
-  margin-top: 20rpx;
+  margin-top: var(--space-2);
   font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+  line-height: var(--lh-normal);
 }
 
 /* 表单 */
 .form-section {
-  margin-bottom: 40rpx;
+  margin-bottom: var(--space-5);
 }
 
+/* 标签本体走全局 .field-label；此处只补左对齐微调 */
 .form-label {
-  font-size: var(--text-body-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: 16rpx;
-  padding-left: 8rpx;
+  padding-left: var(--space-1);
 }
 
 .form-input {
@@ -141,9 +142,9 @@
 }
 
 .category-btn-emoji {
-  font-size: 44rpx;
+  font-size: var(--icon-sm);
   line-height: 1;
-  margin-bottom: 10rpx;
+  margin-bottom: var(--space-1);
 }
 
 .category-btn-name {

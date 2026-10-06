@@ -1,30 +1,46 @@
 <!--pages/menu-board/menu-board.wxml-->
 <view class="container board-page {{themeClass}}">
-  <view class="board-header">
-    <view class="title-md board-title">{{dateText}} · 菜单</view>
-    <view class="caption board-sub" wx:if="{{submitCount > 0}}">{{submitCount}} 人已提交</view>
+
+  <!-- 顶部英雄区：与点菜/汇总同一视觉语言（淡染 + h1 日期锚点），终结四 tab 三种头部规格 -->
+  <view class="board-hero">
+    <view class="board-title">{{dateText}} · 菜单</view>
+    <!-- 空态的引导文案交给 empty-state，这里只在有数据时补充统计 -->
+    <view class="board-sub" wx:if="{{submitCount > 0}}">全家想吃的都在这，{{submitCount}} 人已交菜单</view>
   </view>
 
-  <view wx:if="{{loading}}" class="board-state">
-    <view class="caption">加载中...</view>
-  </view>
+  <!-- 加载骨架：与 board-card 同形 -->
+  <block wx:if="{{loading}}">
+    <view class="skeleton-card" wx:for="{{[1, 2]}}" wx:key="*this">
+      <view class="skeleton-line skeleton-line-title skeleton-shimmer"></view>
+      <view class="skeleton-chip-row">
+        <view class="skeleton-chip skeleton-shimmer"></view>
+        <view class="skeleton-chip skeleton-shimmer"></view>
+        <view class="skeleton-chip skeleton-shimmer"></view>
+      </view>
+    </view>
+  </block>
 
-  <view wx:elif="{{loadError}}" class="board-state">
-    <view class="caption">加载失败，下拉重试</view>
+  <view wx:elif="{{loadError}}" class="board-state" bindtap="onRetry">
+    <view class="caption">加载失败，请检查网络</view>
+    <view class="board-retry">点击重试</view>
   </view>
 
   <block wx:else>
     <empty-state
       wx:if="{{totalDishes.length === 0}}"
       icon="🍽️"
+      image="/images/empty/empty-board.svg"
       title="今天还没有提交的菜单"
       description="大家点完菜提交后，这里会汇总全家想吃的菜"
     />
 
     <block wx:else>
-      <!-- 全家总单：跨提交人去重，按被点人数排序 -->
-      <view class="board-card">
-        <view class="board-section-title">全家总单</view>
+      <!-- 今晚的答案：全家总单（跨提交人去重，按被点人数排序）——本页最该醒目的一块 -->
+      <view class="board-answer">
+        <view class="answer-head">
+          <view class="answer-title">今晚全家想吃</view>
+          <view class="answer-count">{{totalDishes.length}} 道菜</view>
+        </view>
         <view class="total-list">
           <view class="total-item" wx:for="{{totalDishes}}" wx:key="name">
             <text class="total-name">{{item.name}}</text>
@@ -34,6 +50,7 @@
       </view>
 
       <!-- 按提交人分组的明细 -->
+      <view class="section-title board-detail-title">提交明细</view>
       <view class="board-card" wx:for="{{submissions}}" wx:key="index">
         <view class="sub-head">
           <text class="sub-name">{{item.userName}}</text>

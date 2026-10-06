@@ -90,5 +90,10 @@ Page({
 
   onPullDownRefresh() {
     this.loadBoard().finally(() => wx.stopPullDownRefresh());
+  },
+
+  // 错误态的点击重试（不再只依赖下拉刷新这条隐藏路径）
+  onRetry() {
+    this.loadBoard();
   }
 });

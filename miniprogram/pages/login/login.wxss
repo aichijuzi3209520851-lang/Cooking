@@ -12,7 +12,10 @@
   box-sizing: border-box;
   padding: 0 48rpx calc(env(safe-area-inset-bottom) + 44rpx);
   background:
-    linear-gradient(180deg, var(--surface-page) 0%, var(--surface-card) 55%, var(--color-cream) 100%);
+    linear-gradient(180deg, var(--surface-page) 0%, var(--surface-card) 55%, var(--color-cream) 100%),
+    url('/images/brand/paper-texture.jpg');
+  background-size: 100% 100%, 360rpx 323rpx;
+  background-blend-mode: normal, multiply;
   overflow: hidden;
   position: relative;
 }
@@ -184,12 +187,11 @@
   opacity: 0.9;
 }
 
-.login-mark-emoji {
+.login-mark-img {
   position: relative;
   z-index: 1;
-  font-size: 92rpx;
-  line-height: 1;
-  transform: rotate(4deg);
+  width: 116rpx;
+  height: 116rpx;
 }
 
 .login-mark-spark {
@@ -217,8 +219,8 @@
 .login-title {
   color: var(--color-text-primary);
   font-size: var(--text-display);
-  font-weight: 800;
-  line-height: 1.2;
+  font-weight: var(--weight-black);
+  line-height: var(--lh-tight);
   letter-spacing: 2rpx;
 }
 
@@ -230,7 +232,7 @@
   margin-top: 20rpx;
   color: var(--color-text-secondary);
   font-size: var(--text-body-sm);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   letter-spacing: 1rpx;
 }
 
@@ -265,7 +267,7 @@
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
   color: var(--color-on-accent);
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   letter-spacing: 1rpx;
   line-height: 1; /* 覆盖原生 button 默认 line-height（2.55…），避免垂直居中偏移 */
   box-shadow: var(--shadow-accent);
@@ -281,10 +283,10 @@
 }
 
 .login-button-retry {
-  background: var(--color-card);
+  background: var(--surface-card);
   color: var(--color-accent-deep);
   border: 3rpx solid var(--color-accent);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elev-1);
 }
 
 /* 隐私协议勾选行：整行可点，勾选框在左。默认不勾选，未勾选不可登录。 */
@@ -338,13 +340,13 @@
 .login-agree-text {
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .login-agreement-link {
   display: inline;
   color: var(--color-accent);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 /* 辅助说明：置于最下，弱于勾选行，不与必须操作的项争夺注意力 */
@@ -352,7 +354,7 @@
   margin-top: 12rpx;
   color: var(--color-text-tertiary);
   font-size: var(--text-caption);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .login-error {
@@ -363,8 +365,8 @@
   padding: 18rpx 22rpx;
   border-radius: var(--radius-md);
   /* 错误提示配色固定为红系，不随强调色漂移；长文案保持左对齐易读 */
-  background: rgba(224, 32, 32, 0.08);
-  border: 1rpx solid rgba(224, 32, 32, 0.20);
+  background: var(--color-danger-soft);
+  border: 1rpx solid var(--color-danger-border);
   text-align: left;
 }
 
@@ -376,16 +378,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--color-primary-red);
-  color: #FFFFFF;
-  font-size: 20rpx;
-  font-weight: 700;
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+  font-size: var(--text-mini);
+  font-weight: var(--weight-bold);
 }
 
 .login-error-text {
   flex: 1;
   min-width: 0;
-  color: var(--color-primary-red);
+  color: var(--color-danger);
   font-size: var(--text-caption);
   line-height: 1.5;
 }

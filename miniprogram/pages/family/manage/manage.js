@@ -7,7 +7,7 @@ const {
   showApiError,
   showConfirm,
   getRoleName,
-  getAvatarColor,
+  getAvatarGradient,
   getAvatarText,
   getConfirmColor
 } = require('../../../utils/util.js');
@@ -44,8 +44,9 @@ Page({
     const name = (f && f.name) || '我家';
     return {
       title: `${name} · 今晚想吃什么？进来点两个菜`,
-      path: `/pages/family/join/join?code=${(f && f.joinCode) || ''}`
-      // TODO: 补充 5:4 分享封面图后启用 imageUrl: '/images/share/invite-cover.png'
+      path: `/pages/family/join/join?code=${(f && f.joinCode) || ''}`,
+      // 封面用品牌标（无文案裸 logo，正方形由微信居中裁切）
+      imageUrl: '/images/brand/brand-mark.png'
     };
   },
 
@@ -82,12 +83,11 @@ Page({
         // 为每个成员添加头像颜色和首字
         const processedMembers = (members || []).map(m => {
           const userId = m.userId || m.openid || m._id || '';
-          const colors = getAvatarColor(m.nickname || m.name || '');
           return {
             ...m,
             userId: userId,
             roleName: getRoleName(m.role),
-            avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`,
+            avatarStyle: `background: ${getAvatarGradient(m.nickname || m.name || '')};`,
             avatarText: getAvatarText(m.nickname || m.name || ''),
             isSelf: userId === currentUserId
           };

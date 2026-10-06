@@ -1,25 +1,8 @@
 // components/avatar-group/avatar-group.js
-const { asArray } = require('../../utils/util.js')
+const { asArray, getAvatarGradient } = require('../../utils/util.js')
 
-const GRADIENTS = [
-  ['#F0821E', '#D93A2B'],
-  ['#E6A23C', '#F0821E'],
-  ['#2F9E6E', '#7BC96F'],
-  ['#D93A2B', '#E8467C'],
-  ['#E8467C', '#F5A623'],
-  ['#8B5E3C', '#C0392B'],
-  ['#C0392B', '#F0821E'],
-  ['#2F9E6E', '#E6A23C']
-];
-
-function getGradient(name) {
-  if (!name) return GRADIENTS[0];
-  let sum = 0;
-  for (let i = 0; i < name.length; i++) {
-    sum += name.charCodeAt(i);
-  }
-  return GRADIENTS[sum % GRADIENTS.length];
-}
+// 渐变色板与哈希算法统一在 utils/util.js 的 getAvatarColor（唯一实现），
+// 这里只负责排版：叠放、溢出计数、裂图回退
 
 function getInitial(name) {
   if (!name) return '?';
@@ -76,7 +59,7 @@ Component({
       const displayList = [];
       for (let i = 0; i < visibleCount; i++) {
         const m = list[i] || {};
-        const gradient = getGradient(m.nickname);
+        const gradient = getAvatarGradient(m.nickname);
         displayList.push({
           openid: m.openid,
           nickname: m.nickname || '',

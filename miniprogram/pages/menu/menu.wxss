@@ -46,8 +46,8 @@
   min-width: 0;
 }
 
-/* 品牌主标题用 h1 档（52rpx/800）：曾经是 display(68)，但 hero 只是「签名」，
-   真正的主角是下面的菜品列表——首屏高度有限，标题降一档、菜品多露一张卡 */
+/* 首屏锚点是「今天」：与汇总页同一语言（日期做 h1），品牌名交给导航栏，
+   hero 只是「签名」——真正的主角是下面的菜品列表 */
 .header-title {
   font-size: var(--text-h1);
   font-weight: var(--weight-black);
@@ -56,34 +56,11 @@
   line-height: var(--lh-tight);
 }
 
-.header-sub {
-  display: flex;
-  align-items: center;
-  margin-top: var(--space-1);
-  font-size: var(--text-body-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--lh-normal);
-}
-
-.header-dot {
-  margin: 0 var(--space-1);
-  color: var(--color-text-tertiary);
-}
-
-.header-family {
-  color: var(--color-text-secondary);
-  max-width: 280rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 家庭切换胶囊：与标题基线对齐，不抢主标题视觉 */
+/* 家庭切换胶囊：与日期基线对齐，家庭成员名只在这里出现（不在标题行重复） */
 .header-right {
   display: flex;
   align-items: center;
   padding: var(--space-1) var(--space-3);
-  margin-top: 10rpx;
   border-radius: var(--radius-pill);
   background: var(--surface-card);
   box-shadow: var(--elev-1);
@@ -92,7 +69,7 @@
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.header-right:active {
+.header-right-press {
   transform: scale(0.96);
   opacity: 0.9;
 }
@@ -108,10 +85,7 @@
 }
 
 .switch-arrow {
-  font-size: var(--text-h3);
-  color: var(--color-text-tertiary);
   margin-left: 2rpx;
-  line-height: 1;
 }
 
 /* ===== 米饭引导条（原「今日米饭」日报卡下线后的一次性引导）
@@ -182,44 +156,69 @@
 }
 
 .rice-tip-arrow {
-  font-size: var(--text-h3);
-  color: var(--color-text-tertiary);
   line-height: 1;
   flex-shrink: 0;
 }
 
 /* ===== 今日推荐（RECOMMEND-001）
    已从页面上半部收进左侧导航首个「推荐」选项卡；
-   这里是推荐视图顶部的说明区：季节一行 + 未到门槛时的进度条 ===== */
+   语境说明收敛成一行：季节文案在左 + 天气胶囊在右，让位给菜品卡片 ===== */
 .recommend-note {
   padding: var(--space-2) var(--space-4) var(--space-3);
 }
 
-/* 季节气候：独立成行 + 强调色 + 中等字重（原为标题右侧 22rpx 三级灰，
-   真机上约 11pt，是 iOS 最小可读档，用来承载「秋凉渐起，晚上来碗热汤」
-   这种有说服力的文案是错的） */
-.recommend-season {
+/* 语境行：emoji + 季节文案 + 天气胶囊（无数据时胶囊隐藏） */
+.recommend-context {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
   margin-top: var(--space-1);
 }
 
-.recommend-season-emoji {
+.recommend-context-emoji {
   font-size: var(--text-season);
   line-height: var(--lh-normal);
-  margin-right: var(--space-1);
   flex-shrink: 0;
 }
 
-.recommend-season-text {
+.recommend-context-text {
   flex: 1;
-  min-width: 0;
+  min-width: 200rpx;
   font-size: var(--text-season);
   font-weight: var(--weight-medium);
   color: var(--color-accent-deep);
   line-height: var(--lh-normal);
 }
 
+/* 天气 chip：sunken 底小胶囊，弱化为元信息 */
+.recommend-weather-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  max-width: 320rpx;
+  box-sizing: border-box;
+}
+
+.recommend-weather-icon {
+  font-size: var(--text-caption);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.recommend-weather-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 未到开启门槛：进度块（米黄信息块），给预期而非留白 */
 .recommend-progress {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
@@ -230,26 +229,6 @@
 .recommend-progress-text {
   font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
-  line-height: var(--lh-normal);
-}
-
-/* 天气 chip（WEATHER-002）：季节文案下方一行小字，无数据时整行隐藏不占位 */
-.recommend-weather {
-  display: flex;
-  align-items: center;
-  margin-top: var(--space-1);
-}
-
-.recommend-weather-icon {
-  font-size: var(--text-season);
-  line-height: var(--lh-normal);
-  margin-right: var(--space-1);
-  flex-shrink: 0;
-}
-
-.recommend-weather-text {
-  font-size: var(--text-caption);
-  color: var(--color-text-tertiary);
   line-height: var(--lh-normal);
 }
 
@@ -314,7 +293,7 @@
 }
 
 .rail-emoji {
-  font-size: 32rpx;
+  font-size: var(--icon-xs);
   line-height: 1;
   margin-bottom: var(--space-1);
   opacity: 0.7;

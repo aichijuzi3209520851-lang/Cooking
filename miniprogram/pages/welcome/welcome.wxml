@@ -1,7 +1,7 @@
 <!--pages/welcome/welcome.wxml-->
 <view class="welcome-page {{themeClass}}">
   <view class="welcome-content">
-    <view class="welcome-emoji">🍳</view>
+    <image class="welcome-mark-img" src="/images/brand/brand-mark.png" mode="aspectFit" />
     <view class="welcome-title"><text class="welcome-title-highlight">筷点</text>吃饭</view>
     <view class="welcome-subtitle">告诉金牌大厨你想吃什么</view>
   </view>

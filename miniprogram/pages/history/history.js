@@ -6,7 +6,7 @@ const {
   yesterday,
   today,
   formatDate,
-  getAvatarColor,
+  getAvatarGradient,
   getAvatarText,
   showApiError
 } = require('../../utils/util.js');
@@ -22,6 +22,8 @@ Page({
     maxDate: '',
     historyList: [],
     loading: false,
+    // 加载失败与「没有记录」是两回事：失败时显示重试入口，不冒充空态
+    loadError: false,
     canGoNext: false
   },
 
@@ -91,32 +93,35 @@ Page({
   async loadHistory() {
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) {
-      this.setData({ historyList: [] });
+      this.setData({ historyList: [], loadError: false });
       return;
     }
 
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     try {
       const res = await historyApi.list(familyId, this.data.currentDate);
       const { groups } = dto.normalizeTodayList(res);
 
       const processed = groups.map(group => ({
         ...group,
-        voters: (group.voters || []).map(v => {
-          const colors = getAvatarColor(v.nickname || '');
-          return {
-            ...v,
-            avatarStyle: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});`,
-            avatarText: getAvatarText(v.nickname || '')
-          };
-        })
+        voters: (group.voters || []).map(v => ({
+          ...v,
+          avatarStyle: `background: ${getAvatarGradient(v.nickname || '')};`,
+          avatarText: getAvatarText(v.nickname || '')
+        }))
       }));
 
       this.setData({ historyList: processed, loading: false });
     } catch (err) {
       console.error('加载历史记录失败', err);
-      this.setData({ historyList: [], loading: false });
+      // 失败≠没记录：保留空列表但置 loadError，页面显示重试入口而非「这一天没有点菜记录」
+      this.setData({ historyList: [], loading: false, loadError: true });
       showApiError(err, '加载失败');
     }
+  },
+
+  // 错误态重试
+  onRetryHistory() {
+    this.loadHistory();
   }
 });
