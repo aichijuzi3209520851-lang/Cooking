@@ -1,6 +1,7 @@
 // pages/summary/summary.js
 const theme = require('../../utils/theme.js');
 const { voteApi } = require('../../utils/api.js');
+const subscribe = require('../../utils/subscribe.js');
 const dto = require('../../utils/dto.js');
 const category = require('../../utils/category.js');
 const {
@@ -281,6 +282,9 @@ Page({
     if (!current) return;
     const next = !current.decided;
 
+    // 静默补订阅额度（见 utils/subscribe.js）：拍板是 chef 的关键动作，失败不影响拍板
+    subscribe.bankQuota(false);
+
     try {
       const res = await voteApi.decideMenu(app.globalData.currentFamilyId, dishId, next);
       const summaryList = this.data.summaryList.map(item =>
@@ -320,6 +324,9 @@ Page({
     this._rejectDishName = '';
     this.setData({ showReject: false, rejectDishName: '' });
     if (!dishId) return;
+
+    // 静默补订阅额度（见 utils/subscribe.js）：chef 的授权额度靠日常操作累积
+    subscribe.bankQuota(false);
     return this.doChefCancel(dishId, dishName, reason);
   },
 
@@ -339,12 +346,16 @@ Page({
       { label: '午餐', value: 'lunch' },
       { label: '晚餐', value: 'dinner' }
     ];
-    wx.showActionSheet({
-      itemList: MEALS.map(m => m.label),
-      success: (res) => {
-        const meal = MEALS[res.tapIndex] || MEALS[1];
-        this.doSubmitMenu(meal.value, meal.label);
-      }
+    // 提交是推送链路的源头：先补一次订阅额度（已勾选「总是保持」则静默 +1 条，
+    // 未勾选且未连续拒绝过则弹一次授权窗），完成后再选餐次，两个原生弹窗不叠加
+    subscribe.bankQuota(true).then(() => {
+      wx.showActionSheet({
+        itemList: MEALS.map(m => m.label),
+        success: (res) => {
+          const meal = MEALS[res.tapIndex] || MEALS[1];
+          this.doSubmitMenu(meal.value, meal.label);
+        }
+      });
     });
   },
 

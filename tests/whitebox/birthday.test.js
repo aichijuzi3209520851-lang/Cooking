@@ -316,7 +316,7 @@ async function setNotifyEnabled(openid, enabled) {
   })
 }
 
-test('W-C-B12 sendBirthdayWish：当天寿星 → 其他成员各收到一条，寿星本人不收', async () => {
+test('W-C-B12 sendBirthdayWish：当天寿星 → 寿星本人与家人都收到，文案两套', async () => {
   env.resetDb()
   const familyId = 'famN1'
   await seedMembers(familyId, ['u1', 'u2', 'u3'])
@@ -332,12 +332,20 @@ test('W-C-B12 sendBirthdayWish：当天寿星 → 其他成员各收到一条，
   const res = await runNotify({ action: 'sendBirthdayWish' })
   assert.equal(res.success, true)
   assert.equal(res.data.celebrants, 1)
-  assert.equal(res.data.notified, 2, '两位家人各收到一条')
-  assert.deepEqual(env.sent.map(m => m.touser).sort(), ['u2', 'u3'],
-    '寿星本人不应收到自己的生日祝福')
+  assert.equal(res.data.notified, 3, '寿星本人 + 两位家人各收到一条')
+  assert.deepEqual(env.sent.map(m => m.touser).sort(), ['u1', 'u2', 'u3'],
+    '寿星本人也应收到自己的生日提醒')
   assert.equal(env.sent[0].templateId, 'wb-birthday-template')
   // 推送文案不得出现具体日期（运营规范 5.12.6）
-  assert.doesNotMatch(JSON.stringify(env.sent[0].data), /\d+\s*[月日]/)
+  for (const msg of env.sent) {
+    assert.doesNotMatch(JSON.stringify(msg.data), /\d+\s*[月日]/)
+  }
+  // 两套文案：对寿星说「你」，对家人说「TA」
+  const byUser = {}
+  env.sent.forEach(m => { byUser[m.touser] = m })
+  assert.match(JSON.stringify(byUser.u1.data), /今天是你的生日/)
+  assert.match(JSON.stringify(byUser.u2.data), /今天是TA的生日/)
+  assert.match(JSON.stringify(byUser.u3.data), /今天是TA的生日/)
 })
 
 test('W-C-B13 sendBirthdayWish：寿星关闭可见性 → 一条都不发', async () => {

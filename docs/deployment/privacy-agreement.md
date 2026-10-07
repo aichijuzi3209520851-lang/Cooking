@@ -131,8 +131,9 @@ fail api scope is not declared in the privacy agreement  (errno 112)
   弹窗内容**寿星与家人是两套**——家人看到的是「今天是 XX 的生日 + 点一道 TA 爱吃的菜」，
   寿星看到的是第二人称的「今天，你是主角」+ 品牌祝福（`buildPopupContent`）。
   两套都**不含具体日期**，且都有契约测试断言两者确实不同。
-- **推送受众**：`notify.sendBirthdayWish` 只发给**其他成员**，寿星本人不发
-  （他自己知道，且一次推送要消耗收件人一次宝贵的授权额度）。
+- **推送受众**：`notify.sendBirthdayWish` 发给同家庭全体开启通知的成员，**含寿星本人**
+  （2026-10-07 产品要求；本人文案用第二人称「今天是你的生日」，仍只说「今天」不复述日期，
+  不向他人展示出生日期，符合 5.12.6）。
 - 用户选「仅自己可见」时，`collectBirthdayNotice` 与 `sendBirthdayWish` 都会把他剔除
   （依据 `shared/birthday.js#isShared`，缺省视为允许，只有显式 `false` 才隐藏）。
 

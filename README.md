@@ -115,7 +115,7 @@
 ### 8. 生日提醒与祝福（BIRTHDAY-001）
 - 生日**只存月日、不存年份**（最小化收集），支持公历 / 农历（1900-2100 农历换算，前端展示「腊月廿九」这类汉字）
 - 菜单页提醒条只覆盖「今天 / 明天」，生日当天弹祝福弹窗（寿星与家人两套文案，一天只弹一次）；文案不复述具体日期
-- `notify` 的 `birthdayWish` 触发器（每日 09:00）向同家庭其他成员发祝福；只广播「明确同意展示」（`shared` 开关）的生日，寿星本人不收
+- `notify` 的 `birthdayWish` 触发器（每日 09:00）向同家庭全体开启通知的成员发祝福（含寿星本人，本人文案用「你」、家人文案用「TA」）；只广播「明确同意展示」（`shared` 开关）的生日
 
 ### 9. 分享邀请
 - 家庭管理页支持分享给好友/群与朋友圈，卡片携带 6 位加入码与品牌封面图，接收方点开自动填码加入
@@ -580,7 +580,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 | `sendMenuDecidedNotify` | `familyId, dishId, decided` | 厨师拍板/移出今晚菜单，通知全家 |
 | `sendMenuSubmitNotify` | `familyId, userName, dishNames` | 单次提交的即时通知（**新策略下 vote 已不再调用**） |
 | `sendMenuDigest` | — | **饭点汇总**：把当天尚未汇总的提交按家庭合并成一条发给厨师，发完回写 `notifiedAt` 防重复 |
-| `sendBirthdayWish` | — | **生日祝福**：当天过生日的成员 → 同家庭其他成员各一条（只发「同意展示」的生日，寿星本人不收） |
+| `sendBirthdayWish` | — | **生日祝福**：当天过生日的成员 → 同家庭全体开启通知的成员各一条，寿星本人与家人两套文案（只发「同意展示」的生日） |
 
 > ⚠️ `notify` 有**两种入口**：
 > ① 云函数内部调用（必须携带内部密钥 `internalKey`，客户端直调会被拒绝）；
@@ -834,7 +834,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（273 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（281 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -884,7 +884,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 数据库集合数 | **10** 个 |
 | 后端代码量 | ~**3,327** 行 JavaScript（各云函数 `index.js` 合计） |
 | 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
-| 测试 | **21** 个测试文件 / **273** 个用例（单元 114 / 契约 53 / 冒烟 4 / 白盒 102），全绿 |
+| 测试 | **22** 个测试文件 / **281** 个用例（单元 114 / 契约 53 / 冒烟 4 / 白盒 110），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
 | 插画素材 | **41** 张（空状态 5 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 24）+ 品牌资产 2（brand-mark/纸纹） |
 | 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |

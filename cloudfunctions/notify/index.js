@@ -409,7 +409,8 @@ async function listBirthdayUsers() {
  *
  * 接收方仍受订阅消息授权限制：只有 notifyEnabled 为 true 的成员能收到，
  * 未授权的人收不到 —— 这是微信的硬限制，不是本函数的缺陷。
- * 寿星本人不发：他自己知道，而且一次推送要消耗收件人一次宝贵的授权额度。
+ * 寿星本人也收一条（2026-10-07 产品要求）：文案对本人说「你」、对家人说「TA」；
+ * 只提「今天」不复述日期，不向他人展示出生日期，符合运营规范 5.12.6。
  */
 async function sendBirthdayWish() {
   const templateId = getTemplateIds().birthday
@@ -444,16 +445,19 @@ async function sendBirthdayWish() {
         .get()
       // 去重：family_members 里同一用户可能存在多条记录（线上确实出现过）
       const memberIds = [...new Set((membersRes.data || []).map(m => m.userId))]
-        .filter(id => id !== person._id)
       if (memberIds.length === 0) continue
 
       const targets = await filterNotifyEnabled(memberIds)
       total += memberIds.length
       for (const openid of targets) {
+        // 寿星本人与家人两套文案：对本人说「你」，对家人说「TA」（都不出现具体日期）
+        const isCelebrant = openid === person._id
         // 字段名跟着模板走：模板字段变化时只改这里
         const r = await sendOne(openid, templateId, {
           thing2: thing(person.nickname, '家人'),
-          thing3: thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
+          thing3: isCelebrant
+            ? thing('今天是你的生日，快收下家人的祝福', '祝你生日快乐')
+            : thing('今天是TA的生日，快来说声生日快乐', '快来说声生日快乐')
         }, jumpPage(familyId, today))
         if (r.success) notified++
       }

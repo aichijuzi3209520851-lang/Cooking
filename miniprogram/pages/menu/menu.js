@@ -11,6 +11,7 @@ const dto = require('../../utils/dto.js');
 const category = require('../../utils/category.js');
 // 推荐文案层：模板兜底 + AI 增强（AI 不可用/超时自动回落）
 const recommendCopy = require('../../utils/recommend-copy.js');
+const subscribe = require('../../utils/subscribe.js');
 // 生日提醒文案（BIRTHDAY-001）：云函数只给 days/nickname，文案在前端拼
 const birthdayUtil = require('../../utils/birthday.js');
 const {
@@ -751,6 +752,10 @@ Page({
     if (!dish || !dish.dishId) return;
     const familyId = app.globalData.currentFamilyId;
 
+    // 静默补订阅额度（NOTIFY-003）：chef 与家人的授权额度靠点菜这类高频动作持续
+    // 累积，实时推送才不至于耗尽；已勾选「总是保持」时不弹窗，失败不影响投票
+    subscribe.bankQuota(false);
+
     // 乐观更新
     this.optimisticUpdate(dish.dishId, true);
 
@@ -866,6 +871,9 @@ Page({
     const reason = (e.detail && e.detail.reason) || '';
     this.setData({ showReject: false, rejectDishName: '' });
     if (!dish || !dish.dishId) return;
+
+    // 静默补订阅额度（见 utils/subscribe.js）：chef 的授权额度靠日常操作累积
+    subscribe.bankQuota(false);
 
     try {
       const res = await voteApi.chefCancel(app.globalData.currentFamilyId, dish.dishId, reason);
