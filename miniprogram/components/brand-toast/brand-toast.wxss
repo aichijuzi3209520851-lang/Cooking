@@ -1,0 +1,56 @@
+/* 品牌提示条：颜色/圆角/阴影全部走 app.wxss 令牌，明暗主题自动适配 */
+.bt-root {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 24rpx);
+  left: 50%;
+  transform: translate(-50%, -28rpx);
+  display: inline-flex;
+  align-items: center;
+  gap: 16rpx;
+  max-width: calc(100vw - 96rpx);
+  padding: 18rpx 30rpx;
+  background: var(--surface-raised);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out);
+  z-index: 2500;
+}
+
+.bt-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.bt-icon {
+  flex: none;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-on-accent);
+  font-size: 26rpx;
+  font-weight: 700;
+  background: var(--color-accent);
+}
+
+.bt-type-success .bt-icon {
+  background: var(--color-success);
+}
+
+.bt-type-error .bt-icon {
+  background: var(--color-danger);
+}
+
+.bt-text {
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  word-break: break-all;
+}

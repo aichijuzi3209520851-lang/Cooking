@@ -1,0 +1,4 @@
+<view class="bt-root bt-type-{{type}} {{visible ? 'bt-visible' : ''}}" aria-live="polite">
+  <view class="bt-icon">{{type === 'success' ? '✓' : (type === 'error' ? '!' : 'i')}}</view>
+  <text class="bt-text">{{text}}</text>
+</view>

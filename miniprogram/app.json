@@ -1,4 +1,7 @@
 {
+  "usingComponents": {
+    "brand-toast": "/components/brand-toast/brand-toast"
+  },
   "pages": [
     "pages/login/login",
     "pages/menu/menu",

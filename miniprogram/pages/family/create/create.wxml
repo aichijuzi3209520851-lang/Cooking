@@ -29,3 +29,6 @@
     </button>
   </view>
 </view>
+
+<!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
+<brand-toast id="brandToast" />

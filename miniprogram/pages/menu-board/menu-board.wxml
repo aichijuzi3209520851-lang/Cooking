@@ -69,3 +69,6 @@
 
 <!-- 版本更新公告弹窗（每版本进入小程序弹一次，自包含组件） -->
 <changelog-popup class="cl-popup-host" />
+
+<!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
+<brand-toast id="brandToast" />

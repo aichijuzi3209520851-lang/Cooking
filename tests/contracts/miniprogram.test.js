@@ -43,6 +43,24 @@ test('全站分享：app.json 每个页面都声明转发好友与朋友圈（SH
   assert.match(share, /timeline/, 'utils/share.js 缺 timeline');
 });
 
+test('品牌提示条：每个页面挂载组件且 util.js 走统一路由（TOAST-001）', () => {
+  const appConfig = JSON.parse(fs.readFileSync(path.join(ROOT, 'miniprogram/app.json'), 'utf8'));
+  for (const page of appConfig.pages) {
+    const wxml = fs.readFileSync(path.join(ROOT, 'miniprogram', `${page}.wxml`), 'utf8');
+    assert.match(wxml, /<brand-toast id="brandToast"/, `页面未挂载品牌提示条：${page}`);
+  }
+  // 全局组件注册（否则页面里的标签不渲染）
+  assert.equal(
+    appConfig.usingComponents && appConfig.usingComponents['brand-toast'],
+    '/components/brand-toast/brand-toast',
+    'app.json 缺 brand-toast 全局注册'
+  );
+  // 路由层存在：util.js 必须经 presentToast 分发而不是直接调 wx.showToast
+  const util = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/util.js'), 'utf8');
+  assert.match(util, /function presentToast/, 'util.js 缺统一路由 presentToast');
+  assert.match(util, /selectComponent\('#brandToast'\)/, '路由应优先找页面上的 brandToast 组件');
+});
+
 test('util：previewImage 对 cloud:// 先换临时链接（IMG-PREVIEW-001）', () => {
   const src = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/util.js'), 'utf8');
   assert.match(src, /getTempFileURL/, 'cloud fileID 应换取临时链接');

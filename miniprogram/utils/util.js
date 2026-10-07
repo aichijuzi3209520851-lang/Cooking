@@ -144,17 +144,35 @@ function getAvatarText(nickname) {
 }
 
 /**
+ * 品牌提示条（替代原生 toast 的路由层）：
+ * 优先交给当前页面挂载的 <brand-toast id="brandToast"> 组件渲染（品牌样式、长文案完整展示），
+ * 页面未挂组件时退回原生 wx.showToast —— 提示在任何页面都不会丢。
+ */
+function presentToast(opts) {
+  try {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    const page = pages[pages.length - 1];
+    const comp = page && page.selectComponent && page.selectComponent('#brandToast');
+    if (comp && typeof comp.show === 'function') {
+      comp.show(opts);
+      return;
+    }
+  } catch (e) { /* 取不到组件就走兜底，不吞提示 */ }
+  wx.showToast({ title: opts.text, icon: 'none' });
+}
+
+/**
  * 显示成功提示
  */
 function showSuccess(title) {
-  wx.showToast({ title, icon: 'success', duration: 1500 });
+  presentToast({ text: title, type: 'success' });
 }
 
 /**
  * 显示错误提示
  */
 function showError(title) {
-  wx.showToast({ title, icon: 'none' });
+  presentToast({ text: title, type: 'error' });
 }
 
 /**
@@ -163,7 +181,7 @@ function showError(title) {
  */
 function showApiError(err, fallback) {
   const msg = (err && err.message) || fallback || '请求失败';
-  wx.showToast({ title: msg, icon: 'none' });
+  presentToast({ text: msg, type: 'error' });
 }
 
 /**

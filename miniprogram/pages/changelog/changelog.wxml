@@ -23,3 +23,6 @@
 
   <view class="cl-footer caption">—— 就这些，饭点见 ——</view>
 </view>
+
+<!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
+<brand-toast id="brandToast" />

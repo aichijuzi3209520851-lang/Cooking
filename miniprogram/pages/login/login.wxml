@@ -76,3 +76,6 @@
     <view class="login-safe-note">登录后即可创建或加入家庭</view>
   </view>
 </view>
+
+<!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
+<brand-toast id="brandToast" />
