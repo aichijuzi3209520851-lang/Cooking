@@ -43,7 +43,7 @@ Page({
     const f = this.data.currentFamily;
     const name = (f && f.name) || '我家';
     return {
-      title: `${name} · 今晚想吃什么？进来点两个菜`,
+      title: `${name} · 想吃什么？进来点两个菜`,
       path: `/pages/family/join/join?code=${(f && f.joinCode) || ''}`,
       // 封面用品牌标（无文案裸 logo，正方形由微信居中裁切）
       imageUrl: '/images/brand/brand-mark.png'

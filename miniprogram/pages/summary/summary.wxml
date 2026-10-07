@@ -79,7 +79,7 @@
             <view class="dish-info">
               <view class="dish-name-row">
                 <view class="dish-name">{{item.name}}</view>
-                <view class="decided-chip" wx:if="{{item.decided}}">今晚吃</view>
+                <view class="decided-chip" wx:if="{{item.decided}}">已加入</view>
               </view>
               <view class="voter-list">
                 <view
@@ -119,7 +119,7 @@
             </view>
           </view>
 
-          <!-- 金牌大厨操作：拍板今晚菜单 + 撤下 -->
+          <!-- 金牌大厨操作：加入/移除菜单 + 撤下 -->
           <view class="chef-actions" wx:if="{{isChef}}">
             <view
               class="decide-btn {{item.decided ? 'decide-btn-on' : ''}}"
@@ -128,7 +128,7 @@
               catchtap="onDecideMenu"
               hover-class="decide-btn-hover"
             >
-              {{item.decided ? '移出今晚菜单' : '定为今晚菜单'}}
+              {{item.decided ? '移除菜单' : '加入菜单'}}
             </view>
             <view
               class="chef-cancel-btn"

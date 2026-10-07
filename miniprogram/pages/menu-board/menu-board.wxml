@@ -35,10 +35,10 @@
     />
 
     <block wx:else>
-      <!-- 今晚的答案：全家总单（跨提交人去重，按被点人数排序）——本页最该醒目的一块 -->
+      <!-- 全家的答案：全家总单（跨提交人去重，按被点人数排序）——本页最该醒目的一块 -->
       <view class="board-answer">
         <view class="answer-head">
-          <view class="answer-title">今晚全家想吃</view>
+          <view class="answer-title">全家都想吃</view>
           <view class="answer-count">{{totalDishes.length}} 道菜</view>
         </view>
         <view class="total-list">

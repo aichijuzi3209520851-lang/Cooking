@@ -283,28 +283,45 @@ Page({
     }
   },
 
-  // 拍板/移出今晚菜单（PRODUCT-002，仅金牌大厨）
+  // 加入/移除菜单（PRODUCT-002，仅金牌大厨）：纯开关动作，乐观更新零等待
   async onDecideMenu(e) {
     const dishId = e.currentTarget.dataset.id;
     if (!this.data.isChef || this.data.loading) return;
     // 目标状态 = 与当前相反。以渲染同源的 summaryList 为准，不依赖 dataset 的类型编码：
-    // WXML 绑的是布尔 item.decided，曾与数字 1/'1' 比较，导致恒为 false（点「定为」实际执行「移出」）。
+    // WXML 绑的是布尔 item.decided，曾与数字 1/'1' 比较，导致恒为 false（点「加入」实际执行「移除」）。
     const current = this.data.summaryList.find(item => item.dishId === dishId);
     if (!current) return;
+    if (this._deciding) return; // 上一发还没落地，防连点导致状态错乱
     const next = !current.decided;
 
     // 静默补订阅额度（见 utils/subscribe.js）：拍板是 chef 的关键动作，失败不影响拍板
     subscribe.bankQuota(false);
 
+    // 乐观更新：本地先生效（按钮/标签即时翻转，不转「加载中」），失败回滚
+    this.setData({
+      summaryList: this.data.summaryList.map(item =>
+        item.dishId === dishId ? { ...item, decided: next } : item
+      )
+    });
+    this._deciding = true;
     try {
       const res = await voteApi.decideMenu(app.globalData.currentFamilyId, dishId, next);
-      const summaryList = this.data.summaryList.map(item =>
-        item.dishId === dishId ? { ...item, decided: res.decided } : item
-      );
-      this.setData({ summaryList });
-      showSuccess(res.decided ? '已定为今晚菜单' : '已移出今晚菜单');
+      // 与服务端真值对齐一次（其他设备可能同时操作过这道菜）
+      this.setData({
+        summaryList: this.data.summaryList.map(item =>
+          item.dishId === dishId ? { ...item, decided: res.decided } : item
+        )
+      });
+      showSuccess(res.decided ? '已加入菜单' : '已移除菜单');
     } catch (err) {
+      this.setData({
+        summaryList: this.data.summaryList.map(item =>
+          item.dishId === dishId ? { ...item, decided: current.decided } : item
+        )
+      });
       showApiError(err, '操作失败');
+    } finally {
+      this._deciding = false;
     }
   },
 

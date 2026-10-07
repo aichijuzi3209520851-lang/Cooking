@@ -105,8 +105,9 @@ const voteApi = {
   chefCancel: (familyId, dishId, reason) =>
     call('vote', { action: 'chefCancel', familyId, dishId, reason }, true),
   todayList: (familyId) => call('vote', { action: 'todayList', familyId }),
+  // 加入/移除菜单：纯开关动作，页面走乐观更新，不显示全局 loading
   decideMenu: (familyId, dishId, decided) =>
-    call('vote', { action: 'decideMenu', familyId, dishId, decided }, true),
+    call('vote', { action: 'decideMenu', familyId, dishId, decided }),
   // 提交今日菜单（NOTIFY-002）：meal 为餐次（breakfast/lunch/dinner，缺省中餐），
   // 提交成功后云函数实时推送汇总给金牌大厨
   submitMenu: (familyId, meal) => call('vote', { action: 'submitMenu', familyId, meal }, true),

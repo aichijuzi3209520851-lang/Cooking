@@ -229,8 +229,8 @@ async function sendMenuDecidedNotify(data) {
   const results = []
   for (const openid of notifyUsers) {
     results.push(await sendOne(openid, templateId, {
-      thing6: thing(dishName, '今晚菜单'),
-      thing14: thing(decided ? '已加入今晚菜单' : '已移出今晚菜单')
+      thing6: thing(dishName, '今日菜单'),
+      thing14: thing(decided ? '已加入菜单' : '已移除菜单')
     }, jumpPage(familyId, getTodayStr())))
   }
 
