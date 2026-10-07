@@ -29,6 +29,20 @@ test('dish-card：有图缩略图支持全屏预览（IMG-PREVIEW-001）', () =>
   assert.match(wxml, /bindtap="onPreviewImage"/, '缩略图未绑定预览事件');
 });
 
+test('全站分享：app.json 每个页面都声明转发好友与朋友圈（SHARE-001）', () => {
+  const appConfig = JSON.parse(fs.readFileSync(path.join(ROOT, 'miniprogram/app.json'), 'utf8'));
+  assert.ok(appConfig.pages.length >= 10, '页面数量异常');
+  for (const page of appConfig.pages) {
+    const src = fs.readFileSync(path.join(ROOT, 'miniprogram', `${page}.js`), 'utf8');
+    assert.match(src, /onShareAppMessage/, `页面未开启「转发给朋友」：${page}`);
+    assert.match(src, /onShareTimeline/, `页面未开启「分享到朋友圈」：${page}`);
+  }
+  // 统一文案单源存在（家庭管理页的邀请卡片自行实现，不强制走 utils/share）
+  const share = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/share.js'), 'utf8');
+  assert.match(share, /appMessage/, 'utils/share.js 缺 appMessage');
+  assert.match(share, /timeline/, 'utils/share.js 缺 timeline');
+});
+
 test('util：previewImage 对 cloud:// 先换临时链接（IMG-PREVIEW-001）', () => {
   const src = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/util.js'), 'utf8');
   assert.match(src, /getTempFileURL/, 'cloud fileID 应换取临时链接');

@@ -4,6 +4,7 @@ const config = require('../../config.js');
 const changelog = require('../../utils/changelog.js');
 const { familyApi, notifyApi, userApi } = require('../../utils/api.js');
 const birthdayUtil = require('../../utils/birthday.js');
+const share = require('../../utils/share.js');
 const {
   getRoleName,
   getAvatarColor,
@@ -23,6 +24,16 @@ function notifyConfigured() {
 }
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     userInfo: null,

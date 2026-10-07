@@ -2,6 +2,7 @@
 const theme = require('../../utils/theme.js');
 const { historyApi } = require('../../utils/api.js');
 const dto = require('../../utils/dto.js');
+const share = require('../../utils/share.js');
 const {
   yesterday,
   today,
@@ -15,6 +16,16 @@ const app = getApp();
 const WEEK_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     currentDate: '',

@@ -4,6 +4,7 @@
 // 下半区：按提交人分组的提交明细（谁、什么餐次、几点、点了哪些菜）。
 // 从订阅消息点入时带 familyId/date 参数；应用内打开时回退当前家庭与今天。
 const theme = require('../../utils/theme.js');
+const share = require('../../utils/share.js');
 const { voteApi } = require('../../utils/api.js');
 const { today, showApiError, asArray } = require('../../utils/util.js');
 const app = getApp();
@@ -24,6 +25,16 @@ function formatTime(value) {
 }
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage(share.FAMILY_TITLE);
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     date: '',

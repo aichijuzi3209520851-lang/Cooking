@@ -7,6 +7,7 @@
 const theme = require('../../../utils/theme.js');
 const { categoryApi } = require('../../../utils/api.js');
 const category = require('../../../utils/category.js');
+const share = require('../../../utils/share.js');
 const {
   guardChefPage,
   showSuccess,
@@ -18,6 +19,16 @@ const app = getApp();
 const DEFAULT_TIP = `最多 ${category.CATEGORY_MAX} 个分类，名称 ${category.CATEGORY_NAME_MAX} 字以内`;
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     // [{ key, name, emoji, dishCount }]

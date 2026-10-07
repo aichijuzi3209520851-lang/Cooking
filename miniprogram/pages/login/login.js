@@ -1,8 +1,19 @@
 const theme = require('../../utils/theme.js');
+const share = require('../../utils/share.js');
 const { showError } = require('../../utils/util.js');
 const app = getApp();
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     status: 'loading', // loading（登录中）/ failed（失败）/ ready（等待用户点击）

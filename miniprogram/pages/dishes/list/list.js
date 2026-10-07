@@ -2,6 +2,7 @@
 const theme = require('../../../utils/theme.js');
 const { dishApi, categoryApi } = require('../../../utils/api.js');
 const category = require('../../../utils/category.js');
+const share = require('../../../utils/share.js');
 const {
   getCategoryName,
   getCategoryEmoji,
@@ -16,6 +17,16 @@ const app = getApp();
 const PAGE_SIZE = 20;
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     dishes: [],

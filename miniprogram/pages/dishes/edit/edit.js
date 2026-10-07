@@ -3,6 +3,7 @@ const theme = require('../../../utils/theme.js');
 const { dishApi, categoryApi } = require('../../../utils/api.js');
 const category = require('../../../utils/category.js');
 const privacy = require('../../../utils/privacy.js');
+const share = require('../../../utils/share.js');
 const {
   getCategoryList,
   guardChefPage,
@@ -16,6 +17,16 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     id: null,

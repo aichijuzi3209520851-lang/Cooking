@@ -1,12 +1,23 @@
 const theme = require('../../../utils/theme.js');
 const privacyContent = require('../../../utils/privacy-content.js');
 const api = require('../../../utils/api.js');
+const share = require('../../../utils/share.js');
 
 // 《隐私协议》页（PRIV-002）：内容实时更新
 //   1. onLoad 先用「本地缓存（上次云端版本）→ 内置兜底」立即渲染，页面永远有内容；
 //   2. 随后静默拉取云端最新版（app_config 集合，控制台改文档即生效，无需发版），
 //      拉到合法新内容后替换渲染并写缓存；失败/未配置一律保持现状，不打扰用户。
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     doc: privacyContent.BUILTIN,

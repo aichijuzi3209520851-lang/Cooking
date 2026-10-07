@@ -14,6 +14,7 @@ const recommendCopy = require('../../utils/recommend-copy.js');
 const subscribe = require('../../utils/subscribe.js');
 // 生日提醒文案（BIRTHDAY-001）：云函数只给 days/nickname，文案在前端拼
 const birthdayUtil = require('../../utils/birthday.js');
+const share = require('../../utils/share.js');
 const {
   today,
   seasonEmojiOf,
@@ -57,6 +58,16 @@ function buildVoterMap(groups) {
 }
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage(share.FAMILY_TITLE);
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     dishes: [],

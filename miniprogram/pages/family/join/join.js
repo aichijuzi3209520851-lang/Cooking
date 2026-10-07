@@ -1,5 +1,6 @@
 // pages/family/join/join.js
 const theme = require('../../../utils/theme.js');
+const share = require('../../../utils/share.js');
 const { familyApi } = require('../../../utils/api.js');
 const {
   showSuccess,
@@ -10,6 +11,16 @@ const {
 const app = getApp();
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     digits: ['', '', '', '', '', ''],

@@ -4,6 +4,7 @@ const { voteApi } = require('../../utils/api.js');
 const subscribe = require('../../utils/subscribe.js');
 const dto = require('../../utils/dto.js');
 const category = require('../../utils/category.js');
+const share = require('../../utils/share.js');
 const {
   today,
   getAvatarGradient,
@@ -23,6 +24,16 @@ const POLL_INTERVAL = 20000;
 const VOTER_PREVIEW_LIMIT = 4;
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage(share.FAMILY_TITLE);
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     summaryList: [],

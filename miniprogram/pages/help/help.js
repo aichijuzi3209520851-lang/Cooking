@@ -3,6 +3,7 @@
 // 内容维护约定：每条的 path 必须与该页面 bindtap 对应的真实入口一致，
 // 页面结构或文案变化时同步这里，避免教出错误的点击路径。
 const theme = require('../../utils/theme.js');
+const share = require('../../utils/share.js');
 
 const SECTIONS = [
   {
@@ -167,6 +168,16 @@ const SECTIONS = [
 ];
 
 Page({
+
+  // 全站分享（SHARE-001）：任何页面都可转发给好友 / 分享到朋友圈
+  onShareAppMessage() {
+    return share.appMessage();
+  },
+
+  onShareTimeline() {
+    return share.timeline();
+  },
+
   data: {
     themeClass: '',
     sections: SECTIONS
