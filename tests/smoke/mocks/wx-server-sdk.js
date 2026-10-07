@@ -37,6 +37,12 @@ const cloud = {
   openapi: {
     subscribeMessage: {
       async send(message) {
+        if (env.sendFailMode) {
+          // 模拟真实失败（如 43101 额度耗尽）：errMsg 形态与微信 SDK 一致
+          const err = new Error('user refused to accept the msg')
+          err.errMsg = 'openapi.subscribeMessage.send:fail 43101 user refused to accept the msg'
+          throw err
+        }
         env.sent.push(message)
       }
     },

@@ -161,3 +161,52 @@ test('S-Q-08 拒绝封顶后，弹窗路径也不再触发云调用（不误升�
     }
   }
 })
+
+// ---- requestNow（QUOTA-002）：缺额提示条上的显式补充入口 ----
+
+test('S-Q-09 requestNow 不受拒绝封顶约束：拒绝两次后依然给出授权机会', async () => {
+  reset()
+  global.wx.requestSubscribeMessage = ({ tmplIds, success }) => {
+    subCalls.push(tmplIds)
+    success({ 'tmpl-vote': 'reject', 'tmpl-cancel': 'reject' })
+  }
+  try {
+    await subscribe.bankQuota(true)
+    await subscribe.bankQuota(true) // 已达封顶
+    await subscribe.bankQuota(true) // 不再弹
+    assert.equal(subCalls.length, 2)
+
+    const ok = await subscribe.requestNow()
+    assert.equal(ok, false, '用户仍拒绝时返回 false')
+    assert.equal(subCalls.length, 3, 'requestNow 不受封顶限制，照常请求')
+  } finally {
+    global.wx.requestSubscribeMessage = ({ tmplIds, success, fail }) => {
+      subCalls.push(tmplIds)
+      if (subFail) fail({ errMsg: 'requestSubscribeMessage:fail' })
+      else {
+        const values = {}
+        tmplIds.forEach(id => { values[id] = 'accept' })
+        success(values)
+      }
+    }
+  }
+})
+
+test('S-Q-10 requestNow 接受 → 持久化 notifyEnabled 并清零拒绝计数', async () => {
+  reset()
+  storage['subscribe_popup_deny_count'] = 2
+  const ok = await subscribe.requestNow()
+  assert.equal(ok, true)
+  assert.equal(cloudCalls.length, 1)
+  assert.equal(cloudCalls[0].action, 'setNotifyStatus')
+  assert.equal(cloudCalls[0].status, 'accepted')
+  assert.equal(storage['subscribe_popup_deny_count'], 0, '显式接受应重置拒绝计数')
+})
+
+test('S-Q-11 requestNow 总开关关闭 → 不请求直接 false', async () => {
+  reset()
+  setting.subscriptionsSetting.mainSwitch = false
+  const ok = await subscribe.requestNow()
+  assert.equal(ok, false)
+  assert.equal(subCalls.length, 0)
+})

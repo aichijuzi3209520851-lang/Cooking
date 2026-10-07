@@ -91,6 +91,8 @@ Page({
     weatherDiagText: '',
     // 家庭生日提醒条（BIRTHDAY-001）：未来 7 天内有生日时的文案，无则空串
     birthdayNotice: '',
+    // 通知缺额提示条（QUOTA-002）：饭点汇总推送全员失败后，仅大厨可见
+    notifyShortageVisible: false,
     // 生日原文（BIRTHDAY-003）：关闭弹窗时要拿它的 date 写「今天已弹过」的缓存
     birthday: null,
     // 生日当天公告弹窗内容（BIRTHDAY-003）：{title, body, blessing} 或 null
@@ -463,6 +465,37 @@ Page({
     this.setData({ birthdayPopup: null });
   },
 
+  // ============ 通知缺额提示条（QUOTA-002） ============
+  // 饭点汇总推送全员失败（大厨订阅额度耗尽）时，notify 在 families 落标记，
+  // recommend 带回 notifyShortage —— 在这里给大厨一个「补充额度」的自愈入口。
+  // 当日点过「补充/暂不」就不再打扰，次日若仍未恢复会再次出现。
+
+  shortageTodayKey() {
+    const d = new Date();
+    // 仅作当日去重 key，本地时区即可
+    return 'ntshortage:' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  },
+
+  shouldShowShortage(shortage) {
+    if (!shortage || this.data.currentRole !== 'chef') return false;
+    try {
+      return !wx.getStorageSync(this.shortageTodayKey());
+    } catch (e) {
+      return true;
+    }
+  },
+
+  onTapNotifyShortage() {
+    // 显式点击 → 不受弹窗拒绝上限约束，直接给授权机会；
+    // 无论接受与否当日收起（接受则额度到账，下个饭点兜底重试自动补发）
+    subscribe.requestNow().catch(() => {}).then(() => {
+      try {
+        wx.setStorageSync(this.shortageTodayKey(), 1);
+      } catch (e) { /* 存储失败只影响当日隐藏 */ }
+      this.setData({ notifyShortageVisible: false });
+    });
+  },
+
   applyRecommend(res, withDiag) {
     const data = res || {};
     const season = data.season || {};
@@ -553,6 +586,8 @@ Page({
     // 生日当天公告弹窗（BIRTHDAY-003）：一天只弹一次，提前一天不弹
     birthday: data.birthday || null,
     birthdayPopup: this.pickBirthdayPopup(data.birthday),
+    // 通知缺额提示条（QUOTA-002）：仅大厨展示，当日关闭后不再打扰
+    notifyShortageVisible: this.shouldShowShortage(data.notifyShortage === true),
       // 节日时把季节图标换成节日 emoji（中秋 🥮 / 冬至 🥟…）
       seasonEmoji: noteEmoji || this.data.seasonEmoji
     });

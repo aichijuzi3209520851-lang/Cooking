@@ -33,6 +33,14 @@
     <text class="birthday-tip-text">{{birthdayNotice}}</text>
   </view>
 
+  <!-- 通知缺额提示（QUOTA-002）：饭点汇总推送全员失败后仅大厨可见，
+       点「补充额度」重新授权；额度到账后下个饭点兜底重试会自动补发未送出的菜单 -->
+  <view class="shortage-tip" wx:if="{{notifyShortageVisible}}">
+    <text class="shortage-tip-emoji">🔔</text>
+    <text class="shortage-tip-text">菜单提醒没送出去：你的通知额度用完了</text>
+    <view class="shortage-tip-btn" catchtap="onTapNotifyShortage">补充额度</view>
+  </view>
+
   <!-- 米饭引导：米饭已回归「主食」分类里的普通菜品（谁想吃谁点），
        这里只在主食里确实没有米饭时提示厨师补一道 -->
   <view

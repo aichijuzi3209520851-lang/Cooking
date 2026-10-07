@@ -287,6 +287,15 @@ async function sendMenuSubmitNotify(data) {
 
 // ============ 饭点汇总（NOTIFY-003） ============
 
+// 缺额标记（QUOTA-002）：digest 推送全员失败（典型为大厨订阅额度耗尽）时，
+// 在 families 上落 notifyShortage 标记，大厨下次打开小程序会看到「补充通知额度」
+// 提示条（menu 页），点按重新授权即恢复闭环。写失败只影响提示条，不阻塞推送主流程。
+function markShortage(familyId, shortage) {
+  db.collection('families').doc(familyId)
+    .update({ data: { notifyShortage: shortage } })
+    .catch(() => {})
+}
+
 // 把「今天已提交但还没汇总过」的菜单，按家庭合并成一条消息发给该家庭的金牌大厨。
 //
 // 为什么要有它：微信小程序订阅消息（一次性订阅）的额度不是「花钱买的条数」，而是
@@ -365,6 +374,11 @@ async function sendMenuDigest() {
     // 全员失败（如授权已耗尽）则不标记，留到下一个时间点再试一次。
     if (okCount > 0) {
       digestedIds.push(...familySubs.map(s => s._id))
+      // 推送恢复（QUOTA-002）：清掉缺额标记，大厨端提示条随之消失
+      markShortage(familyId, false)
+    } else {
+      // 全员失败（QUOTA-002）：落缺额标记，大厨下次打开小程序可见「补充通知额度」提示条
+      markShortage(familyId, true)
     }
   }
 

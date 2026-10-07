@@ -151,6 +151,8 @@ function createDb() {
 const env = module.exports = {
   currentUser: '',
   sent: [],           // 订阅消息发送记录（openapi.subscribeMessage.send）
+  // 置 true 时 subscribeMessage.send 抛错（模拟 43101 额度耗尽等发送失败，QUOTA-002）
+  sendFailMode: false,
   deletedFiles: [],   // 云存储删除记录（cloud.deleteFile）
   securityChecks: [], // 内容安全检测记录（openapi.security.*）
   // 篡改检测结果用：设为 'pass' | 'risky' 或 (type) => 'pass' | 'risky'
@@ -167,5 +169,6 @@ const env = module.exports = {
     env.deletedFiles.length = 0
     env.securityChecks.length = 0
     env.securityResult = 'pass'
+    env.sendFailMode = false
   }
 }

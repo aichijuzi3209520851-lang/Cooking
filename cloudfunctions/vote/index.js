@@ -944,9 +944,15 @@ async function recommendDishes(data, openid) {
   const ready = dishes.length >= RECOMMEND_MIN_DISHES &&
     historyDays >= RECOMMEND_MIN_HISTORY_DAYS
 
+  // 通知缺额标记（QUOTA-002）：notify 的饭点汇总推送全员失败时落的标记，
+  // 大厨端 menu 页据此显示「补充通知额度」提示条；eater 拿到也无需展示
+  const famRes = await db.collection('families').doc(familyId).get().catch(() => null)
+  const notifyShortage = !!(famRes && famRes.data && famRes.data.notifyShortage)
+
   const base = {
     today,
     ready,
+    notifyShortage,
     // 今天已经点过的菜：前端把推荐项标成「已想吃」，避免推一道刚选好的菜
     todayDishIds,
     // 命中的传统节日（FEST-001）：null=无节日。前端用它顶置节日提示与文案

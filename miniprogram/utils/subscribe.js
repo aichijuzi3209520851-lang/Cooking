@@ -114,4 +114,29 @@ async function bankQuota(allowPopup = false) {
   }
 }
 
-module.exports = { bankQuota }
+/**
+ * 用户显式点击「补充通知额度」时调用（QUOTA-002）：不受弹窗拒绝次数上限约束——
+ * 这是用户看到缺额提示条后的主动行为，每一次都应给出授权机会。
+ * 接受后同样升级服务端 notifyEnabled（只升级不降级）。
+ * @returns {Promise<boolean>} 是否有任一模板被接受。
+ */
+async function requestNow() {
+  try {
+    const tmplIds = templateIds()
+    if (tmplIds.length === 0) return false
+
+    const { mainSwitch } = await getSubscribeSetting()
+    if (!mainSwitch) return false
+
+    const accepted = await requestSubscribe(tmplIds)
+    if (accepted) {
+      notifyApi.setStatus('accepted', '').catch(() => {})
+      try { wx.setStorageSync(POPUP_DENY_KEY, 0) } catch (e) { /* 同上 */ }
+    }
+    return accepted
+  } catch (e) {
+    return false
+  }
+}
+
+module.exports = { bankQuota, requestNow }

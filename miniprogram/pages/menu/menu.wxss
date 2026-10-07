@@ -116,6 +116,42 @@
 
 /* 家庭生日提醒条（BIRTHDAY-001）：用强调色淡染区别于米黄的米饭引导条，
    传达「喜事」语义；纯提示不可点，所以没有 press 态 */
+/* 通知缺额提示条（QUOTA-002）：仅大厨可见，点按补充订阅额度 */
+.shortage-tip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  border: 1rpx solid var(--color-danger-border);
+  box-sizing: border-box;
+}
+
+.shortage-tip-emoji {
+  flex-shrink: 0;
+  margin-right: var(--space-2);
+}
+
+.shortage-tip-text {
+  flex: 1;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.shortage-tip-btn {
+  flex-shrink: 0;
+  margin-left: var(--space-3);
+  padding: 10rpx 24rpx;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
 .birthday-tip {
   flex-shrink: 0;
   display: flex;
