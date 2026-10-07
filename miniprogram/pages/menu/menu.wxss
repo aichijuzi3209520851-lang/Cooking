@@ -116,6 +116,78 @@
 
 /* 家庭生日提醒条（BIRTHDAY-001）：用强调色淡染区别于米黄的米饭引导条，
    传达「喜事」语义；纯提示不可点，所以没有 press 态 */
+/* 首次使用引导（ONBOARD-001）：居中品牌卡片，价值先行 + 教勾「总是保持」 */
+.onboard-mask {
+  justify-content: center;
+}
+
+.onboard-card {
+  width: 600rpx;
+  box-sizing: border-box;
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  padding: 48rpx 40rpx 40rpx;
+  text-align: center;
+  box-shadow: var(--shadow-float);
+}
+
+.onboard-emoji {
+  font-size: 72rpx;
+  line-height: 1;
+}
+
+.onboard-title {
+  margin-top: 20rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.onboard-body {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.onboard-hint {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-wash);
+  border: 1rpx solid var(--color-accent-soft);
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+.onboard-actions {
+  margin-top: 36rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.onboard-btn {
+  flex: 1;
+  padding: 20rpx 0;
+  border-radius: var(--radius-pill);
+  font-size: 28rpx;
+  font-weight: 600;
+  text-align: center;
+}
+
+.onboard-btn-ghost {
+  background: var(--surface-sunken);
+  color: var(--color-text-secondary);
+}
+
+.onboard-btn-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
 /* 通知缺额提示条（QUOTA-002）：仅大厨可见，点按补充订阅额度 */
 .shortage-tip {
   flex-shrink: 0;

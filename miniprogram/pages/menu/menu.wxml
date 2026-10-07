@@ -256,5 +256,19 @@
 <!-- 版本更新公告弹窗（每版本进入小程序弹一次，自包含组件） -->
 <changelog-popup class="cl-popup-host" />
 
+<!-- 首次使用引导（ONBOARD-001）：讲清「为什么开」并教勾「总是保持」，只出现一次 -->
+<view class="onboard-mask overlay-mask" wx:if="{{notifyOnboard}}" catchtouchmove="onboardNoop">
+  <view class="onboard-card">
+    <view class="onboard-emoji">🔔</view>
+    <view class="onboard-title">开启消息提醒</view>
+    <view class="onboard-body">有人点了想吃的菜、菜单提交、家人生日——都会第一时间告诉你。</view>
+    <view class="onboard-hint">下一步的授权窗里，建议勾选「总是保持以上选择」：以后不再弹窗，家人每次点菜都会自动为你积累提醒额度，消息永不间断。</view>
+    <view class="onboard-actions">
+      <view class="onboard-btn onboard-btn-ghost" catchtap="onNotifyOnboardDecline">暂不</view>
+      <view class="onboard-btn onboard-btn-primary" catchtap="onNotifyOnboardAccept">立即开启</view>
+    </view>
+  </view>
+</view>
+
 <!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
 <brand-toast id="brandToast" />

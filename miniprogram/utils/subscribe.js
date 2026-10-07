@@ -18,6 +18,8 @@ const { notifyApi } = require('./api.js')
 // 不再在业务动作里弹窗，只走静默补额与「我的 → 通知设置」手动入口
 const POPUP_DENY_KEY = 'subscribe_popup_deny_count'
 const POPUP_DENY_LIMIT = 2
+// 首次引导（ONBOARD-001）：「开启消息提醒」价值引导弹窗只做一次的本地标记
+const ONBOARD_KEY = 'notify_onboard_done'
 
 function templateIds() {
   const config = require('../config.js')
@@ -139,4 +141,37 @@ async function requestNow() {
   }
 }
 
-module.exports = { bankQuota, requestNow }
+/**
+ * 首次使用引导（ONBOARD-001）：是否需要展示「开启消息提醒」价值引导。
+ * 大厂权限前置范式：在系统授权弹窗之前，先用自家界面讲清楚「为什么要开」，
+ * 并明确教用户勾选「总是保持以上选择」——这是额度自动累积的唯一开关。
+ * 展示条件（全满足才引导）：
+ *   - 配置了订阅模板；
+ *   - 本机没完成过引导；
+ *   - 订阅总开关没被手动关掉（关了=用户明确不要，不打扰）；
+ *   - 还没勾「总是保持」（已勾 = 额度自动累积，无需引导）。
+ * @returns {Promise<boolean>}
+ */
+async function needsOnboard() {
+  try {
+    if (templateIds().length === 0) return false
+    try {
+      if (wx.getStorageSync(ONBOARD_KEY)) return false
+    } catch (e) { /* 读失败按未引导处理，宁可多引导一次 */ }
+    const { mainSwitch, silentIds } = await getSubscribeSetting()
+    if (!mainSwitch) return false
+    if (silentIds.length > 0) return false
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
+/** 标记引导已完成（点了「立即开启」或「暂不」都算——引导绝不二次骚扰） */
+function markOnboarded() {
+  try {
+    wx.setStorageSync(ONBOARD_KEY, 1)
+  } catch (e) { /* 写失败则下次可能再引导一次，可接受 */ }
+}
+
+module.exports = { bankQuota, requestNow, needsOnboard, markOnboarded }

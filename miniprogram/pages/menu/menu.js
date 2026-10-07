@@ -93,6 +93,8 @@ Page({
     birthdayNotice: '',
     // 通知缺额提示条（QUOTA-002）：饭点汇总推送全员失败后，仅大厨可见
     notifyShortageVisible: false,
+    // 首次使用引导（ONBOARD-001）：「开启消息提醒」价值引导弹窗
+    notifyOnboard: false,
     // 生日原文（BIRTHDAY-003）：关闭弹窗时要拿它的 date 写「今天已弹过」的缓存
     birthday: null,
     // 生日当天公告弹窗内容（BIRTHDAY-003）：{title, body, blessing} 或 null
@@ -160,6 +162,8 @@ Page({
     });
 
     this.setToday();
+    // 首次使用引导（ONBOARD-001）：只判一次，不随 onShow 重复打扰
+    this.maybeShowNotifyOnboard();
     // 先用本地缓存渲染左侧导航（避免首帧分类栏空白），再拉云端分类表纠偏
     this.syncCachedCategories();
 
@@ -469,6 +473,31 @@ Page({
   // 饭点汇总推送全员失败（大厨订阅额度耗尽）时，notify 在 families 落标记，
   // recommend 带回 notifyShortage —— 在这里给大厨一个「补充额度」的自愈入口。
   // 当日点过「补充/暂不」就不再打扰，次日若仍未恢复会再次出现。
+
+  // 首次使用引导（ONBOARD-001）：讲清「为什么开」+ 教勾「总是保持」，只做一次
+  maybeShowNotifyOnboard() {
+    if (this._onboardChecked) return;
+    this._onboardChecked = true;
+    subscribe.needsOnboard().then((need) => {
+      if (need) this.setData({ notifyOnboard: true });
+    });
+  },
+
+  onNotifyOnboardAccept() {
+    subscribe.markOnboarded();
+    // 立即请求授权（点击上下文内），弹出的系统窗里用户可勾「总是保持」
+    subscribe.requestNow().then((ok) => {
+      this.setData({ notifyOnboard: false });
+      if (ok) showSuccess('已开启，消息不会错过了');
+    });
+  },
+
+  onboardNoop() { /* 挡住蒙层滚动穿透 */ },
+
+  onNotifyOnboardDecline() {
+    subscribe.markOnboarded();
+    this.setData({ notifyOnboard: false });
+  },
 
   shortageTodayKey() {
     const d = new Date();

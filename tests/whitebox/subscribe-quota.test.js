@@ -210,3 +210,31 @@ test('S-Q-11 requestNow 总开关关闭 → 不请求直接 false', async () => 
   assert.equal(ok, false)
   assert.equal(subCalls.length, 0)
 })
+
+// ---- needsOnboard / markOnboarded（ONBOARD-001）：首次引导判定 ----
+
+test('S-Q-12 needsOnboard：新用户 true；已勾「总是保持」/ 总开关关 / 无模板 → false', async () => {
+  reset()
+  // 新用户：未勾总是保持、开关开着 → 引导
+  assert.equal(await subscribe.needsOnboard(), true)
+
+  // 已勾「总是保持」→ 额度自动累积，不引导
+  reset()
+  setting.subscriptionsSetting.itemSettings = { 'tmpl-vote': 'accept' }
+  assert.equal(await subscribe.needsOnboard(), false)
+
+  // 总开关手动关掉 → 用户明确不要，不打扰
+  reset()
+  setting.subscriptionsSetting.mainSwitch = false
+  assert.equal(await subscribe.needsOnboard(), false)
+})
+
+test('S-Q-13 引导只做一次：markOnboarded 后 needsOnboard 恒 false', async () => {
+  reset()
+  assert.equal(await subscribe.needsOnboard(), true)
+  subscribe.markOnboarded()
+  assert.equal(await subscribe.needsOnboard(), false, '完成过引导就不再展示')
+})
+
+// S-Q-14（未配置订阅模板 → 不引导）见 subscribe-onboard-empty.test.js：
+// 需要进程级空配置桩，与上面的 config-stub 同进程会互相污染解析缓存，故独立成文件。
