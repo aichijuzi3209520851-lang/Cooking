@@ -70,4 +70,4 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 部署与控制台：`docs/deployment/database.md`
 - 白盒测试设计：`docs/whitebox-test-plan.md`
 
-> 共享模块是**拷贝模型**（`cloud-shared` 历史包名已废弃；`CLAUDE.md` 现也按拷贝模型描述）。集合数、测试计数以 README/代码为准（当前 10 集合 / 310 项测试）。
+> 共享模块是**拷贝模型**（`cloud-shared` 历史包名已废弃；`CLAUDE.md` 现也按拷贝模型描述）。集合数、测试计数以 README/代码为准（当前 10 集合 / 311 项测试）。

@@ -71,7 +71,8 @@ Page({
   data: {
     themeClass: '',
     dishes: [],
-    selectedCategory: 'all',
+    // 首屏落在「推荐」：用户进来先看今日推荐，而不是全部列表
+    selectedCategory: 'recommend',
     // 左侧分类导航：首项「推荐」→「全部」→ 家庭可配置分类（UI-002）
     categories: buildRail(category.getCategories()),
     currentFamily: null,

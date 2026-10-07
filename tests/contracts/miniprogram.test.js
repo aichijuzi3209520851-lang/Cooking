@@ -164,3 +164,15 @@ test('启动顺序：公告基线先于隐私初始化与登录（新老用户�
   assert.ok(seedAt < privacyAt, '公告基线必须先于 privacy.init()');
   assert.ok(seedAt < loginAt, '公告基线必须先于 this.login()（登录写入 appCache 前区分新老用户）');
 });
+
+test('点菜首屏默认落在「推荐」而非「全部」', () => {
+  const menuJs = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/menu/menu.js'), 'utf8');
+  assert.match(
+    menuJs,
+    /selectedCategory:\s*'recommend'/,
+    '菜单页 selectedCategory 初始值应为 recommend（新用户首屏先看今日推荐）'
+  );
+  // 「推荐」固定为左侧导航首项，「推荐/全部」都是伪分类（不受家庭分类表变动影响）
+  assert.match(menuJs, /return \[RAIL_RECOMMEND\]\.concat/, '「推荐」应是左侧导航首项');
+  assert.match(menuJs, /PSEUDO_KEYS = \['recommend', 'all'\]/, '推荐/全部均为伪分类');
+});

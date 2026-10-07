@@ -19,7 +19,7 @@ function resetStorage() {
 
 test('C-LG-01 RELEASES 从新到旧排列，且每条字段完整', () => {
   const { RELEASES } = changelog
-  assert.ok(RELEASES.length >= 2, '至少要有两个历史版本')
+  assert.ok(RELEASES.length >= 1, '至少要有首发版本（未发布只有 1.0.0 一条，发新版后递增）')
   const toNum = (v) => v.split('.').map(Number)
   const cmp = (a, b) => {
     for (let i = 0; i < 3; i++) {
@@ -49,7 +49,7 @@ test('C-LG-02 shouldShow：未看过 → true；markShown 后同版本 → false
   changelog.markShown()
   assert.equal(changelog.shouldShow(), false, '标记后同版本不应再弹')
 
-  // 模拟「标记是旧版本」（用户上次看过 1.5.0，现在出了新版本）
+  // 模拟「标记是旧版本」（用户上次看过旧版本，现在出了新版本）
   storage.set('changelogSeen', '0.0.1')
   assert.equal(changelog.shouldShow(), true, '新版本号 ≠ 标记应弹出')
 })
