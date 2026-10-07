@@ -12,9 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **开发/编译**：微信开发者工具导入仓库根目录（`miniprogramRoot: miniprogram/`，`cloudfunctionRoot: cloudfunctions/`），点击「编译」。冷启动入口页是 `pages/login/login`（用户在登录页点击「微信快捷登录」后才路由到菜单/欢迎页）。
 - **本地验证**（全部零依赖，Node ≥18）：
-  - `npm run check:syntax` — 全部 JS 语法检查（159 个文件，进程内 `vm.Script` 解析，零子进程）
+  - `npm run check:syntax` — 全部 JS 语法检查（168 个文件，进程内 `vm.Script` 解析，零子进程）
   - `npm run lint` — JSON 合法性、硬编码密钥/占位模板 ID 扫描、依赖版本固定性、本地资源引用检查、**shared 模块同步校验**
-  - `npm test` — 全部测试（当前 298 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
+  - `npm test` — 全部测试（当前 310 项）；`npm run test:unit` / `npm run check:contracts` 分别只跑单元/契约
   - 跑单个测试：`node --test tests/unit/dto.test.js`
   - `npm run predeploy` — 部署前完整门禁
 - **部署云函数**（`login` `family` `dish` `vote` `notify` `dailyReset` `weather`）：

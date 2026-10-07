@@ -2,6 +2,7 @@
 const config = require('./config.js');
 const privacy = require('./utils/privacy.js');
 const api = require('./utils/api.js');
+const changelog = require('./utils/changelog.js');
 
 App({
   globalData: {
@@ -16,6 +17,10 @@ App({
   },
 
   onLaunch() {
+    // 版本公告基线：必须在登录写入 appCache 之前跑——新用户首启直接把当前
+    // 版本记为「已看过」，更新公告只投放给老用户（否则登录后就无法区分新老）
+    changelog.seedFirstLaunch();
+
     // 隐私协议授权（PRIV-001）：注册全局监听，隐私接口调用前确保已获用户同意
     privacy.init();
 

@@ -151,3 +151,16 @@ test('公告模块：弹窗挂载全部 tab 页 + 我的页入口 + 版本号单
   const changelogJs = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/changelog.js'), 'utf8');
   assert.match(changelogJs, /getVersion/, 'changelog 缺少 getVersion 单源出口');
 });
+
+test('启动顺序：公告基线先于隐私初始化与登录（新老用户区分窗口）', () => {
+  // seedFirstLaunch 靠「changelogSeen / appCache 双空」识别全新安装；
+  // 登录成功后 saveCache 写入 appCache 就无法再区分新老——顺序是功能正确性的一部分。
+  const appJs = fs.readFileSync(path.join(ROOT, 'miniprogram/app.js'), 'utf8');
+  const seedAt = appJs.indexOf('changelog.seedFirstLaunch()');
+  const privacyAt = appJs.indexOf('privacy.init()');
+  const loginAt = appJs.indexOf('this.login()');
+  assert.ok(seedAt > -1, 'onLaunch 缺少 changelog.seedFirstLaunch()（新用户首启会误弹公告）');
+  assert.ok(privacyAt > -1, 'onLaunch 缺少 privacy.init()');
+  assert.ok(seedAt < privacyAt, '公告基线必须先于 privacy.init()');
+  assert.ok(seedAt < loginAt, '公告基线必须先于 this.login()（登录写入 appCache 前区分新老用户）');
+});

@@ -17,7 +17,9 @@ const RELEASES = [
     title: '通知自愈',
     items: [
       '首次使用会引导开启消息提醒：讲清为什么开、教你勾「总是保持」，家人点菜自动为你积攒额度，消息永不断顿',
-      '消息提醒断供自愈：通知额度用完时，首页出现「补充额度」入口，点一下即恢复，不再默默丢消息'
+      '消息提醒断供自愈：通知额度用完时，首页出现「补充额度」入口，点一下即恢复，不再默默丢消息',
+      '新用户首次打开不再看到「版本更新」公告：公告只提醒升级过的老用户',
+      '隐私授权改为用到才弹：上传菜品图、粘贴加入码或换头像时才询问，同意一次后不再打扰'
     ]
   },
   {
@@ -126,6 +128,23 @@ function emit() {
   });
 }
 
+/**
+ * 首次安装打基线：更新公告只给老用户看。
+ * 全新安装（本地既无登录缓存 appCache、也无公告标记）时，把当前版本直接记为
+ * 「已看过」——新用户没有旧版本可对比，公告对他们是噪音；此后版本更新照常弹。
+ * 必须在 app.js onLaunch 尽早调用：登录 saveCache 写入 appCache 后就无法再区分新老。
+ */
+function seedFirstLaunch() {
+  try {
+    if (typeof wx === 'undefined' || !wx.getStorageSync || !wx.setStorageSync) return;
+    if (wx.getStorageSync(STORAGE_KEY)) return; // 已有公告标记（老用户/已打过基线）
+    if (wx.getStorageSync('appCache')) return;  // 有登录缓存 → 老用户，公告照常
+    wx.setStorageSync(STORAGE_KEY, getLatest().version);
+  } catch (e) {
+    // 打基线失败退回旧行为（新用户可能多看一次公告），不阻断启动
+  }
+}
+
 /** 最新版本对象（RELEASES[0]，数组必须从新到旧排列） */
 function getLatest() {
   return RELEASES[0];
@@ -170,5 +189,6 @@ module.exports = {
   getVersion,
   shouldShow,
   markShown,
+  seedFirstLaunch,
   subscribe
 };

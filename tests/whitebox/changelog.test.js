@@ -14,6 +14,7 @@ const changelog = require('../../miniprogram/utils/changelog.js')
 
 function resetStorage() {
   storage.delete('changelogSeen')
+  storage.delete('appCache')
 }
 
 test('C-LG-01 RELEASES 从新到旧排列，且每条字段完整', () => {
@@ -72,4 +73,47 @@ test('C-LG-04 subscribe/markShown 广播：任一实例关闭，其余实例同�
   unsub()
   changelog.markShown()
   assert.equal(notified, 2, '退订后不再收到广播')
+})
+
+test('C-LG-05 seedFirstLaunch：全新安装打基线，新用户首启不弹公告', () => {
+  resetStorage()
+  assert.equal(changelog.shouldShow(), true, '前提：未打基线时会弹')
+
+  changelog.seedFirstLaunch()
+  assert.equal(storage.get('changelogSeen'), changelog.getVersion(), '应把当前版本记为已看过')
+  assert.equal(changelog.shouldShow(), false, '新用户首启不应再弹公告')
+})
+
+test('C-LG-06 seedFirstLaunch：老用户（已有登录缓存）不打基线，公告照常', () => {
+  resetStorage()
+  storage.set('appCache', { openid: 'old-user' })
+
+  changelog.seedFirstLaunch()
+  assert.equal(storage.has('changelogSeen'), false, '老用户不应被种入当前版本基线')
+  assert.equal(changelog.shouldShow(), true, '从未见过公告的老用户应弹')
+
+  // 老用户看过旧版本公告：旧标记同样不能被覆盖
+  storage.set('changelogSeen', '0.0.1')
+  changelog.seedFirstLaunch()
+  assert.equal(storage.get('changelogSeen'), '0.0.1', '旧标记不被覆盖')
+  assert.equal(changelog.shouldShow(), true, '新版本号 ≠ 旧标记，公告照常弹')
+})
+
+test('C-LG-07 seedFirstLaunch：重复调用幂等，不改变已有标记', () => {
+  resetStorage()
+  changelog.seedFirstLaunch()
+  const seeded = storage.get('changelogSeen')
+
+  changelog.seedFirstLaunch() // 模拟登录写入 appCache 后再次进入
+  assert.equal(storage.get('changelogSeen'), seeded, '重复调用不改变标记')
+})
+
+test('C-LG-08 seedFirstLaunch：wx 不可用时静默跳过，不抛异常', () => {
+  const saved = global.wx
+  delete global.wx
+  try {
+    assert.doesNotThrow(() => changelog.seedFirstLaunch())
+  } finally {
+    global.wx = saved
+  }
 })

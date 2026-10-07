@@ -72,7 +72,10 @@ function init() {
   wx.getPrivacySetting({
     success(res) {
       state.contractName = (res && res.privacyContractName) || DEFAULT_CONTRACT_NAME;
-      state.needAuthorization = !!(res && res.needAuthorization);
+      // 懒触发：启动查询只取协议名称，不置真 needAuthorization —— 弹窗仅由
+      // onNeedPrivacyAuthorization（真正调用隐私接口时）触发。否则新用户一进
+      // 首页就弹平台隐私窗，与登录页已勾选的《隐私协议》重复、观感像连环弹窗。
+      // 同意一次后平台记录授权，此后任何隐私接口都不再触发。
       state.checked = true;
       emit();
     },
