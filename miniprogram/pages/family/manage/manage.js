@@ -45,8 +45,8 @@ Page({
     return {
       title: `${name} · 想吃什么？进来点两个菜`,
       path: `/pages/family/join/join?code=${(f && f.joinCode) || ''}`,
-      // 封面用品牌标（无文案裸 logo，正方形由微信居中裁切）
-      imageUrl: '/images/brand/brand-mark.png'
+      // 封面与全站分享一致：登录页品牌区同款视觉（5:4，微信不裁切）
+      imageUrl: '/images/brand/share-cover.png'
     };
   },
 

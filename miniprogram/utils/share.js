@@ -9,8 +9,9 @@
 
 const BRAND_TITLE = '筷点吃饭｜一家人的今日菜单，从这一餐开始';
 const FAMILY_TITLE = '今天吃什么？我们家的菜单都在「筷点吃饭」';
-// 封面用品牌标（无文案裸 logo，正方形由微信居中裁切），与家庭管理页邀请卡片一致
-const IMAGE_URL = '/images/brand/brand-mark.png';
+// 封面用登录页品牌区同款视觉（米黄圆角卡 + 🍳 + 橙点），5:4 比例微信不裁切；
+// 旧 brand-mark.png 棋盘格背景已废弃，方形标仅保留给 welcome/role 页 aspectFit 展示
+const IMAGE_URL = '/images/brand/share-cover.png';
 
 /** 转发给好友/群。title 缺省用品牌文案；家庭相关页面传 FAMILY_TITLE */
 function appMessage(title) {
