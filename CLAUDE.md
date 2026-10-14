@@ -126,7 +126,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 云函数 action 清单以各函数 `exports.main` 的 switch 分支为准，前端以 `utils/api.js` 为准。
 - 共享模块是**拷贝模型**（不是 `file:` npm 依赖，`cloud-shared` 已废弃）：改 `shared/` 后必须同步拷贝到 6 个函数目录再部署（见常用操作与 `docs/deployment/database.md` §8）；**不需要** `npm install` 云函数。
-- 数据库安全规则：环境 `lcw-d5gfcge7b41bedd02` **不支持 `get()` 跨集合规则**，多数集合仍客户端读写全关、仅云函数访问；`daily_votes` 通过文档内冗余 `familyMembers` + `in` 表达式实现成员可读（2026-10-12 已生效），`watch()` 已恢复实时监听；代码保留有限重试 + **静默降级 20s 轮询**作为兜底（`menu`/`summary` 的 `syncDegraded` 仅作内部流转开关、不显示提示条），下拉刷新仍是兜底——见 `docs/deployment/database.md` §2.1/§2.2。
+- 数据库安全规则：环境 `lcw-d5gfcge7b41bedd02` **不支持 `get()` 跨集合规则**，多数集合仍客户端读写全关、仅云函数访问；`daily_votes` 通过文档内冗余 `familyMembers` + `in` 表达式实现成员可读（规则已生效），但**该环境规则校验器不放行「数组包含式」规则的集合查询**（2026-10-15 实测四种查询写法均 `-502003`），`watch()` 依旧被拒；前端**首次失败即静默转 20s 轮询**（方案B：不重试、不打 error，只留一条 warn），页面数据走 `vote.todayList` 不受影响，下拉刷新仍是兜底——见 `docs/deployment/database.md` §2.1/§2.2。
 - 未实现/待配置功能（订阅消息模板 ID 与定时触发器、`LBS_KEY`）在 README「未完成功能」中明确标注；**扫码加入家庭已决定不做**，昵称头像授权已实现——不要把未配置当未实现。
 
 ## 参考

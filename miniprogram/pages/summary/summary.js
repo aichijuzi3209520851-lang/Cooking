@@ -17,8 +17,6 @@ const {
 } = require('../../utils/util.js');
 const app = getApp();
 
-const WATCH_RETRY_LIMIT = 3;
-const WATCH_STABLE_MS = 30000;
 // watch 降级后的轮询间隔（毫秒）。20s 是体验与云调用成本的折中
 const POLL_INTERVAL = 20000;
 // 投票人头像折叠阈值：超过此数默认收起，防止单卡被头像流撑高（点「+N」展开全部）
@@ -96,7 +94,7 @@ Page({
     // 若此前已降级为轮询，回到本页时恢复轮询；否则只在 watcher 未建立时重建。
     if (this.data.syncDegraded) {
       this.degradeToPolling();
-    } else if (!this.watcher && this._watchRetryTimer == null) {
+    } else if (!this.watcher) {
       this.setupWatcher();
     }
     this.scheduleMidnightRefresh();
@@ -150,14 +148,13 @@ Page({
     }
   },
 
-  // 建立实时监听（SYNC-001：最小监听范围 + 去抖 + 有限重连）
+  // 建立实时监听（SYNC-001：最小监听范围 + 去抖 + 失败即转轮询）
   setupWatcher() {
     const familyId = app.globalData.currentFamilyId;
     const date = this.data.todayDate;
     const contextKey = familyId && date ? familyId + '|' + date : '';
     if (this._watchContextKey !== contextKey) {
       this._watchContextKey = contextKey;
-      this._watchRetries = 0;
       this.stopPolling();
       this.setData({ syncDegraded: false });
     }
@@ -175,15 +172,9 @@ Page({
       }).watch({
         onChange: (snapshot) => {
           if (generation !== this._watchGeneration || this._pageVisible === false) return;
+          // 首帧快照是存量数据而非变更，跳过
           if (initialSnapshot) {
             initialSnapshot = false;
-            if (this._watchStableTimer) clearTimeout(this._watchStableTimer);
-            this._watchStableTimer = setTimeout(() => {
-              this._watchStableTimer = null;
-              if (generation === this._watchGeneration && this._pageVisible !== false) {
-                this._watchRetries = 0;
-              }
-            }, WATCH_STABLE_MS);
             return;
           }
           const changes = (snapshot && snapshot.docChanges) || [];
@@ -200,9 +191,10 @@ Page({
         },
         onError: (err) => {
           if (generation !== this._watchGeneration || this._pageVisible === false) return;
-          console.error('汇总监听异常', err);
-          this.closeWatcher();
-          this.scheduleWatcherRetry();
+          // SYNC-001 方案B：安全规则不放行集合监听时首次失败即静默转轮询，
+          // 不再有限重试（每次进页 3 次无效重连 + 4 条 error 日志毫无价值）。
+          console.warn('汇总实时监听不可用，已转 20s 轮询', err && (err.errCode || err.message));
+          this.degradeToPolling();
         }
       });
       if (generation === this._watchGeneration) {
@@ -212,38 +204,13 @@ Page({
       }
     } catch (err) {
       if (generation !== this._watchGeneration || this._pageVisible === false) return;
-      console.error('建立监听失败', err);
-      this.scheduleWatcherRetry();
-    }
-  },
-
-  scheduleWatcherRetry() {
-    if (this._pageVisible === false || this._watchRetryTimer != null) return;
-    if ((this._watchRetries || 0) >= WATCH_RETRY_LIMIT) {
+      console.warn('建立实时监听失败，已转 20s 轮询', err && err.message);
       this.degradeToPolling();
-      return;
     }
-
-    this._watchRetries = (this._watchRetries || 0) + 1;
-    const retry = this._watchRetries;
-    const generation = this._watchGeneration;
-    this._watchRetryTimer = setTimeout(() => {
-      this._watchRetryTimer = null;
-      if (generation !== this._watchGeneration || this._pageVisible === false) return;
-      this.setupWatcher();
-    }, 1000 * retry);
   },
 
   closeWatcher() {
     this._watchGeneration = (this._watchGeneration || 0) + 1;
-    if (this._watchStableTimer != null) {
-      clearTimeout(this._watchStableTimer);
-      this._watchStableTimer = null;
-    }
-    if (this._watchRetryTimer != null) {
-      clearTimeout(this._watchRetryTimer);
-      this._watchRetryTimer = null;
-    }
     if (this._reloadTimer) {
       clearTimeout(this._reloadTimer);
       this._reloadTimer = null;
@@ -259,20 +226,12 @@ Page({
   },
 
   /**
-   * 实时同步降级：watch 重试用尽后改为轮询。
+   * 实时同步降级：watch 失败后改为轮询（方案B：首次失败即降级，不重试）。
    * 静默降级（SYNC-001）：数据照常自动刷新（20s 轮询 + 下拉刷新兜底），
    * 不向用户显示「实时同步不可用」提示 —— 用户几乎无感，提示条只会制造焦虑。
    * syncDegraded 仅作内部流转开关（onShow 恢复轮询 / setupWatcher 防重建）。
    */
   degradeToPolling() {
-    if (this._watchRetryTimer != null) {
-      clearTimeout(this._watchRetryTimer);
-      this._watchRetryTimer = null;
-    }
-    if (this._watchStableTimer != null) {
-      clearTimeout(this._watchStableTimer);
-      this._watchStableTimer = null;
-    }
     if (this._pollTimer || this._pageVisible === false) return;
     this.setData({ syncDegraded: true });
     this.closeWatcher();

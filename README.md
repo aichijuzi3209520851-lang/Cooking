@@ -656,7 +656,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 ### 5. 数据库与存储安全
 
 - 客户端写操作全部关闭，所有写入经云函数校验（见 [docs/deployment/database.md](docs/deployment/database.md) 的规则文件 `docs/deployment/security-rules/*.json`）；
-- 客户端读权限按"本人/本家庭成员"最小化开放：`daily_votes` 通过文档内冗余 `familyMembers` + `in` 表达式实现成员可读（2026-10-12 已生效，watch 恢复实时），其余集合仍全关、仅云函数访问（详见 [docs/deployment/database.md](docs/deployment/database.md) §2）；
+- 客户端读权限按"本人/本家庭成员"最小化开放：`daily_votes` 通过文档内冗余 `familyMembers` + `in` 表达式实现成员可读（规则已生效，但该环境规则校验器不放行「数组包含式」规则的**集合查询**，`watch()` 仍被拒——前端首次失败即静默转 20s 轮询，页面数据走云函数 `vote.todayList` 不受影响），其余集合仍全关、仅云函数访问（详见 [docs/deployment/database.md](docs/deployment/database.md) §2）；
 - 云存储：上传路径分两类——菜品图 `dishes/{familyId}/{openid}/...`、头像 `avatars/{openid}/...`，写规则**同时放行两个前缀**且限定上传者自己的目录；图片替换/删除/家庭解散时由服务端清理文件；
 - 索引清单（`joinCode` 唯一、`family_members` 联合、`daily_votes` 联合等）见部署文档。
 

@@ -72,7 +72,7 @@
 
 | 检查项 | 结果 |
 |--------|------|
-| 前端 watcher 生命周期（menu/summary） | ✅ onHide/onUnload 均 closeWatcher，有限次重连（3 次） |
+| 前端 watcher 生命周期（menu/summary） | ✅ onHide/onUnload 均 closeWatcher，失败即静默转 20s 轮询（方案B，2026-10-15 起不再重试） |
 | 前端定时器（跨午夜刷新） | ✅ onHide/onUnload clearMidnightTimer，递归调度有界 |
 | 云函数循环边界 | ✅ dailyReset 游标分页（`_id` 严格递增 + 空页退出），失败页保留重跑，无死循环路径 |
 | 云函数超时风险 | ✅ M2 修复（chefCancel 批量删除）；dailyReset 分批 100 条 + 失败保留 |

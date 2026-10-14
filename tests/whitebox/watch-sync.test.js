@@ -1,4 +1,6 @@
-// 白盒测试：点菜/汇总页实时监听失败后的有限重试与轮询降级（SYNC-001）
+// 白盒测试：点菜/汇总页实时监听失败后的静默降级轮询（SYNC-001 方案B）
+// 行为约定：首次失败立即转 20s 轮询——不再有限重试、不打 console.error，
+// 仅留一条 console.warn 供排查；重复降级幂等，迟到回调不能复活监听。
 // 使用可控定时器和 CloudBase watch 桩，不依赖微信开发者工具或真实网络。
 const { test, beforeEach, after } = require('node:test')
 const assert = require('node:assert/strict')
@@ -9,10 +11,14 @@ let watchRecords = []
 let timers = new Map()
 let intervals = new Map()
 let nextTimerId = 1
+let errorLogs = []
+let warnLogs = []
 const realSetTimeout = global.setTimeout
 const realClearTimeout = global.clearTimeout
 const realSetInterval = global.setInterval
 const realClearInterval = global.clearInterval
+const realConsoleError = console.error
+const realConsoleWarn = console.warn
 
 function fakeSetTimeout(fn) {
   const id = nextTimerId++
@@ -57,12 +63,18 @@ function resetHarness() {
   timers.clear()
   intervals.clear()
   nextTimerId = 1
+  errorLogs = []
+  warnLogs = []
 }
 
 global.setTimeout = fakeSetTimeout
 global.clearTimeout = fakeClearTimeout
 global.setInterval = fakeSetInterval
 global.clearInterval = fakeClearInterval
+
+// 日志噪音是本方案的核心指标：error 必须为 0，warn 每次降级只许 1 条
+console.error = (...args) => { errorLogs.push(args) }
+console.warn = (...args) => { warnLogs.push(args) }
 
 global.getApp = () => ({
   globalData: {
@@ -155,50 +167,55 @@ beforeEach(() => {
   resetHarness()
 })
 
-test('W-SYNC-01 点菜页连续监听失败：有限重试后只启用一次轮询', () => {
+test('W-SYNC-01 点菜页监听失败：首次即降级轮询，无重试、无 error 日志', () => {
   const page = createPage('menu')
   page.setupWatcher()
+  assert.equal(watchRecords.length, 1, '初次建立一个 watcher')
 
-  for (let i = 0; i < 4; i += 1) {
-    failCurrentWatch()
-    runNextTimer()
-  }
+  failCurrentWatch()
 
-  assert.equal(watchRecords.length, 4, '初次监听外最多重试 3 次')
-  assert.equal(page.data.syncDegraded, true, '重试用尽后应显示降级提示')
-  assert.equal(intervals.size, 1, '应只创建一个轮询定时器')
-  assert.equal(timers.size, 0, '降级后不应留下重试定时器')
+  assert.equal(watchRecords.length, 1, '失败后不应再建 watcher（不再有限重试）')
+  assert.equal(page.data.syncDegraded, true, '失败后应进入降级状态')
+  assert.equal(intervals.size, 1, '应启用 20s 轮询')
+  assert.equal(timers.size, 0, '不应留下任何重试定时器')
+  assert.equal(errorLogs.length, 0, '不应打 console.error')
+  assert.equal(warnLogs.length, 1, '每次降级只留一条 console.warn')
 
   page.degradeToPolling()
   assert.equal(intervals.size, 1, '重复降级不应创建第二个轮询定时器')
+  assert.equal(warnLogs.length, 1, '重复降级不再输出日志')
 })
 
-test('W-SYNC-02 汇总页连续监听失败：不会因重建 watcher 清零计数', () => {
+test('W-SYNC-02 汇总页监听失败：同款静默降级，日志同样克制', () => {
   const page = createPage('summary')
   page.setupWatcher()
 
-  for (let i = 0; i < 4; i += 1) {
-    failCurrentWatch()
-    runNextTimer()
-  }
+  failCurrentWatch()
 
-  assert.equal(watchRecords.length, 4)
+  assert.equal(watchRecords.length, 1)
   assert.equal(page.data.syncDegraded, true)
   assert.equal(intervals.size, 1)
+  assert.equal(timers.size, 0)
+  assert.equal(errorLogs.length, 0)
+  assert.equal(warnLogs.length, 1)
 })
 
-test('W-SYNC-03 页面隐藏会取消待重试，迟到回调不能复活监听', () => {
+test('W-SYNC-03 页面隐藏后迟到回调不能复活监听，也不建轮询', () => {
   const page = createPage('menu')
   page.setupWatcher()
-  failCurrentWatch()
-  assert.equal(timers.size, 1, '失败后应排队一次重试')
+  const record = watchRecords[0]
 
   page.onHide()
+  // 迟到的 onError / onChange（generation 已失效）必须被忽略
+  record.options.onError(new Error('late failure'))
+  record.options.onChange({ docChanges: [{ dataType: 'update' }] })
   runAllTimers()
 
   assert.equal(watchRecords.length, 1, '隐藏后不应重新建立 watcher')
-  assert.equal(timers.size, 0)
-  assert.equal(intervals.size, 0)
+  assert.equal(intervals.size, 0, '迟到错误不应在隐藏状态启动轮询')
+  assert.equal(timers.size, 0, '不应留下任何定时器')
+  assert.equal(page.data.syncDegraded, false, '迟到错误不应改写降级状态')
+  assert.equal(warnLogs.length, 0, '被忽略的迟到错误不应产生日志')
 })
 
 test('W-SYNC-04 离开后返回：未降级时可重建 watcher，降级时只恢复轮询', () => {
@@ -220,7 +237,7 @@ test('W-SYNC-04 离开后返回：未降级时可重建 watcher，降级时只�
   assert.equal(intervals.size, 1)
 })
 
-test('W-SYNC-05 两页都保留 add/delete/update 变更处理', () => {
+test('W-SYNC-05 两页都保留 add/delete/update 变更处理，首帧快照跳过', () => {
   for (const kind of ['menu', 'summary']) {
     const page = createPage(kind)
     page.setupWatcher()
@@ -244,4 +261,6 @@ after(() => {
   global.clearTimeout = realClearTimeout
   global.setInterval = realSetInterval
   global.clearInterval = realClearInterval
+  console.error = realConsoleError
+  console.warn = realConsoleWarn
 })

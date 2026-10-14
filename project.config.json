@@ -45,9 +45,8 @@
     "disableSWC": true
   },
   "appid": "wx9b3a3a025a1bda64",
-  "projectname": "quickstart-wx-cloud",
-  "libVersion": "2.20.1",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "projectname": "miniprogram-11",
+  "libVersion": "3.17.1",
   "condition": {
     "search": {
       "list": []

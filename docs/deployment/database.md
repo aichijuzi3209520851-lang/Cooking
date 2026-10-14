@@ -44,7 +44,7 @@
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 | `app_config` | false（仅云函数，经 `login.getAppConfig` 下发） | false |
 
-> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06，2026-10-14 改为静默降级）：watch 重试用尽后改为 20s 轮询 `todayList`，`syncDegraded` 仅作内部流转开关、不向用户显示提示条，下拉刷新仍是兜底。
+> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06，2026-10-14 改为静默降级，2026-10-15 起首次失败即降级）：watch 失败后改为 20s 轮询 `todayList`，`syncDegraded` 仅作内部流转开关、不向用户显示提示条，下拉刷新仍是兜底。
 
 ### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-10-12 核对）
 
@@ -54,26 +54,36 @@
 | `families` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化：`get()` 被拒 |
 | `family_members` | 本人/同家庭（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `dishes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
-| `daily_votes` | 成员包含式（`in`） | `{"read": "auth.openid in doc.familyMembers", "write": false}` | ✅ **2026-10-12 生效**：靠文档内冗余成员清单绕过 `get()`，watch 恢复可用（见 §2.2） |
+| `daily_votes` | 成员包含式（`in`） | `{"read": "auth.openid in doc.familyMembers", "write": false}` | ⚠️ 规则已生效但**集合查询仍被拒**（见 §2.2）：watch 不可用，前端首败即转 20s 轮询 |
 | `vote_history` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `notify_ledger` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `rice_reports` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `menu_submissions` | （文档未列） | `{"read": false, "write": false}` | 与 `rice_reports` 一致，仅云函数 |
 | `app_config` | （文档未列） | `{"read": false, "write": false}` | 与 `notify_ledger` 一致，仅云函数（PRIV-002） |
 
-### 2.2 `daily_votes` 成员包含式读规则（SYNC-002，2026-10-12）
+### 2.2 `daily_votes` 成员包含式读规则（SYNC-002，2026-10-12；2026-10-15 实测修正）
 
 `get()` 跨集合校验在本环境不可用，改用**文档内冗余成员清单**实现「家庭成员可读」：
 
 - 每条 `daily_votes` 文档带 `familyMembers: [openid, ...]`（该家庭全体成员 openid，写入时去重）；
-- 规则 `{"read": "auth.openid in doc.familyMembers", "write": false}`（`in` 表达式**不含 `get()`**，实测可通过平台校验，不再被静默回退）；
+- 规则 `{"read": "auth.openid in doc.familyMembers", "write": false}`（`in` 表达式**不含 `get()`**，可通过平台校验）；
 - 维护方：`vote.addVote` 写票时全量写入；`family.joinFamily` 加入成功后对当天票 `addToSet` 补写新成员；
   被移除/退出成员的当日票由 `removeUserTodayVotes` 直接删除，无需 `$pull`；
-- 影响范围：`menu.js` / `summary.js` 的 `watch()` 恢复实时监听；降级轮询逻辑保留作为兜底；
 - 历史票不回填（`daily_votes` 每日由 `dailyReset` 归档清空），只有 2026-10-12 之后写入的票带该字段。
 
-**影响（历史，已解决）**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 曾因无客户端读权限必然失败。
-代码兜底（`onError` 限次重连 → 重试用尽后自动降级为 20s 轮询，静默不显示提示条）保留，作为规则传播延迟或异常时的保险。
+> ❌ **2026-10-15 实测修正（推翻 10-12 的「watch 恢复」结论）**：该规则只放行**单文档读**；
+> CloudBase 规则校验是**校验式**的——**集合查询条件必须是规则的子集**才能放行。
+> 前端 `watch()` 用的是 `where({ familyId, date })`，无法推导出 `auth.openid in doc.familyMembers`
+> → 直接拒绝（`-502003 Permission denied`）。实测四种查询写法（含 `familyMembers: _.in([openid])`
+> 等三种变体）**全部被拒**；对照组 `users`（`doc._id == auth.openid` 单值相等形式）集合查询正常。
+> 结论：**该环境的规则校验器不支持「数组包含式」规则的集合查询**，与集合是否有数据无关，
+> 真机行为一致（校验发生在服务端）。
+
+**现状（2026-10-15 起，方案B）**：`menu.js` / `summary.js` 的 `watch()` 仍会失败，但**首次失败即静默转 20s 轮询**
+（不再有限重试、不再打 `console.error`，只留一条 `console.warn`），页面数据始终走云函数 `vote.todayList`，
+功能不受影响；实时性降级为最坏 20s 延迟 + 下拉刷新兜底。彻底恢复实时需按**方案C**改造：
+「每成员一条同步文档」+ `doc.memberOpenid == auth.openid` 规则（该校验器支持单值相等形式）
++ 云函数写入侧 fan-out，排期 1.0.2。
 
 ## 3. 数据库索引清单
 

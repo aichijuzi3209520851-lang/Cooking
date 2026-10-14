@@ -235,9 +235,9 @@
 <birthday-popup
   id="birthday-popup"
   visible="{{!!birthdayPopup}}"
-  title="{{birthdayPopup.title}}"
-  body="{{birthdayPopup.body}}"
-  blessing="{{birthdayPopup.blessing}}"
+  title="{{birthdayPopup.title || ''}}"
+  body="{{birthdayPopup.body || ''}}"
+  blessing="{{birthdayPopup.blessing || ''}}"
   bind:close="onCloseBirthdayPopup"
 />
 

@@ -76,18 +76,13 @@ const TAB_SELECTED_ICONS = {
 };
 
 /**
- * 读取系统外观主题（wx.getSystemInfoSync 已废弃，优先 getAppBaseInfo）
+ * 读取系统外观主题。只用 wx.getAppBaseInfo——
+ * wx.getSystemInfoSync 已废弃（基础库 3.x 调用即打告警），拿不到主题时按浅色处理。
  */
 function getSystemTheme() {
   try {
-    if (wx.getAppBaseInfo) {
-      return wx.getAppBaseInfo().theme || 'light';
-    }
-  } catch (e) {
-    // ignore，走旧 API 兜底
-  }
-  try {
-    return wx.getSystemInfoSync().theme || 'light';
+    const info = typeof wx.getAppBaseInfo === 'function' ? wx.getAppBaseInfo() : null;
+    return (info && info.theme) || 'light';
   } catch (e) {
     return 'light';
   }

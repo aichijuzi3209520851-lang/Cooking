@@ -78,7 +78,7 @@ agent 调用 `wechatide.cmd -c CodeBuddy <tool>` 时，`--project` **盘符必�
 - 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单（餐次自选，缺省中餐）后**立即实时合并推送**给大厨，饭点定时器（11:00/17:00）转为兜底补发；即时推送还有「撤菜」「拍板」。消息跳转落点是「菜单」看板页 `pages/menu-board/menu-board`（`vote.todaySubmissions` 数据源）。
 - 数据库 10 个集合（含 `menu_submissions`、`rice_reports`、`app_config`）。米饭前端已下线，云函数接口保留，`dailyReset` 仍会清理。《隐私协议》全文存 `app_config`（`_id`=`privacy_agreement`）：控制台改文档即实时生效、无需发版（`login.getAppConfig` 下发，前端 `utils/privacy-content.js` 内置兜底，手册 `docs/deployment/privacy-agreement.md` §7）。
 - 部署：先同步 `shared` → 再传 7 个函数（`weather` 无 shared，但也需上传）。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
-- 数据库安全规则：环境**不支持 `get()` 跨集合**，多数集合客户端读写全关、仅云函数访问；`daily_votes` 用文档内冗余 `familyMembers` + `in` 表达式实现成员可读（2026-10-12 已生效），watch 已恢复实时；代码保留有限重试 + **静默降级** 20s 轮询兜底（`menu`/`summary` 的 `syncDegraded` 仅作内部流转开关，不显示提示条）。详见 `docs/deployment/database.md` §2.1/§2.2。
+- 数据库安全规则：环境**不支持 `get()` 跨集合**，多数集合客户端读写全关、仅云函数访问；`daily_votes` 用文档内冗余 `familyMembers` + `in` 表达式实现成员可读（规则已生效），但**该环境规则校验器不放行「数组包含式」规则的集合查询**（2026-10-15 实测），`watch()` 仍被拒——前端**首次失败即静默转 20s 轮询**（方案B：不重试、不打 error；`syncDegraded` 仅作内部流转开关，不显示提示条）。详见 `docs/deployment/database.md` §2.1/§2.2。
 - 已配置（2026-09-27，真机验证过）：订阅消息模板 ID、`NOTIFY_*` 环境变量、4 个定时触发器、`config.js` 模板段。**仍待配置：`LBS_KEY`**（weather；缺失时天气加权静默降级）。**扫码加入家庭已决定不做**（加入方式＝6 位加入码 + 分享卡片）。
 
 ## 参考
