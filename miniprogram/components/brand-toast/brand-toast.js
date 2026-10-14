@@ -1,7 +1,8 @@
 // components/brand-toast/brand-toast.js
 // 品牌提示条（SHARE 同期 UI 焕新）：替代原生 wx.showToast 的深灰方块。
 // 设计要点：
-//   - 顶部滑落胶囊（奶油白浮层 + 主题色圆形图标 + 滑入淡出），全程 pointer-events:none，
+//   - 屏幕中偏下的胶囊（58% 高度，微信/支付宝式 toast 落点，不压页面标题；
+//     奶油白浮层 + 主题色圆形图标 + 上移淡入淡出），全程 pointer-events:none，
 //     不挡任何点击；
 //   - 颜色全部走 app.wxss 设计令牌，明暗主题自动适配；
 //   - 页面通过 utils/util.js 的 showSuccess/showError/showApiError 间接触发（勿直接引用本组件），

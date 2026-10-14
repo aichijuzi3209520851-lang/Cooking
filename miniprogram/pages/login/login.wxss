@@ -105,13 +105,13 @@
   opacity: var(--float-opacity);
 }
 
-.float-1 { width: 64rpx; height: 64rpx; top: 9%;  left: 13%; }
-.float-2 { width: 58rpx; height: 58rpx; top: 7%;  right: 30%; }
-.float-3 { width: 84rpx; height: 84rpx; top: 17%; right: 8%; }
-.float-4 { width: 58rpx; height: 58rpx; top: 31%; left: 4%; }
-.float-5 { width: 76rpx; height: 76rpx; top: 38%; right: 5%; }
-.float-6 { width: 56rpx; height: 56rpx; top: 48%; left: 6%; }
-.float-7 { width: 68rpx; height: 68rpx; top: 46%; right: 20%; }
+.float-1 { width: 84rpx; height: 84rpx; top: 9%;  left: 13%; }
+.float-2 { width: 76rpx; height: 76rpx; top: 7%;  right: 30%; }
+.float-3 { width: 110rpx; height: 110rpx; top: 17%; right: 8%; }
+.float-4 { width: 76rpx; height: 76rpx; top: 31%; left: 4%; }
+.float-5 { width: 100rpx; height: 100rpx; top: 38%; right: 5%; }
+.float-6 { width: 74rpx; height: 74rpx; top: 48%; left: 6%; }
+.float-7 { width: 90rpx; height: 90rpx; top: 46%; right: 20%; }
 
 /* 4 组漂浮轨迹：时长错开 + 负延迟错帧，观感是「轻轻漂」而不是「乱飞」 */
 .drift-a { animation: driftA 9.8s ease-in-out infinite; }

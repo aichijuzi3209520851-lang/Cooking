@@ -487,14 +487,14 @@ notifyTemplates: [
 
 | 维度 | 状态 |
 |:---|:---|
-| 代码分支 | `main`（2026-10-06，方案B + T1-T8 之后），与 GitHub 完全同步 |
-| 测试 | 273/273 全绿；check:syntax 159 文件；lint / check:routes 通过 |
-| 云函数 | 7/7 已部署（09-27 版）；⚠️ **dish / vote 待重新部署**（10-06 内容安全修复 + vote/config.json 权限声明，未部署前线上仍是旧行为） |
-| 前端版本 | `utils/changelog.js` 最新条目 **1.5.5**（界面质感升级与体验修复）；体验版停在 1.5.3，随下次上传发布 |
+| 代码分支 | `main`（2026-10-14，v1.0.1 改版：自定义导航 / 看板升级 / 文案不重样 / 资源治理），与 GitHub 完全同步 |
+| 测试 | 344/344 全绿；check:syntax 173 文件；check:package 通过（主包 676.7 KB / 媒体总和 180.7 KB）；lint / check:routes 通过 |
+| 云函数 | 7/7；⚠️ **v1.0.1 涉及 login / family / vote 云函数改动，需重新部署后线上生效**（`daily_votes.familyMembers` 冗余写、看板撤菜闭环、成员记录去重） |
+| 前端版本 | `utils/changelog.js` 最新条目 **1.0.1**（全新底部导航 · 菜单看板升级）；体验版停在 1.0.0，随下次上传发布 |
 | 主题/UI | 五主题家族；方案 B 品牌质感改版已落地（登录页保持原样——用户明确要求） |
-| 实时同步 | watch 失效环境自动降级 20s 轮询 + 页面提示（menu/summary） |
-| 内容安全 | 家庭名/菜品名/分类名/否决原因/昵称 全覆盖（dish/vote 部署后线上生效） |
-| 待办 | dish/vote 重新部署；`LBS_KEY` 待配置；正式发布 `NOTIFY_MP_STATE` 改 formal；E2E 自动化待窗口期 |
+| 实时同步 | `daily_votes` 成员包含式读规则已生效（2026-10-12），watch 恢复实时；异常时静默降级 20s 轮询（不提示） |
+| 内容安全 | 家庭名/菜品名/分类名/否决原因/昵称 全覆盖（login/family/dish/vote 部署后线上生效） |
+| 待办 | 云函数重新部署；`LBS_KEY` 待配置；正式发布 `NOTIFY_MP_STATE` 改 formal；E2E 自动化待窗口期 |
 
 ---
 

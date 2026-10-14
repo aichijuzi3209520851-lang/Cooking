@@ -7,13 +7,13 @@
 
   <!-- 漂浮装饰层：随手机倾斜轻微视差，纯装饰不响应点击 -->
   <view class="float-layer" style="transform: translate3d({{px * 14}}rpx, {{py * 14}}rpx, 0);">
-    <image class="float-icon float-1 drift-a" src="/images/login/chili.svg" mode="aspectFit" />
-    <image class="float-icon float-2 drift-c" src="/images/login/rice.svg" mode="aspectFit" />
-    <image class="float-icon float-3 drift-b" src="/images/login/bokchoy.svg" mode="aspectFit" />
-    <image class="float-icon float-4 drift-d" src="/images/login/mug.svg" mode="aspectFit" />
-    <image class="float-icon float-5 drift-a" src="/images/login/fish.svg" mode="aspectFit" />
-    <image class="float-icon float-6 drift-b" src="/images/login/tomato.svg" mode="aspectFit" />
-    <image class="float-icon float-7 drift-d" src="/images/login/soup.svg" mode="aspectFit" />
+    <image class="float-icon float-1 drift-a" src="/images/login/chili.png" mode="aspectFit" />
+    <image class="float-icon float-2 drift-c" src="/images/login/rice.png" mode="aspectFit" />
+    <image class="float-icon float-3 drift-b" src="/images/login/bokchoy.png" mode="aspectFit" />
+    <image class="float-icon float-4 drift-d" src="/images/login/mug.png" mode="aspectFit" />
+    <image class="float-icon float-5 drift-a" src="/images/login/fish.png" mode="aspectFit" />
+    <image class="float-icon float-6 drift-b" src="/images/login/tomato.png" mode="aspectFit" />
+    <image class="float-icon float-7 drift-d" src="/images/login/soup.png" mode="aspectFit" />
   </view>
 
   <view class="login-brand" style="transform: translate3d({{px * -8}}rpx, {{py * -8}}rpx, 0);">

@@ -68,7 +68,19 @@
   "compileType": "miniprogram",
   "srcMiniprogramRoot": "miniprogram/",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": "design" },
+      { "type": "folder", "value": "docs" },
+      { "type": "folder", "value": "tests" },
+      { "type": "folder", "value": "scripts" },
+      { "type": "folder", "value": "node_modules" },
+      { "type": "folder", "value": ".workbuddy" },
+      { "type": "file", "value": "AGENTS.md" },
+      { "type": "file", "value": "CLAUDE.md" },
+      { "type": "file", "value": "README.md" },
+      { "type": "file", "value": "project.md" },
+      { "type": "file", "value": "ui-design-spec.html" }
+    ],
     "include": []
   },
   "editorSetting": {

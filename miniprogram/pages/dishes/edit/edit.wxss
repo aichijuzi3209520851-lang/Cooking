@@ -108,6 +108,26 @@
   padding-left: var(--space-1);
 }
 
+/* 分类区标题行：左标签 + 右「管理分类」入口（CATE-ENTRY-002） */
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cate-manage-link {
+  padding: var(--space-1) var(--space-2);
+  /* 抵消右侧内边距，让文字与表单区右缘对齐，热区仍保持外扩 */
+  margin-right: calc(-1 * var(--space-2));
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.cate-manage-link-press {
+  opacity: 0.6;
+}
+
 .form-input {
   margin-bottom: 0;
 }

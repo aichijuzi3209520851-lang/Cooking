@@ -69,6 +69,15 @@ async function addVote(data, openid) {
   // 校验家庭成员
   await requireMember(db, familyId, openid)
 
+  // 全体成员 openid 冗余进每条当日票（SYNC-002）：
+  // 实时监听 watch 的客户端读权限按「doc.familyMembers 包含 auth.openid」校验
+  // （本环境不支持 get() 跨集合安全规则，见 docs/deployment/database.md §2.1），
+  // 因此每条票冗余一份成员清单；成员变动由 family 云函数维护（加入补写、退出随当日票清理）。
+  const membersRes = await db.collection('family_members')
+    .where({ familyId })
+    .get()
+  const familyMembers = [...new Set((membersRes.data || []).map(m => m.userId))]
+
   // 校验菜品存在且未隐藏
   const dishRes = await db.collection('dishes').doc(dishId).get().catch(() => null)
   if (!dishRes || !dishRes.data) {
@@ -95,6 +104,7 @@ async function addVote(data, openid) {
         dishId,
         userId: openid,
         date: today,
+        familyMembers,
         createdAt: now
       }
     })
@@ -203,6 +213,20 @@ async function chefCancel(data, openid) {
     await db.collection('daily_votes')
       .where({ _id: _.in(votes.map(v => v._id)) })
       .remove()
+  }
+
+  // 同步把这道菜从今日菜单提交里摘除（NOTIFY-004）：
+  // 看板页明细/总单都来自 menu_submissions 快照，不清会让「已撤的菜」继续挂在看板上；
+  // mock/真实库都按「整组取回 + 客户端过滤」处理，不依赖数组包含查询
+  const subRes = await db.collection('menu_submissions')
+    .where({ familyId, date: today })
+    .get()
+  for (const s of (subRes.data || [])) {
+    const rest = (s.dishIds || []).filter(id => id !== dishId)
+    if (rest.length === (s.dishIds || []).length) continue
+    await db.collection('menu_submissions').doc(s._id).update({
+      data: { dishIds: rest, dishCount: rest.length, updatedAt: new Date() }
+    })
   }
 
   const normalizedReason = normalizeReason(reason)
@@ -403,28 +427,81 @@ async function todaySubmissions(data, openid) {
     .where({ familyId, date })
     .orderBy('createdAt', 'asc')
     .get()
-  const submissions = subRes.data || []
+  // 全被撤空的提交不再展示（大厨撤菜会把 dishIds 清空）
+  const submissions = (subRes.data || []).filter(s => (s.dishIds || []).length > 0)
 
   const dishMap = await getDishMap(db, _, submissions.flatMap(s => s.dishIds || []))
 
+  // 头像（NOTIFY-004）：「谁想吃」以当日投票为准，提交人头像用于明细卡片；
+  // users 批量查一次同时供两处使用（不用 field() 投影，保持与 smoke mock 兼容）
+  const votersRes = await db.collection('daily_votes')
+    .where({ familyId, date })
+    .get()
+  const votersByDish = {}
+  const userIdSet = new Set()
+  for (const v of (votersRes.data || [])) {
+    if (!v.dishId || !v.userId) continue
+    ;(votersByDish[v.dishId] = votersByDish[v.dishId] || []).push(v.userId)
+    userIdSet.add(v.userId)
+  }
+  for (const s of submissions) {
+    if (s.userId) userIdSet.add(s.userId)
+  }
+
+  const userMap = {}
+  if (userIdSet.size > 0) {
+    const usersRes = await db.collection('users')
+      .where({ _id: _.in([...userIdSet]) })
+      .get()
+    for (const u of (usersRes.data || [])) userMap[u._id] = u
+  }
+  const memberDto = (id) => ({
+    openid: id,
+    nickname: (userMap[id] && userMap[id].nickname) || '家人',
+    avatarUrl: (userMap[id] && userMap[id].avatarUrl) || ''
+  })
+
   const list = submissions.map(s => ({
+    userId: s.userId || '',
     userName: s.userName || '家人',
+    avatarUrl: (userMap[s.userId] && userMap[s.userId].avatarUrl) || '',
     meal: s.meal || 'lunch',
-    dishCount: s.dishCount || (s.dishIds || []).length,
+    dishCount: (s.dishIds || []).length,
+    // 结构化菜品：看板端大厨撤菜需要 dishId（dishNames 保留作旧字段兼容）
+    dishes: (s.dishIds || []).map(id => ({ dishId: id, name: (dishMap[id] && dishMap[id].name) || '已删除菜品' })),
     dishNames: (s.dishIds || []).map(id => (dishMap[id] && dishMap[id].name) || '已删除菜品'),
     submittedAt: s.createdAt || s.updatedAt || ''
   }))
 
   // 全家总单：跨提交人去重菜品并统计被几人点了（含同一人多道）
+  // 顺带携带菜品图（取该菜最新一条的 imageUrl，没配图则为空，前端仅展示有图菜品）
+  // 与每道菜「谁想吃」的头像列表（按当日投票人聚合，同名家菜合并去重）
   const counter = {}
   for (const s of submissions) {
     for (const id of (s.dishIds || [])) {
-      const name = (dishMap[id] && dishMap[id].name) || '已删除菜品'
-      counter[name] = (counter[name] || 0) + 1
+      const dish = dishMap[id] || {}
+      const name = dish.name || '已删除菜品'
+      if (!counter[name]) {
+        counter[name] = { count: 0, imageUrl: dish.imageUrl || '', category: dish.category || '', dishIds: [] }
+      }
+      counter[name].count += 1
+      if (!counter[name].dishIds.includes(id)) counter[name].dishIds.push(id)
     }
   }
   const totalDishes = Object.keys(counter)
-    .map(name => ({ name, count: counter[name] }))
+    .map((name) => {
+      const c = counter[name]
+      const seen = new Set()
+      const voters = []
+      for (const id of c.dishIds) {
+        for (const uid of (votersByDish[id] || [])) {
+          if (seen.has(uid)) continue
+          seen.add(uid)
+          voters.push(memberDto(uid))
+        }
+      }
+      return { name, count: c.count, imageUrl: c.imageUrl, category: c.category, voters }
+    })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 
   return { date, submissions: list, totalDishes }
@@ -635,6 +712,10 @@ const W_FESTIVAL = 80
 //    放宽到 4500ms（vote 自身 timeout 10s，仍留有余量）。别再往回收。
 const WEATHER_TIMEOUT_MS = 4500
 
+// 超时后的快速重试上限：第一次调用多半已把 weather 实例拉起（冷启动成本已付），
+// 热实例实测 ~500ms 返回。两段合计 7.5s，仍在 vote 自身 10s 预算内（WEATHER-002）。
+const WEATHER_RETRY_MS = 3000
+
 // 实例级天气缓存：云函数实例存活期间，同 IP 15 分钟只打一次 weather。
 // 一家人先后打开菜单页，第一个人付冷启动成本，后面的人 0ms 命中。
 const WEATHER_CACHE_TTL = 15 * 60 * 1000
@@ -659,7 +740,7 @@ let lastWeatherDiag = null
  * ⚠️ `cloud.callFunction` 会 reject（不只是超时）——必须 try/catch，否则异常被外层
  *    `.catch(() => null)` 静默吞掉，连 warn 都不打，故障无从定位。
  */
-async function fetchWeatherBoost(overrideIp) {
+async function fetchWeatherBoost(overrideIp, seedDate) {
   const t0 = Date.now()
   const setDiag = (stage, extra) => {
     lastWeatherDiag = Object.assign({ stage, ms: Date.now() - t0 }, extra || {})
@@ -687,22 +768,38 @@ async function fetchWeatherBoost(overrideIp) {
   }
 
   let res
+  const raceWeather = (limit) => Promise.race([
+    cloud.callFunction({ name: 'weather', data: { type: 'now', ip: clientIp } }),
+    new Promise((resolve) => setTimeout(() => resolve(null), limit))
+  ])
   // 记录客户端 IP 形态：hasIpv4/hasIpv6 能一眼看出「是不是 IPv6-only 用户」
   setDiag('calling', { ip: clientIp, hasIpv4: !!ipv4, hasIpv6: !!ipv6 })
   try {
-    res = await Promise.race([
-      cloud.callFunction({ name: 'weather', data: { type: 'now', ip: clientIp } }),
-      new Promise((resolve) => setTimeout(() => resolve(null), WEATHER_TIMEOUT_MS))
-    ])
+    res = await raceWeather(WEATHER_TIMEOUT_MS)
   } catch (e) {
     setDiag('call_threw', { ip: clientIp, err: String((e && e.message) || e) })
     console.warn('[vote][weather] 调用 weather 抛异常：', e)
     return null
   }
   if (!res) {
-    setDiag('timeout', { ip: clientIp, limit: WEATHER_TIMEOUT_MS })
-    console.warn('[vote][weather] 调用 weather 超时（>' + WEATHER_TIMEOUT_MS + 'ms）')
-    return null
+    // ⚠️ 超时分支也要带 hasIpv4/hasIpv6：否则前端对 timeout 一律显示「无IP」，
+    //    把「IP 没拿到」和「实例冷启动抖动」两种完全不同的病因混在一起（DIAG-001）
+    setDiag('timeout', { ip: clientIp, limit: WEATHER_TIMEOUT_MS, hasIpv4: !!ipv4, hasIpv6: !!ipv6 })
+    console.warn('[vote][weather] 调用 weather 超时（>' + WEATHER_TIMEOUT_MS + 'ms），快速重试一次')
+    // 快速重试：首次调用已付掉 weather 冷启动成本，热实例通常秒回
+    try {
+      res = await raceWeather(WEATHER_RETRY_MS)
+    } catch (e) {
+      setDiag('call_threw', { ip: clientIp, stage: 'retry', err: String((e && e.message) || e) })
+      console.warn('[vote][weather] 重试调用 weather 抛异常：', e)
+      return null
+    }
+    if (!res) {
+      setDiag('timeout_retry', { ip: clientIp, limit: WEATHER_RETRY_MS, hasIpv4: !!ipv4, hasIpv6: !!ipv6 })
+      console.warn('[vote][weather] 重试仍超时（>' + WEATHER_RETRY_MS + 'ms），放弃天气加权')
+      return null
+    }
+    setDiag('ok_after_retry', { ip: clientIp, hasIpv4: !!ipv4, hasIpv6: !!ipv6 })
   }
   const out = res.result
   if (!out || !out.success) {
@@ -729,7 +826,9 @@ async function fetchWeatherBoost(overrideIp) {
     weather: infos.weather || '',
     temperature: typeof infos.temperature === 'number' ? infos.temperature : null
   }
-  const boost = weatherMap.buildWeatherBoost(raw.weather, raw.temperature)
+  // seed=日期：天气文案按天从 notes[] 变体里选一句，避免每个下雨天都同一句。
+  // 实例级天气缓存 15 分钟，同一天内 note 稳定，跨天自然更换。
+  const boost = weatherMap.buildWeatherBoost(raw.weather, raw.temperature, { seed: seedDate })
   console.log('[vote][weather] 命中：', raw.city, raw.weather, raw.temperature + '°C',
     boost ? ('加权=' + boost.id) : '中性天气不加权')
   setDiag('ok', {
@@ -921,7 +1020,8 @@ async function recommendDishes(data, openid) {
   // debugWeather:true 时（DIAG-001）允许用 debugIp 显式指定 IP 复现真机链路，
   // 并把诊断快照随响应返回——真机排查用，正常调用不带。
   const dbgWeather = data.debugWeather === true
-  const wxBoost = await fetchWeatherBoost(dbgWeather ? data.debugIp : null).catch(() => null)
+  // today 作为天气文案 seed：同一天稳定、跨天从变体里换一句
+  const wxBoost = await fetchWeatherBoost(dbgWeather ? data.debugIp : null, today).catch(() => null)
 
   // 1. 候选菜品：隐藏菜品不参与推荐（隐藏通常意味着「暂时不想吃」）
   const dishRes = await db.collection('dishes')

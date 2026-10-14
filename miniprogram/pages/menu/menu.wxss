@@ -88,17 +88,6 @@
   margin-left: 2rpx;
 }
 
-/* ===== 实时同步降级提示（T6）：米黄信息块，弱存在感但可读 ===== */
-.sync-degraded-tip {
-  flex-shrink: 0;
-  padding: var(--space-1) var(--space-3);
-  margin-bottom: var(--space-3);
-  font-size: var(--text-caption);
-  color: var(--color-text-secondary);
-  background: var(--color-cream);
-  text-align: center;
-}
-
 /* ===== 米饭引导条（原「今日米饭」日报卡下线后的一次性引导）
    极淡一条，不抢推荐与菜品列表的注意力 ===== */
 .rice-tip {
@@ -286,18 +275,45 @@
   padding: var(--space-2) var(--space-4) var(--space-3);
 }
 
-/* 语境行：emoji + 季节文案 + 天气胶囊（无数据时胶囊隐藏） */
+/* 语境行（NOTE-001）：升级为「今日一签」便签卡 ——
+   米黄纸底 + 顶部斜贴胶带 + emoji 圆徽 + 邮票风天气胶囊，
+   让每日一句像被「贴」在菜单上，而不是一行干巴巴的说明文字 */
 .recommend-context {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  margin-top: var(--space-1);
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-cream);
+  border-radius: var(--radius-md);
+}
+
+/* 顶部胶带：半透明白条斜贴，制造「手写便签钉在页面上」的手作感 */
+.recommend-context::before {
+  content: '';
+  position: absolute;
+  top: -12rpx;
+  left: 50%;
+  width: 104rpx;
+  height: 30rpx;
+  transform: translateX(-50%) rotate(-2.5deg);
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 4rpx;
+  box-shadow: 0 2rpx 6rpx rgba(107, 95, 82, 0.08);
 }
 
 .recommend-context-emoji {
-  font-size: var(--text-season);
-  line-height: var(--lh-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: var(--color-accent-wash);
+  font-size: 42rpx;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -307,17 +323,18 @@
   font-size: var(--text-season);
   font-weight: var(--weight-medium);
   color: var(--color-accent-deep);
-  line-height: var(--lh-normal);
+  line-height: 1.55;
 }
 
-/* 天气 chip：sunken 底小胶囊，弱化为元信息 */
+/* 天气胶囊：邮票风 —— 白底 + 品牌红虚线齿孔边，呼应便签的纸质语境 */
 .recommend-weather-chip {
   display: inline-flex;
   align-items: center;
   gap: 4rpx;
-  padding: 4rpx var(--space-2);
+  padding: 6rpx var(--space-3);
   border-radius: var(--radius-pill);
-  background: var(--surface-sunken);
+  background: rgba(255, 255, 255, 0.72);
+  border: 2rpx dashed var(--color-accent-soft);
   max-width: 320rpx;
   box-sizing: border-box;
 }

@@ -7,10 +7,11 @@
     "check:syntax": "node scripts/check-syntax.js",
     "check:routes": "node scripts/check-page-urls.js",
     "lint": "node scripts/lint.js",
+    "check:package": "node scripts/check-package-size.js",
     "test": "node --test \"tests/unit/*.test.js\" \"tests/contracts/*.test.js\" \"tests/smoke/*.test.js\" \"tests/whitebox/*.test.js\"",
     "test:unit": "node --test \"tests/unit/*.test.js\"",
     "check:contracts": "node --test \"tests/contracts/*.test.js\"",
-    "predeploy": "npm run check:syntax && npm run check:routes && npm run lint && npm test",
+    "predeploy": "npm run check:syntax && npm run check:routes && npm run lint && npm run check:package && npm test",
     "test:coverage": "node --test --experimental-test-coverage \"tests/unit/*.test.js\" \"tests/contracts/*.test.js\" \"tests/smoke/*.test.js\" \"tests/whitebox/*.test.js\"",
     "test:e2e": "node scripts/e2e-smoke.js"
   },

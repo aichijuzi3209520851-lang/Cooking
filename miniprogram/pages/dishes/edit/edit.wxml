@@ -38,7 +38,14 @@
 
   <!-- 分类选择 -->
   <view class="form-section">
-    <view class="field-label form-label">分类</view>
+    <view class="field-head">
+      <view class="field-label form-label">分类</view>
+      <!-- 分类管理入口（CATE-ENTRY-002）：选分类时发现缺分类可就地进入；
+           返回后 onShow 会重拉分类列表，新增分类即刻出现在选择器里 -->
+      <view class="cate-manage-link" hover-class="cate-manage-link-press" bindtap="onManageCategories">
+        管理分类 ›
+      </view>
+    </view>
     <view class="category-grid">
       <view
         class="category-btn {{category === item.key ? 'category-btn-active' : ''}}"

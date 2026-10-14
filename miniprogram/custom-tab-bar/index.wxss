@@ -1,0 +1,82 @@
+/* custom-tab-bar/index.wxss
+   与原生 tabBar 视觉对齐：白底 + 上缘细线 + 图标页签；
+   中心「+」凸起圆钮继承原悬浮按钮的语言（品牌红渐变 + 白圈 + 红晕投影） */
+.tab-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #FFFFFF;
+  box-shadow: 0 -1rpx 0 rgba(0, 0, 0, 0.08);
+  box-sizing: content-box;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  padding-top: 12rpx;
+  padding-bottom: 8rpx;
+}
+
+.tab-item-press {
+  opacity: 0.7;
+}
+
+.tab-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.tab-text {
+  font-size: 20rpx;
+  line-height: 1;
+  color: #6B5F52;
+}
+
+.tab-item-active .tab-text {
+  color: #D93A2B;
+  font-weight: 600;
+}
+
+/* 中心槽位：与页签等宽，按钮绝对定位向上凸出 */
+.tab-center {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.tab-fab {
+  position: absolute;
+  left: 50%;
+  top: -34rpx;
+  transform: translateX(-50%);
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8543F, #D93A2B);
+  border: 6rpx solid #FFFFFF;
+  box-shadow: 0 8rpx 20rpx rgba(217, 58, 43, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+}
+
+.tab-fab-press {
+  transform: translateX(-50%) scale(0.92);
+  opacity: 0.9;
+}
+
+.tab-fab-icon {
+  font-size: 56rpx;
+  font-weight: 300;
+  line-height: 1;
+  color: #FFFFFF;
+  margin-top: -6rpx;
+}

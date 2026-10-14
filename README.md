@@ -92,7 +92,7 @@
 - 推荐菜品**与点菜列表共用同一套卡片组件**（`dish-card`），排列与交互完全一致；投票人真值取自当日投票数据，两个入口的「我想吃/已想吃」状态严格同步
 - **开启门槛**：菜品库 ≥ 8 道 **且** 历史点菜 ≥ 3 天；未达门槛时展示「还差几道菜 / 还差几天」的进度而不是留白
 - **打分逻辑**：频率（最近 30 天被点天数 ×10 + 票数 ×1）+ 时令（命中当季食材 +60、季节分类加权 ×5）+ 节日（命中节日食物 +80，免冷却）+ 天气（雨/热/冷/霾的分类加权），最近 2 天吃过的整体 ×0.3 冷却；保证至少一道时令菜入选
-- 顶部给出**季节/节气/节日/天气提示**（如「🍂 白露 · 秋凉渐起，晚上来碗热汤」），依据 24 节气近似算法、2025-2035 节日锚点表与 LBS 天气（`weather` 云函数）；文案模板兜底、可用 CloudBase AI 增强（失败自动回落）
+- 顶部给出**季节/节气/节日/天气提示**（如「🍂 白露 · 秋凉渐起，晚上来碗热汤」），依据 24 节气近似算法、2025-2035 节日锚点表与 LBS 天气（`weather` 云函数）；**文案按日期 seed 每天不同**（每种天气 6 个变体 + 每季 12 句 + 温度越界池，相邻两天必然不重样）；模板兜底、可用 CloudBase AI 增强（失败自动回落）
 - 推荐属增益能力：云函数异常时静默隐藏，不影响点菜主流程
 
 ### 5. 汇总与历史
@@ -108,9 +108,9 @@
 
 ### 7. 视觉体验
 - **登录页**：沉浸式自定义导航 + 7 个食物图标漂浮动效 + 重力感应视差（倾斜手机，漂浮层与品牌区反向位移）
-- **tabBar**：面性圆润风格图标（碗筷/清单/人形），选中态颜色随主题家族切换
-- **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史/看板无提交）与菜品分类占位图均为定制 SVG 插画，裂图自动回退 emoji
-- **交互细节**：投票成功弹跳动效 + 震动反馈、菜单/汇总/看板/历史页首屏骨架屏、下拉刷新、实时同步（数据库 watch 多端监听；权限受限环境自动降级 20s 轮询并在页面提示）
+- **底部导航**：自定义 tabBar，面性圆润风格图标（碗筷/清单/人形），选中态颜色随主题家族切换；中央「+」凸起按钮供大厨一键加菜
+- **插画体系**：空状态（无家庭/空菜谱/无人点菜/无历史/看板无提交）为 AI 3D 软陶风插画，菜品分类占位图为定制 SVG，裂图自动回退 emoji
+- **交互细节**：投票成功弹跳动效 + 震动反馈、菜单/汇总/看板/历史页首屏骨架屏、下拉刷新、实时同步（数据库 watch 多端监听；异常时静默降级 20s 轮询，不打扰用户）
 
 ### 8. 生日提醒与祝福（BIRTHDAY-001）
 - 生日**只存月日、不存年份**（最小化收集），支持公历 / 农历（1900-2100 农历换算，前端展示「腊月廿九」这类汉字）
@@ -173,10 +173,11 @@ miniprogram-11/
 │   ├── sitemap.json
 │   ├── images/                   # 图片素材（生图模型产出 + 开发整合）
 │   │   ├── tabbar/               #   导航图标（PNG，4 图标 × 1 灰色常态 + 5 主题选中态）
-│   │   ├── login/                #   登录页漂浮 SVG 图标（7 个食物造型）
-│   │   ├── empty/                #   空状态插画（无家庭/空菜谱/无人点菜/无历史/看板无提交）
-│   │   ├── brand/                #   品牌资产（brand-mark 品牌标 + paper-texture 纸纹肌理）
-│   │   └── category/             #   菜品分类占位插画（荤/素/汤/主食/凉菜）
+│   │   ├── login/                #   登录页漂浮图标（PNG，7 个食物造型）
+│   │   ├── empty/                #   空状态插画（PNG，无家庭/空菜谱/无人点菜/无历史/看板无提交）
+│   │   ├── brand/                #   品牌资产（brand-mark 品牌标 + share-cover 分享封面 + paper-texture 纸纹肌理）
+│   │   └── category/             #   菜品分类占位插画（SVG，荤/素/汤/主食/凉菜）
+│   │   ├── custom-tab-bar/           # 自定义底部导航（中心「+」加菜按钮，角色感知显隐）
 │   ├── components/               # 自定义组件
 │   │   ├── avatar-group/         #   成员头像组（自动生成暖色渐变头像）
 │   │   ├── dish-card/            #   菜品卡片（缩略图、票数、投票按钮）
@@ -235,7 +236,7 @@ miniprogram-11/
 │   └── weather/                  # 腾讯位置服务天气代理（推荐天气加权，不引用 shared）
 │
 ├── tests/                        # 测试
-│   ├── unit/                     # 单元测试（dto/date/category/season/lunar/cloud-shared…）
+│   ├── unit/                     # 单元测试（dto/date/category/season/lunar/weather-map/recommend-copy…）
 │   ├── contracts/                # 契约测试（云函数 API 契约 + 前端关键行为）
 │   ├── smoke/                    # 冒烟测试（内存数据库真实运行核心链路）
 │   └── whitebox/                 # 白盒测试（边界值/判定/幂等重跑，见 docs/whitebox-test-plan.md）
@@ -250,7 +251,7 @@ miniprogram-11/
 │   ├── image-asset-generation-brief.md  # 插画素材生成需求单
 │   └── tabbar-icon-brief.md      #   tabBar 图标生成需求单
 ├── design/                       # 设计素材（SVG 源档 / 头像 / 应用图标）
-├── scripts/                      # 工程脚本（语法检查 / lint / 云函数批量部署）
+├── scripts/                      # 工程脚本（语法检查 / lint / 包体校验 / 云函数批量部署）
 ├── .github/workflows/            # CI：push/PR 自动跑语法 + lint + 测试
 ├── project.config.json           # 开发者工具项目配置（appid、编译选项）
 ├── project.private.config.json   # 个人私有配置（不入库）
@@ -271,7 +272,7 @@ miniprogram-11/
 | **privacy-popup** | `components/privacy-popup/` | 隐私授权弹窗 | 由 `utils/privacy.js` 驱动，隐私接口调用前统一弹出（PRIV-001） |
 | **reject-reason** | `components/reject-reason/` | 一票否决原因弹窗 | 预设短语 + 自定义输入，≤20 字；仅用于当次通知，不落库 |
 | **birthday-popup** | `components/birthday-popup/` | 生日当天祝福弹窗 | 纯展示组件（BIRTHDAY-003），「一天只弹一次」由页面缓存控制 |
-| **changelog-popup** | `components/changelog-popup/` | 版本更新公告弹窗 | 每版本进入小程序弹一次（本地缓存标记），关闭后同版本不再弹；数据来自 `login.getAppConfig` |
+| **changelog-popup** | `components/changelog-popup/` | 版本更新公告弹窗 | 每版本进入小程序弹一次（本地缓存标记），关闭后同版本不再弹；数据来自 `utils/changelog.js` 静态单源（随代码发版，零网络请求） |
 
 ### 工具模块
 
@@ -438,7 +439,7 @@ tcb fn deploy weather -e <环境ID> --force
 | `families` | 家庭 | `name`、`joinCode`(唯一)、`memberCount`、`creatorId`、`categories`(家庭自定义分类表 `[{key,name,emoji}]`；缺省或非法时回退内置 5 类) |
 | `family_members` | 成员关系 | `_id`=`m_{familyId}_{userId}`、`familyId`、`userId`、`role`(chef/eater)、`joinedAt` |
 | `dishes` | 菜品 | `familyId`、`name`、`category`(家庭分类表的 key：内置 `meat/veg/soup/staple/cold` 或 `c_` 前缀自定义分类)、`imageUrl`、`isHidden`、`cookCount`(累计被点次数) |
-| `daily_votes` | 当日投票（热数据） | `_id`=`v_{date}_{familyId}_{dishId}_{userId}`、`familyId`、`dishId`、`userId`、`date` |
+| `daily_votes` | 当日投票（热数据） | `_id`=`v_{date}_{familyId}_{dishId}_{userId}`、`familyId`、`dishId`、`userId`、`date`、`familyMembers`（成员 openid 冗余，供安全规则 `in` 判读，SYNC-002） |
 | `vote_history` | 历史归档（冷数据） | `_id`=`h_{voteId}`（幂等）、`familyId`、`dishId`、`dishName`、`userId`、`userName`、`date`、`decided` |
 | `notify_ledger` | 第一票通知台账 | `_id`=`n_{date}_{familyId}_{dishId}` |
 | `rice_reports` | 原「今日米饭」饭量上报（**前端已下线，接口保留**；由 dailyReset 清理昨日） | `_id`=`r_{date}_{familyId}_{userId}`、`familyId`、`userId`、`bowls`(0-5，0.5 步进)、`date` |
@@ -475,15 +476,15 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 | 云函数 | 代码量 | Action 数 | 核心职责 | 依赖 |
 |:---|:---|:---|:---|:---|
-| `login` | 246 行 | 4 | 静默登录、通知授权状态、资料更新（昵称/头像/生日）、全局配置下发（隐私协议） | `wx-server-sdk` |
-| `family` | 668 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 + 转让创建者 | `wx-server-sdk`、`crypto` |
-| `dish` | 470 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
-| `vote` | 1096 行 | 10 | 投票核心 + 菜单提交/拍板 + 历史 + 米饭 + 今日推荐 | `wx-server-sdk` |
-| `notify` | 536 行 | 6 | 订阅消息：内部调用 + 饭点汇总 + 生日祝福 | `wx-server-sdk` |
+| `login` | 266 行 | 4 | 静默登录、通知授权状态、资料更新（昵称/头像/生日）、全局配置下发（隐私协议） | `wx-server-sdk` |
+| `family` | 689 行 | 10 | 家庭 CRUD + 成员管理 + 解散清理 + 转让创建者 | `wx-server-sdk`、`crypto` |
+| `dish` | 472 行 | 8 | 菜品 CRUD + 隐藏切换 + 家庭分类管理 | `wx-server-sdk` |
+| `vote` | 1262 行 | 10 | 投票核心 + 菜单提交/拍板 + 历史 + 米饭 + 今日推荐 | `wx-server-sdk` |
+| `notify` | 566 行 | 6 | 订阅消息：内部调用 + 饭点汇总 + 生日祝福 | `wx-server-sdk` |
 | `dailyReset` | 212 行 | 1 | 定时归档投票 + 重置状态 | `wx-server-sdk` |
 | `weather` | 113 行 | 1 | LBS 天气代理（IP 定位 → 实时/预报天气） | `wx-server-sdk`、`https` |
 
-> 后端总代码量约 **3,327 行** JavaScript（7 个云函数 `index.js` 合计），所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`（`weather`/`dailyReset` 为单入口）
+> 后端总代码量约 **3,580 行** JavaScript（7 个云函数 `index.js` 合计），所有云函数遵循统一架构模式：`getOpenid() → switch(action) → 参数/权限/归属校验 → 数据操作 → { success, data } | { success: false, errorCode, message }`（`weather`/`dailyReset` 为单入口）
 
 所有函数通过 `wx.cloud.callFunction` 调用，首个参数为 `action`。
 
@@ -556,10 +557,11 @@ users (1) ──── (N) family_members (N) ──── (1) families
 |:---|:---|:---|
 | `add` | `familyId, dishId` | 投一票（确定性 `_id` 幂等，重复返回 `VOTE_ALREADY_EXISTS`） |
 | `cancel` | `familyId, dishId` | 干饭能手撤回自己的票（不扣减累计 `cookCount`） |
-| `chefCancel` | `familyId, dishId, reason?` | 金牌大厨否决任意投票（仅清当日投票，菜品保留、可再点），可附原因并通知受影响成员；自定义原因经内容安全检测后才进订阅消息 |
+| `chefCancel` | `familyId, dishId, reason?` | 金牌大厨否决任意投票（仅清当日投票，菜品保留、可再点），**同步从当日菜单提交中摘除该菜**；可附原因并通知受影响成员；自定义原因经内容安全检测后才进订阅消息 |
 | `submitMenu` | `familyId` | 提交今日菜单（`menu_submissions` 幂等 upsert，入队等待饭点汇总；重复提交＝更新并重新入队） |
 | `decideMenu` | `familyId, dishId, decided` | 拍板 / 移出今晚菜单（仅 chef）；拍板时通知全家 |
 | `todayList` | `familyId` | 当日投票结果，返回 `{ date, groups[], submitCount }`（group 含 `dishId/dishName/category/imageUrl/isHidden/decided/voters[]`） |
+| `todaySubmissions` | `familyId, date` | 当日菜单提交明细（菜单看板数据源）：按人分组（`dishes[]` 结构化菜名 + 头像）+ 全家合并总单（含 `imageUrl/category/voters`）；全被撤空的提交自动过滤 |
 | `setRice` / `getRice` | `familyId, bowls` / `familyId` | 米饭饭量上报与聚合（**前端 UI 已下线**，接口保留；0-5 碗、0.5 步进） |
 | `history` | `familyId, date` | 按日期（YYYY-MM-DD）查询历史归档，返回 `{ date, groups[] }` |
 | `recommend` | `familyId` | 今日推荐（家庭成员可读）。返回 `{ ready, todayDishIds[], festival, weather, birthday, season{season,label,term,foods,tip}, progress{dishCount,historyDays,…}, items[] }`；`items` 每项含 `dishId/name/category/imageUrl/days/votes/reason/reasonType/seasonal/cooling` |
@@ -654,7 +656,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 ### 5. 数据库与存储安全
 
 - 客户端写操作全部关闭，所有写入经云函数校验（见 [docs/deployment/database.md](docs/deployment/database.md) 的规则文件 `docs/deployment/security-rules/*.json`）；
-- 客户端读权限按"本人/本家庭成员"最小化开放（依赖 CloudBase 安全规则 `get()` 跨集合校验，需控制台验证）；
+- 客户端读权限按"本人/本家庭成员"最小化开放：`daily_votes` 通过文档内冗余 `familyMembers` + `in` 表达式实现成员可读（2026-10-12 已生效，watch 恢复实时），其余集合仍全关、仅云函数访问（详见 [docs/deployment/database.md](docs/deployment/database.md) §2）；
 - 云存储：上传路径分两类——菜品图 `dishes/{familyId}/{openid}/...`、头像 `avatars/{openid}/...`，写规则**同时放行两个前缀**且限定上传者自己的目录；图片替换/删除/家庭解散时由服务端清理文件；
 - 索引清单（`joinCode` 唯一、`family_members` 联合、`daily_votes` 联合等）见部署文档。
 
@@ -793,9 +795,9 @@ users (1) ──── (N) family_members (N) ──── (1) families
 
 ### 视觉组件体系
 
-- **tabBar**：面性圆润图标（碗筷/清单/人形，生图模型产出），暖灰普通态 + 家族色选中态，随主题切换
-- **登录页**：沉浸式自定义导航、7 个食物 SVG 漂浮动效（4 组错帧轨迹）、加速度计重力视差
-- **插画体系**：空状态与分类占位使用定制扁平绘本风 SVG，`empty-state` 组件插画优先、emoji 兜底
+- **tabBar**：自定义底部导航，面性圆润图标（碗筷/清单/人形，生图模型产出），暖灰普通态 + 家族色选中态，随主题切换；中央「+」凸起按钮（大厨可见）
+- **登录页**：沉浸式自定义导航、7 个食物图标漂浮动效（4 组错帧轨迹）、加速度计重力视差
+- **插画体系**：空状态为 AI 3D 软陶风插画（PNG），分类占位为定制扁平绘本风 SVG，`empty-state` 组件插画优先、emoji 兜底
 - **骨架屏**：菜单/汇总/看板/历史页首屏加载占位，消除空状态闪现
 - **触控热区**：高频小按钮统一 `::after` 外扩至 ≥88rpx（44px）
 
@@ -834,7 +836,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（311 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（344 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -882,11 +884,11 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 自定义组件数 | **7** 个（avatar-group / dish-card / empty-state / privacy-popup / reject-reason / birthday-popup / changelog-popup） |
 | 云函数数 | **7** 个（login 4 / family 10 / dish 8 / vote 10 / notify 6 / dailyReset 1 / weather 1 个 Action） |
 | 数据库集合数 | **10** 个 |
-| 后端代码量 | ~**3,327** 行 JavaScript（各云函数 `index.js` 合计） |
+| 后端代码量 | ~**3,580** 行 JavaScript（各云函数 `index.js` 合计） |
 | 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
-| 测试 | **27** 个测试文件 / **311** 个用例（单元 114 / 契约 57 / 冒烟 4 / 白盒 136），全绿 |
+| 测试 | **30** 个测试文件 / **344** 个用例（单元 141 / 契约 57 / 冒烟 4 / 白盒 142），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
-| 插画素材 | **41** 张（空状态 5 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 24）+ 品牌资产 2（brand-mark/纸纹） |
+| 插画素材 | **41** 张（空状态 5 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 24）+ 品牌资产 3（brand-mark / share-cover / 纸纹） |
 | 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |
 | 主题方案 | **5** 大主题家族 + 跟随系统（导航/tabBar/弹窗全量联动） |
 | 字阶体系 | **10** 档 `--text-*` 令牌（22/24/26/28/30/38/40/42/52/68rpx），页面一律走令牌 |

@@ -285,6 +285,17 @@ async function joinFamily(family, openid) {
     throw new ApiError('INTERNAL_ERROR', '加入家庭失败，请重试')
   }
 
+  // 4. 当日票可见性补写（SYNC-002）：把新成员 openid 补进今天已有票的 familyMembers，
+  //    使其立刻能通过 watch/规则读到全家今天点的菜。失败不影响加入主流程：
+  //    下一次任何人点菜时会重新全量写入成员清单。
+  try {
+    await db.collection('daily_votes')
+      .where({ familyId, date: getTodayStr() })
+      .update({ data: { familyMembers: _.addToSet(openid) } })
+  } catch (e) {
+    console.warn('[family] 补写当日票可见性失败（不影响加入）', e)
+  }
+
   return {
     familyId,
     name: family.name,
@@ -299,7 +310,17 @@ async function listFamilies(openid) {
     .where({ userId: openid })
     .get()
 
-  const members = membersRes.data || []
+  // 防御历史脏数据：早期版本用随机 _id 写成员记录，随后改为确定性 _id 时
+  // 同一用户在同一家庭可能留下两条记录，直接展开会让同一家庭重复出现。
+  // 按 familyId 去重，保留 joinedAt 最早的一条。
+  const seenByFamily = new Map()
+  for (const m of membersRes.data || []) {
+    const prev = seenByFamily.get(m.familyId)
+    if (!prev || new Date(m.joinedAt) < new Date(prev.joinedAt)) {
+      seenByFamily.set(m.familyId, m)
+    }
+  }
+  const members = [...seenByFamily.values()]
 
   const familyDocs = await Promise.all(
     members.map(m => db.collection('families').doc(m.familyId).get().catch(() => null))

@@ -1,0 +1,56 @@
+<!--custom-tab-bar/index.wxml-->
+<!-- 自定义底部导航：点菜 / 汇总 / [+中心凸起按钮] / 菜单 / 我的。
+     中心按钮夹在「汇总」与「菜单」之间（用户指定位置），仅大厨可见 -->
+<view class="tab-bar">
+  <view
+    class="tab-item {{selected === 0 ? 'tab-item-active' : ''}}"
+    hover-class="tab-item-press"
+    data-path="{{list[0].pagePath}}"
+    bindtap="switchTab"
+  >
+    <image class="tab-icon" src="{{selected === 0 ? list[0].activeIcon : list[0].icon}}" mode="aspectFit" />
+    <text class="tab-text">{{list[0].text}}</text>
+  </view>
+
+  <view
+    class="tab-item {{selected === 1 ? 'tab-item-active' : ''}}"
+    hover-class="tab-item-press"
+    data-path="{{list[1].pagePath}}"
+    bindtap="switchTab"
+  >
+    <image class="tab-icon" src="{{selected === 1 ? list[1].activeIcon : list[1].icon}}" mode="aspectFit" />
+    <text class="tab-text">{{list[1].text}}</text>
+  </view>
+
+  <!-- 中心凸起「+」：占一个等宽槽位保持左右页签均匀分布，按钮本身向上凸出 -->
+  <view class="tab-center">
+    <view
+      wx:if="{{canAdd}}"
+      class="tab-fab"
+      hover-class="tab-fab-press"
+      bindtap="onAdd"
+    >
+      <text class="tab-fab-icon">+</text>
+    </view>
+  </view>
+
+  <view
+    class="tab-item {{selected === 2 ? 'tab-item-active' : ''}}"
+    hover-class="tab-item-press"
+    data-path="{{list[2].pagePath}}"
+    bindtap="switchTab"
+  >
+    <image class="tab-icon" src="{{selected === 2 ? list[2].activeIcon : list[2].icon}}" mode="aspectFit" />
+    <text class="tab-text">{{list[2].text}}</text>
+  </view>
+
+  <view
+    class="tab-item {{selected === 3 ? 'tab-item-active' : ''}}"
+    hover-class="tab-item-press"
+    data-path="{{list[3].pagePath}}"
+    bindtap="switchTab"
+  >
+    <image class="tab-icon" src="{{selected === 3 ? list[3].activeIcon : list[3].icon}}" mode="aspectFit" />
+    <text class="tab-text">{{list[3].text}}</text>
+  </view>
+</view>

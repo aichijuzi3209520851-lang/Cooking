@@ -53,13 +53,24 @@ async function findOrCreateUser(openid) {
 
 // 批量获取家庭信息（DTO 与 family.list 统一：familyId 字段）
 async function getFamiliesWithRole(members) {
+  // 防御历史脏数据：同一家庭可能存在多条成员记录（随机 _id 时代遗留），
+  // 按 familyId 去重保留 joinedAt 最早的一条，避免登录后家庭列表重复展示
+  const seenByFamily = new Map()
+  for (const m of members || []) {
+    const prev = seenByFamily.get(m.familyId)
+    if (!prev || new Date(m.joinedAt) < new Date(prev.joinedAt)) {
+      seenByFamily.set(m.familyId, m)
+    }
+  }
+  const dedupedMembers = [...seenByFamily.values()]
+
   const familyDocs = await Promise.all(
-    (members || []).map(m => db.collection('families').doc(m.familyId).get().catch(() => null))
+    dedupedMembers.map(m => db.collection('families').doc(m.familyId).get().catch(() => null))
   )
   const families = []
   familyDocs.forEach((famRes, i) => {
     const fam = famRes && famRes.data ? famRes.data : null
-    const member = members[i]
+    const member = dedupedMembers[i]
     if (!fam) {
       return
     }

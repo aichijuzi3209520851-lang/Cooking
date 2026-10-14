@@ -26,26 +26,80 @@
   </view>
 
   <block wx:else>
-    <empty-state
-      wx:if="{{totalDishes.length === 0}}"
-      icon="🍽️"
-      image="/images/empty/empty-board.svg"
-      title="今天还没有提交的菜单"
-      description="大家点完菜提交后，这里会汇总全家想吃的菜"
-    />
+    <!-- BOARD-EMPTY-001：空态判定用 JS 算好的 boardEmpty 布尔，且 wx:if 挂在 block 上
+         （wx:if 直接挂在组件标签上实测不挂载，见 menu-board.js data 注释） -->
+    <block wx:if="{{boardEmpty}}">
+      <empty-state
+        icon="🍽️"
+        image="/images/empty/empty-board.png"
+        title="今天还没有提交的菜单"
+        description="大家点完菜提交后，这里会汇总全家想吃的菜"
+      />
+    </block>
 
     <block wx:else>
-      <!-- 全家的答案：全家总单（跨提交人去重，按被点人数排序）——本页最该醒目的一块 -->
-      <view class="board-answer">
+      <!-- 全家的答案：全家总单（跨提交人去重，按被点人数排序）——本页最该醒目的一块；
+           整卡可点：有图点格全屏看大图，无图格显示分类表情占位 -->
+      <view class="board-answer" bindtap="onAnswerTap" hover-class="answer-hover">
         <view class="answer-head">
           <view class="answer-title">全家都想吃</view>
-          <view class="answer-count">{{totalDishes.length}} 道菜</view>
+          <view class="answer-count">{{totalDishes.length}} 道菜 · {{hasDishImage ? '点开看大图 ›' : '点开查看全家清单 ›'}}</view>
         </view>
         <view class="total-list">
           <view class="total-item" wx:for="{{totalDishes}}" wx:key="name">
+            <image
+              wx:if="{{item.imageUrl}}"
+              class="total-thumb"
+              src="{{item.imageUrl}}"
+              mode="aspectFill"
+            />
             <text class="total-name">{{item.name}}</text>
+            <!-- 谁想吃：当日投票人头像（NOTIFY-004），最多 3 个 + 溢出计数；
+                 不用 wx:if 圈渲染（实测 wx:if 挂在组件上会不挂载），空 voters 渲染空壳 -->
+            <avatar-group
+              class="total-avatars"
+              members="{{item.voters}}"
+              size="36"
+              max="3"
+            />
             <text class="total-count">{{item.count}} 人点</text>
           </view>
+        </view>
+      </view>
+
+      <!-- 菜品图片画廊弹层：全家总单的「看图模式」 -->
+      <view class="gallery-mask" wx:if="{{galleryVisible}}" bindtap="onGalleryClose">
+        <view class="gallery-panel" catchtap="noop">
+          <view class="gallery-head">
+            <text class="gallery-title">全家都想吃</text>
+            <text class="gallery-sub">{{totalDishes.length}} 道菜</text>
+          </view>
+          <scroll-view scroll-y class="gallery-scroll">
+            <view class="gallery-grid">
+              <view
+                class="gallery-cell"
+                wx:for="{{totalDishes}}"
+                wx:key="name"
+                data-url="{{item.imageUrl}}"
+                catchtap="onGalleryCellTap"
+              >
+                <view class="gallery-img">
+                  <image
+                    wx:if="{{item.imageUrl}}"
+                    src="{{item.imageUrl}}"
+                    mode="aspectFill"
+                  />
+                  <!-- 无图占位：分类大表情（不再重复格下的菜名） -->
+                  <view wx:else class="gallery-fallback">
+                    <text class="gallery-fallback-emoji">{{item.emoji}}</text>
+                  </view>
+                </view>
+                <view class="gallery-cell-name">{{item.name}}</view>
+                <view class="gallery-cell-count">{{item.count}} 人点</view>
+              </view>
+            </view>
+          </scroll-view>
+          <view class="gallery-close" catchtap="onGalleryClose">收 起</view>
         </view>
       </view>
 
@@ -53,14 +107,27 @@
       <view class="section-title board-detail-title">提交明细</view>
       <view class="board-card" wx:for="{{submissions}}" wx:key="index">
         <view class="sub-head">
-          <text class="sub-name">{{item.userName}}</text>
+          <view class="sub-who">
+            <avatar-group class="sub-avatar" members="{{[item.member]}}" size="56" />
+            <text class="sub-name">{{item.userName}}</text>
+          </view>
           <view class="sub-meta">
             <text class="meal-tag meal-{{item.meal}}">{{item.mealLabel}}</text>
             <text class="sub-time" wx:if="{{item.timeText}}">{{item.timeText}}</text>
           </view>
         </view>
         <view class="sub-dishes">
-          <text class="sub-dish" wx:for="{{item.dishNames}}" wx:for-item="dish" wx:key="*this">{{dish}}</text>
+          <view class="sub-dish" wx:for="{{item.dishes}}" wx:for-item="dish" wx:key="dishId">
+            <text class="sub-dish-name">{{dish.name}}</text>
+            <!-- 大厨就地撤菜（NOTIFY-004）：× 仅大厨可见，弹原因选择 -->
+            <text
+              wx:if="{{isChef}}"
+              class="sub-dish-remove"
+              data-dish-id="{{dish.dishId}}"
+              data-dish-name="{{dish.name}}"
+              catchtap="onRejectDish"
+            >×</text>
+          </view>
         </view>
       </view>
     </block>
@@ -69,6 +136,14 @@
 
 <!-- 版本更新公告弹窗（每版本进入小程序弹一次，自包含组件） -->
 <changelog-popup class="cl-popup-host" />
+
+<!-- 一票否决原因选择（NOTIFY-004）：与 menu 页共用同一组件 -->
+<reject-reason
+  visible="{{showReject}}"
+  dish-name="{{rejectDishName}}"
+  bind:confirm="onRejectConfirm"
+  bind:cancel="onRejectCancel"
+/>
 
 <!-- 品牌提示条：showSuccess/showError/showApiError 的渲染载体（util.js 自动路由） -->
 <brand-toast id="brandToast" />

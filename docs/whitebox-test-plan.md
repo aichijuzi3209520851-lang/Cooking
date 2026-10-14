@@ -4,6 +4,8 @@
 > 对象：云函数业务逻辑（运行时）、共享纯函数模块（validators / date / dto）
 > 方法：判定覆盖（分支）、条件覆盖、边界值分析、循环与幂等重跑、错误推断
 > 结果：**115 个用例全部通过**（单元 40 + 契约 31 + 冒烟 3 + 白盒 41），CI 已纳入
+>
+> 2026-10-14 复核：白盒 **142 例**（新增 `watch-sync` 5 例 + `cloud-logic` W-C-V5 看板撤菜闭环 1 例），`npm test` 全量 **344 例**全绿。
 
 ---
 
@@ -72,6 +74,17 @@
 | W-C-N3 | notify | notifyEnabled 过滤：关闭者不收、开启者收到（touser 断言） |
 | W-C-R1 | dailyReset | 手动运行闸门（FORBIDDEN）/ 日期格式校验 |
 | W-C-R2 | dailyReset | **幂等重跑**：首跑归档 → 重跑零新增 → 隐藏菜品重置（循环 + 幂等验证） |
+| W-C-V5 | vote.chefCancel / todaySubmissions | **看板撤菜闭环**：chefCancel 同步摘除今日 `menu_submissions`、`todaySubmissions` 带头像与结构化菜品、空提交被过滤 |
+
+### 2.6 watch 状态机（W-SYNC 系列，5 例）——有限重试 + 静默降级轮询
+
+| 编号 | 覆盖目标 |
+|------|----------|
+| W-SYNC-01 | 点菜页连续监听失败：有限重试后只启用一次轮询 |
+| W-SYNC-02 | 汇总页连续监听失败：不会因重建 watcher 清零计数 |
+| W-SYNC-03 | 页面隐藏会取消待重试，迟到回调不能复活监听 |
+| W-SYNC-04 | 离开后返回：未降级时可重建 watcher，已降级只恢复轮询 |
+| W-SYNC-05 | 两页都保留 add/delete/update 变更处理 |
 
 ### 2.5 冒烟（既有 3 例，构成端到端补充）
 
@@ -107,4 +120,4 @@
 
 ## 五、纳入 CI
 
-`npm test` 已扩展为 unit + contracts + smoke + whitebox 四套件（115 用例）；覆盖率命令 `npm run test:coverage`。GitHub Actions 随 `npm test` 自动执行全部用例。
+`npm test` 已扩展为 unit + contracts + smoke + whitebox 四套件（当前 344 用例）；覆盖率命令 `npm run test:coverage`。GitHub Actions 随 `npm test` 自动执行全部用例。

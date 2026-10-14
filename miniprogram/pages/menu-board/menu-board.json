@@ -3,6 +3,8 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "empty-state": "/components/empty-state/empty-state",
-    "changelog-popup": "/components/changelog-popup/changelog-popup"
+    "changelog-popup": "/components/changelog-popup/changelog-popup",
+    "reject-reason": "/components/reject-reason/reject-reason",
+    "avatar-group": "/components/avatar-group/avatar-group"
   }
 }

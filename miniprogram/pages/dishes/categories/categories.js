@@ -127,6 +127,9 @@ Page({
       });
       showSuccess('已添加分类');
       wx.vibrateShort({ type: 'light', fail() {} });
+      // addCategory 返回的列表不带 dishCount，直接沿用会把计数冲成 0，
+      // 导致「有菜品不能删」的前置拦截失效 —— 补拉一次带计数的列表纠偏
+      this.loadCategories();
     } catch (err) {
       // 失败时保留输入与已选图标，用户可直接改个名字重试
       console.error('添加分类失败', err);
@@ -163,6 +166,8 @@ Page({
       this.setData({ categories: list });
       this.refreshAddState();
       showSuccess('已删除');
+      // 同 onAddTap：removeCategory 返回的列表不带 dishCount，补拉纠偏
+      this.loadCategories();
     } catch (err) {
       console.error('删除分类失败', err);
       showApiError(err, '删除失败');

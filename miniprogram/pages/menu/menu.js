@@ -26,6 +26,7 @@ const app = getApp();
 
 const PAGE_SIZE = 50;
 const WATCH_RETRY_LIMIT = 3;
+const WATCH_STABLE_MS = 30000;
 // watch 降级后的轮询间隔（毫秒）。20s 是体验与云调用成本的折中
 const POLL_INTERVAL = 20000;
 
@@ -102,7 +103,8 @@ Page({
     birthdayPopup: null,
     loading: false,
     refreshing: false,
-    // 实时同步降级标记：watch 失败后为 true，界面提示并改用轮询
+    // 实时同步降级标记：watch 失败后为 true，静默改为轮询（不向用户显示提示，
+    // 仅作 watch/轮询的流转开关：降级后 onShow 只恢复轮询、不再重建 watcher）
     syncDegraded: false,
     page: 1,
     hasMore: true,
@@ -145,6 +147,7 @@ Page({
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) {
       this.setData({ hasFamily: false });
+      this.syncTabBar(0, false);
       wx.reLaunch({ url: '/pages/welcome/welcome' });
       return;
     }
@@ -162,6 +165,9 @@ Page({
       isChef: currentRole === 'chef'
     });
 
+    // 自定义 tabBar（TABBAR-001）：同步选中项与中心「+」可见性（仅大厨）
+    this.syncTabBar(0, currentRole === 'chef');
+
     this.setToday();
     // 首次使用引导（ONBOARD-001）：只判一次，不随 onShow 重复打扰
     this.maybeShowNotifyOnboard();
@@ -174,17 +180,24 @@ Page({
     const dirty = this._loadedKey !== familyId + '|' + this.data.todayDate;
 
     if (dirty) {
+      // 家庭或业务日变化时开启新一轮监听，不沿用旧上下文的降级状态。
+      this._watchRetries = 0;
+      this.stopPolling();
+      this.setData({ syncDegraded: false });
       this.loadCategories();
       this.loadRecommend();
       this.checkRiceDish();
-      this.setupWatcher();
       this._loadedKey = familyId + '|' + this.data.todayDate;
     }
 
     // 投票数据始终刷新（成本低，且是主流程正确性所需）
     this.loadData(true, true);
-    // 若此前已降级为轮询，回到本页时恢复轮询（onHide 会停表；degradeToPolling 自身防重入）
-    if (this.data.syncDegraded) this.degradeToPolling();
+    // 同日从子页返回时，onHide 已关闭 watcher；降级后则只恢复轮询。
+    if (this.data.syncDegraded) {
+      this.degradeToPolling();
+    } else if (!this.watcher && this._watchRetryTimer == null) {
+      this.setupWatcher();
+    }
     this.scheduleMidnightRefresh();
   },
 
@@ -242,26 +255,41 @@ Page({
   // ============ 实时监听（SYNC-001） ============
 
   setupWatcher() {
-    this.closeWatcher();
     const familyId = app.globalData.currentFamilyId;
     const date = this.data.todayDate;
-    if (!familyId || !date) return;
+    const contextKey = familyId && date ? familyId + '|' + date : '';
+    if (this._watchContextKey !== contextKey) {
+      this._watchContextKey = contextKey;
+      this._watchRetries = 0;
+      this.stopPolling();
+      this.setData({ syncDegraded: false });
+    }
 
+    this.closeWatcher();
+    if (!familyId || !date || this._pageVisible === false || this.data.syncDegraded) return;
+
+    const generation = this._watchGeneration;
     try {
       const db = wx.cloud.database();
       let initialSnapshot = true;
-      this._watchRetries = 0;
-      this.watcher = db.collection('daily_votes').where({
+      const watcher = db.collection('daily_votes').where({
         familyId,
         date
       }).watch({
         onChange: (snapshot) => {
-          // 跳过初始快照，onShow 中已主动加载
+          if (generation !== this._watchGeneration || this._pageVisible === false) return;
+          // 初始快照确认监听已建立；持续稳定一段时间后才重置失败计数。
           if (initialSnapshot) {
             initialSnapshot = false;
+            if (this._watchStableTimer) clearTimeout(this._watchStableTimer);
+            this._watchStableTimer = setTimeout(() => {
+              this._watchStableTimer = null;
+              if (generation === this._watchGeneration && this._pageVisible !== false) {
+                this._watchRetries = 0;
+              }
+            }, WATCH_STABLE_MS);
             return;
           }
-          // 只对增删改响应，合并高频变化（去抖）
           const changes = (snapshot && snapshot.docChanges) || [];
           const relevant = changes.some(c => {
             const dataType = c && (c.dataType || c.type);
@@ -269,26 +297,57 @@ Page({
           });
           if (!relevant) return;
           if (this._reloadTimer) clearTimeout(this._reloadTimer);
-          this._reloadTimer = setTimeout(() => this.loadData(true), 300);
+          this._reloadTimer = setTimeout(() => {
+            this._reloadTimer = null;
+            if (generation === this._watchGeneration && this._pageVisible !== false) this.loadData(true);
+          }, 300);
         },
         onError: (err) => {
+          if (generation !== this._watchGeneration || this._pageVisible === false) return;
           console.error('点菜监听异常', err);
-          // 有限次数重连
-          if ((this._watchRetries || 0) < WATCH_RETRY_LIMIT) {
-            this._watchRetries = (this._watchRetries || 0) + 1;
-            setTimeout(() => this.setupWatcher(), 1000 * this._watchRetries);
-            return;
-          }
-          // 重试用尽：不再静默，降级为轮询并让用户看见
-          this.degradeToPolling();
+          this.closeWatcher();
+          this.scheduleWatcherRetry();
         }
       });
+      if (generation === this._watchGeneration) {
+        this.watcher = watcher;
+      } else if (watcher && typeof watcher.close === 'function') {
+        watcher.close();
+      }
     } catch (err) {
+      if (generation !== this._watchGeneration || this._pageVisible === false) return;
       console.error('建立监听失败', err);
+      this.scheduleWatcherRetry();
     }
   },
 
+  scheduleWatcherRetry() {
+    if (this._pageVisible === false || this._watchRetryTimer != null) return;
+    if ((this._watchRetries || 0) >= WATCH_RETRY_LIMIT) {
+      this.degradeToPolling();
+      return;
+    }
+
+    this._watchRetries = (this._watchRetries || 0) + 1;
+    const retry = this._watchRetries;
+    const generation = this._watchGeneration;
+    this._watchRetryTimer = setTimeout(() => {
+      this._watchRetryTimer = null;
+      if (generation !== this._watchGeneration || this._pageVisible === false) return;
+      this.setupWatcher();
+    }, 1000 * retry);
+  },
+
   closeWatcher() {
+    this._watchGeneration = (this._watchGeneration || 0) + 1;
+    if (this._watchStableTimer != null) {
+      clearTimeout(this._watchStableTimer);
+      this._watchStableTimer = null;
+    }
+    if (this._watchRetryTimer != null) {
+      clearTimeout(this._watchRetryTimer);
+      this._watchRetryTimer = null;
+    }
     if (this._reloadTimer) {
       clearTimeout(this._reloadTimer);
       this._reloadTimer = null;
@@ -305,11 +364,22 @@ Page({
 
   /**
    * 实时同步降级：watch 重试用尽后改为轮询。
-   * 原实现只打 console.warn，用户完全无感 —— 这里补上可见提示 + 自动刷新。
+   * 静默降级（SYNC-001）：数据照常自动刷新（20s 轮询 + 下拉刷新兜底），
+   * 不向用户显示「实时同步不可用」提示 —— 用户几乎无感，提示条只会制造焦虑。
+   * syncDegraded 仅作内部流转开关（onShow 恢复轮询 / setupWatcher 防重建）。
    */
   degradeToPolling() {
-    if (this._pollTimer) return;
+    if (this._watchRetryTimer != null) {
+      clearTimeout(this._watchRetryTimer);
+      this._watchRetryTimer = null;
+    }
+    if (this._watchStableTimer != null) {
+      clearTimeout(this._watchStableTimer);
+      this._watchStableTimer = null;
+    }
+    if (this._pollTimer || this._pageVisible === false) return;
     this.setData({ syncDegraded: true });
+    this.closeWatcher();
     this._pollTimer = setInterval(() => {
       // 页面不可见时不发无用请求
       if (this._pageVisible === false) return;
@@ -427,7 +497,9 @@ Page({
       no_client_ip: '拿不到客户端 IP（IPv6-only 用户会这样）',
       calling: '调用 weather 云函数后未返回',
       call_threw: '调用 weather 抛异常：' + (diag.err || ''),
-      timeout: '调用 weather 超时（>' + (diag.limit || '') + 'ms）',
+      timeout: '调用 weather 超时（>' + (diag.limit || '') + 'ms），已自动重试',
+      timeout_retry: '重试后仍超时（>' + (diag.limit || '') + 'ms）',
+      ok_after_retry: '首次超时重试后成功（此处不应缺天气）',
       weather_failed: 'weather 返回失败：' + (diag.errorCode || '') + ' ' + (diag.message || ''),
       no_realtime: 'weather 响应缺实时数据',
       cache_hit: '缓存命中（此处不应缺天气）',
@@ -570,7 +642,9 @@ Page({
     // 节日 > 天气 > 季节/AI：顶置文案取第一个命中的确定性来源（一天一次，不折腾）
     const fest = data.festival || null;
     const wxw = data.weather || null;   // { city, weather, temperature, tip }
-    const fallbackNote = recommendCopy.buildSeasonNote(season.season, seedKey);
+    // 当天温度：天气 chip 与文案共用同一份数据（null = 拿不到，文案退化为按季节）
+    const todayTemp = (wxw && typeof wxw.temperature === 'number') ? wxw.temperature : null;
+    const fallbackNote = recommendCopy.buildSeasonNote(season.season, seedKey, todayTemp);
     const termText = season.term || '';
     let noteText;
     let noteFromServer = false;   // 服务端已给定稿文案（节日/天气）时跳过 AI 增强
@@ -634,13 +708,19 @@ Page({
     const season = (data && data.season) || {};
     const items = (data && data.items) || [];
     const date = data.today || '';
+    // 当天天气/温度：让 AI 文案反映「今天」而不只是「这个季节」。
+    // 缺省时 prompt 自动去掉天气行，退化为纯季节文案。
+    const wxw = (data && data.weather) || null;
+    const temperature = (wxw && typeof wxw.temperature === 'number') ? wxw.temperature : null;
     recommendCopy.loadNote({
       familyId,
       date,
       season: season.season || '',
       term: season.term || '',
       foods: season.foods || [],
-      dishNames: items.map(i => i.name).filter(Boolean)
+      dishNames: items.map(i => i.name).filter(Boolean),
+      weather: wxw ? (wxw.weather || '') : '',
+      temperature
     }).then(res => {
       if (!res || !res.text) return;
       // 期间可能切了家庭或跨天，只对同一天的数据生效
@@ -967,9 +1047,12 @@ Page({
     }
   },
 
-  // 添加菜品
-  onAddDish() {
-    wx.navigateTo({ url: '/pages/dishes/edit/edit' });
+  // 自定义 tabBar 同步（TABBAR-001）：每个页签页持有独立组件实例，
+  // onShow 时各自回写选中项与中心「+」可见性
+  syncTabBar(selected, canAdd) {
+    if (typeof this.getTabBar !== 'function') return;
+    const bar = this.getTabBar();
+    if (bar) bar.setData({ selected, canAdd: !!canAdd });
   },
 
   // 跳转家庭管理

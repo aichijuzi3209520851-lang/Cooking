@@ -9,9 +9,10 @@ npm install              # 仅 devDependencies（miniprogram-automator）
 npm run check:syntax     # 全部 JS 语法
 npm run check:routes     # 跳转 URL 必须精确命中 app.json（静默失败，必跑）
 npm run lint             # JSON / 硬编码密钥 / 浮动依赖版本 / 本地资源路径
+npm run check:package    # 主包 ≤2MB + 图片音频【总和】≤200KB（注意是总和，非单文件）
 npm test                 # unit + contracts + smoke + whitebox
 
-npm run predeploy        # 完整门禁 = syntax + routes + lint + test
+npm run predeploy        # 完整门禁 = syntax + routes + lint + check:package + test
 
 node --test tests/unit/dto.test.js   # 单文件/聚焦
 npm run test:unit
@@ -21,9 +22,25 @@ npm run test:coverage
 npm run test:e2e         # 需本机微信开发者工具 + 服务端口 + 云函数已部署
 ```
 
+`scripts/check-asset-size.py` 是配套的**只读体检脚本**（工作区口径，比打包范围大），需手动用 Python 跑：
+`python scripts/check-asset-size.py`。
+
 CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit → check:contracts`（Node 22）。**不含** `check:routes` 与 smoke/whitebox——合并前仍跑 `npm run predeploy`。
 
 `npm run test:e2e` 依赖写死的开发者工具 CLI（`scripts/e2e-smoke.js` 顶部路径），换机器先改路径；并要求「设置 → 安全 → 服务端口」已开。
+
+## 微信开发者工具 CLI（wechatide）
+
+agent 调用 `wechatide.cmd -c CodeBuddy <tool>` 时，`--project` **盘符必须大写**：
+
+```powershell
+--project "D:\we-chat\project\miniprogram-11"   # ✅
+--project "d:\we-chat\project\miniprogram-11"   # ❌ 整条链路挂起
+```
+
+开发者工具按字符串**精确匹配**项目路径：小写 `d:` 会被当成另一个项目，CLI 自动新建一个 `[PROJECT-LITE]` 窗口，但同一目录只允许存在一个后端，这个新窗口永远收不到 `messagechannel port open`，状态停在 `opening`。后果是每次 MCP `initialize` 都在 `bootstrapProjectWindowsForInitialize` 卡满 300s，CLI 30s 就放弃 → `MCP_INIT_ERROR`，全部 `simulator_*` / `automation_*` 调用约 121s 后失败。
+
+**已卡住的急救**：关掉那个重复的 `[PROJECT-LITE]` 窗口即可恢复（`check_wechatide_status` 从 121s 降到 1s）。
 
 ## 结构要点
 
@@ -61,7 +78,7 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 订阅消息额度＝用户授权次数（NOTIFY-003）：点菜不推送、只写 `notify_ledger`；提交菜单（餐次自选，缺省中餐）后**立即实时合并推送**给大厨，饭点定时器（11:00/17:00）转为兜底补发；即时推送还有「撤菜」「拍板」。消息跳转落点是「菜单」看板页 `pages/menu-board/menu-board`（`vote.todaySubmissions` 数据源）。
 - 数据库 10 个集合（含 `menu_submissions`、`rice_reports`、`app_config`）。米饭前端已下线，云函数接口保留，`dailyReset` 仍会清理。《隐私协议》全文存 `app_config`（`_id`=`privacy_agreement`）：控制台改文档即实时生效、无需发版（`login.getAppConfig` 下发，前端 `utils/privacy-content.js` 内置兜底，手册 `docs/deployment/privacy-agreement.md` §7）。
 - 部署：先同步 `shared` → 再传 7 个函数（`weather` 无 shared，但也需上传）。`dailyReset` / `notify` 的定时触发器需控制台手动建（cron 为 7 段；时位写成 `*` 会变成每小时执行）。
-- 当前环境安全规则**不支持 `get()` 跨集合**，已退化为客户端读写全关、仅云函数访问（`docs/deployment/database.md` §2.1）；watch 失败已自动降级为 20s 轮询并在页面提示（`menu`/`summary` 的 `syncDegraded`）。
+- 数据库安全规则：环境**不支持 `get()` 跨集合**，多数集合客户端读写全关、仅云函数访问；`daily_votes` 用文档内冗余 `familyMembers` + `in` 表达式实现成员可读（2026-10-12 已生效），watch 已恢复实时；代码保留有限重试 + **静默降级** 20s 轮询兜底（`menu`/`summary` 的 `syncDegraded` 仅作内部流转开关，不显示提示条）。详见 `docs/deployment/database.md` §2.1/§2.2。
 - 已配置（2026-09-27，真机验证过）：订阅消息模板 ID、`NOTIFY_*` 环境变量、4 个定时触发器、`config.js` 模板段。**仍待配置：`LBS_KEY`**（weather；缺失时天气加权静默降级）。**扫码加入家庭已决定不做**（加入方式＝6 位加入码 + 分享卡片）。
 
 ## 参考
@@ -70,4 +87,4 @@ CI（`.github/workflows/ci.yml`）只跑 `check:syntax → lint → test:unit �
 - 部署与控制台：`docs/deployment/database.md`
 - 白盒测试设计：`docs/whitebox-test-plan.md`
 
-> 共享模块是**拷贝模型**（`cloud-shared` 历史包名已废弃；`CLAUDE.md` 现也按拷贝模型描述）。集合数、测试计数以 README/代码为准（当前 10 集合 / 311 项测试）。
+> 共享模块是**拷贝模型**（`cloud-shared` 历史包名已废弃；`CLAUDE.md` 现也按拷贝模型描述）。集合数、测试计数以 README/代码为准（当前 10 集合 / 344 项测试）。

@@ -1,9 +1,11 @@
 /* 品牌提示条：颜色/圆角/阴影全部走 app.wxss 令牌，明暗主题自动适配 */
 .bt-root {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 24rpx);
+  /* 屏幕中偏下（大厂惯例：微信/支付宝式 toast 均落在视线不离开内容的 55%~60% 区间），
+     不再挂顶部压住页面标题 */
+  top: 58%;
   left: 50%;
-  transform: translate(-50%, -28rpx);
+  transform: translate(-50%, calc(-50% + 28rpx));
   display: inline-flex;
   align-items: center;
   gap: 16rpx;
@@ -23,7 +25,7 @@
 
 .bt-visible {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -50%);
 }
 
 .bt-icon {

@@ -107,8 +107,158 @@
   gap: var(--space-1);
   background: var(--surface-raised);
   border-radius: var(--radius-pill);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
   box-shadow: var(--elev-1);
+}
+
+/* 卡片内菜品小缩略图：有配图的菜在标签左侧显示圆角小图 */
+.total-thumb {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+  background: var(--surface-sunken);
+}
+
+/* 「全家都想吃」整卡可点反馈 */
+.answer-hover {
+  opacity: 0.92;
+  transform: scale(0.995);
+}
+
+/* 总单里每道菜的「谁想吃」头像组：与人数计数间留出呼吸位 */
+.total-avatars {
+  margin-left: var(--space-1);
+}
+
+/* ===== 菜品图片画廊弹层 ===== */
+.gallery-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: rgba(20, 16, 10, 0.55);
+  display: flex;
+  align-items: flex-end;
+}
+
+.gallery-panel {
+  width: 100%;
+  max-height: 78vh;
+  box-sizing: border-box;
+  background: var(--surface-card);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  box-shadow: 0 -12rpx 40rpx rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.gallery-title {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.gallery-sub {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.gallery-scroll {
+  max-height: 56vh;
+}
+
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.gallery-cell {
+  width: calc((100% - var(--space-3) * 2) / 3);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.gallery-img {
+  width: 100%;
+  height: 0;
+  padding-top: 100%;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  overflow: hidden;
+  position: relative;
+}
+
+.gallery-img image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 无配图的菜：分类表情占位（<text> 不支持 flex，用 view 包一层才能居中） */
+.gallery-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-fallback-emoji {
+  font-size: 88rpx;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.gallery-cell-name {
+  font-size: var(--text-mini);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gallery-cell-count {
+  font-size: var(--text-mini);
+  color: var(--color-num-strong);
+  font-weight: var(--weight-bold);
+}
+
+.gallery-close {
+  margin-top: var(--space-4);
+  height: 84rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-deep);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 2rpx;
 }
 
 .total-name {
@@ -142,6 +292,18 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-2);
+}
+
+/* 提交人头像 + 昵称（NOTIFY-004）：表明这份菜单是谁交的 */
+.sub-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.sub-avatar {
+  flex-shrink: 0;
 }
 
 .sub-name {
@@ -192,11 +354,33 @@
 }
 
 .sub-dish {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-body-sm);
   color: var(--color-text-secondary);
   background: var(--surface-sunken);
   border-radius: var(--radius-xs);
   padding: var(--space-1) var(--space-2);
+}
+
+/* 大厨撤菜 ×（NOTIFY-004）：小红点级弱存在，按下去才升级为弹窗 */
+.sub-dish-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  margin: -4rpx -6rpx -4rpx 0;
+  border-radius: 50%;
+  font-size: 30rpx;
+  line-height: 1;
+  color: var(--color-text-tertiary);
+}
+
+.sub-dish-remove:active {
+  color: var(--color-primary-red);
+  background: rgba(224, 32, 32, 0.10);
 }
 
 /* ===== 加载骨架（形状与 board-card 对齐） ===== */

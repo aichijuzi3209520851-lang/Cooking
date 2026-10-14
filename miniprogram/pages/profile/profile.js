@@ -79,6 +79,13 @@ Page({
     theme.applyTheme(this);
     // 等待登录完成后渲染，避免展示旧缓存状态（AUTH-001）
     await app.waitForLogin();
+    // 自定义 tabBar（TABBAR-001）：同步选中项与中心「+」可见性（仅大厨）
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({
+        selected: 3,
+        canAdd: app.globalData.currentRole === 'chef' && !!app.globalData.currentFamilyId
+      });
+    }
     this.loadUserData();
   },
 

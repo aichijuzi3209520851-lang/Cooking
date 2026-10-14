@@ -18,6 +18,7 @@ const {
 const app = getApp();
 
 const WATCH_RETRY_LIMIT = 3;
+const WATCH_STABLE_MS = 30000;
 // watch 降级后的轮询间隔（毫秒）。20s 是体验与云调用成本的折中
 const POLL_INTERVAL = 20000;
 // 投票人头像折叠阈值：超过此数默认收起，防止单卡被头像流撑高（点「+N」展开全部）
@@ -49,7 +50,8 @@ Page({
     todayDate: '',
     dateText: '',
     loading: false,
-    // 实时同步降级标记：watch 失败后为 true，界面提示并改用轮询
+    // 实时同步降级标记：watch 失败后为 true，静默改为轮询（不向用户显示提示，
+    // 仅作 watch/轮询的流转开关：降级后 onShow 只恢复轮询、不再重建 watcher）
     syncDegraded: false,
     // 「+N」展开状态：dishId → true 时显示全部投票人
     expandedVoters: {},
@@ -65,6 +67,14 @@ Page({
 
     // 等待登录完成后再加载数据（AUTH-001）
     await app.waitForLogin();
+
+    // 自定义 tabBar（TABBAR-001）：同步选中项与中心「+」可见性（仅大厨）
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({
+        selected: 1,
+        canAdd: app.globalData.currentRole === 'chef' && !!app.globalData.currentFamilyId
+      });
+    }
 
     const familyId = app.globalData.currentFamilyId;
     if (!familyId) {
@@ -83,9 +93,12 @@ Page({
 
     this.setToday();
     this.loadData();
-    this.setupWatcher();
-    // 若此前已降级为轮询，回到本页时恢复轮询（onHide 会停表；degradeToPolling 自身防重入）
-    if (this.data.syncDegraded) this.degradeToPolling();
+    // 若此前已降级为轮询，回到本页时恢复轮询；否则只在 watcher 未建立时重建。
+    if (this.data.syncDegraded) {
+      this.degradeToPolling();
+    } else if (!this.watcher && this._watchRetryTimer == null) {
+      this.setupWatcher();
+    }
     this.scheduleMidnightRefresh();
   },
 
@@ -122,6 +135,8 @@ Page({
     const delay = next.getTime() - now.getTime();
     this._midnightTimer = setTimeout(() => {
       this.setToday();
+      this.stopPolling();
+      this.setData({ syncDegraded: false });
       this.setupWatcher();
       this.loadData();
       this.scheduleMidnightRefresh();
@@ -137,22 +152,38 @@ Page({
 
   // 建立实时监听（SYNC-001：最小监听范围 + 去抖 + 有限重连）
   setupWatcher() {
-    this.closeWatcher();
     const familyId = app.globalData.currentFamilyId;
     const date = this.data.todayDate;
-    if (!familyId || !date) return;
+    const contextKey = familyId && date ? familyId + '|' + date : '';
+    if (this._watchContextKey !== contextKey) {
+      this._watchContextKey = contextKey;
+      this._watchRetries = 0;
+      this.stopPolling();
+      this.setData({ syncDegraded: false });
+    }
 
+    this.closeWatcher();
+    if (!familyId || !date || this._pageVisible === false || this.data.syncDegraded) return;
+
+    const generation = this._watchGeneration;
     try {
       const db = wx.cloud.database();
       let initialSnapshot = true;
-      this._watchRetries = 0;
-      this.watcher = db.collection('daily_votes').where({
+      const watcher = db.collection('daily_votes').where({
         familyId,
         date
       }).watch({
         onChange: (snapshot) => {
+          if (generation !== this._watchGeneration || this._pageVisible === false) return;
           if (initialSnapshot) {
             initialSnapshot = false;
+            if (this._watchStableTimer) clearTimeout(this._watchStableTimer);
+            this._watchStableTimer = setTimeout(() => {
+              this._watchStableTimer = null;
+              if (generation === this._watchGeneration && this._pageVisible !== false) {
+                this._watchRetries = 0;
+              }
+            }, WATCH_STABLE_MS);
             return;
           }
           const changes = (snapshot && snapshot.docChanges) || [];
@@ -162,26 +193,57 @@ Page({
           });
           if (!relevant) return;
           if (this._reloadTimer) clearTimeout(this._reloadTimer);
-          this._reloadTimer = setTimeout(() => this.loadData(), 300);
+          this._reloadTimer = setTimeout(() => {
+            this._reloadTimer = null;
+            if (generation === this._watchGeneration && this._pageVisible !== false) this.loadData();
+          }, 300);
         },
         onError: (err) => {
+          if (generation !== this._watchGeneration || this._pageVisible === false) return;
           console.error('汇总监听异常', err);
-          // 有限次数重连
-          if ((this._watchRetries || 0) < WATCH_RETRY_LIMIT) {
-            this._watchRetries = (this._watchRetries || 0) + 1;
-            setTimeout(() => this.setupWatcher(), 1000 * this._watchRetries);
-            return;
-          }
-          // 重试用尽：不再静默，降级为轮询并让用户看见
-          this.degradeToPolling();
+          this.closeWatcher();
+          this.scheduleWatcherRetry();
         }
       });
+      if (generation === this._watchGeneration) {
+        this.watcher = watcher;
+      } else if (watcher && typeof watcher.close === 'function') {
+        watcher.close();
+      }
     } catch (err) {
+      if (generation !== this._watchGeneration || this._pageVisible === false) return;
       console.error('建立监听失败', err);
+      this.scheduleWatcherRetry();
     }
   },
 
+  scheduleWatcherRetry() {
+    if (this._pageVisible === false || this._watchRetryTimer != null) return;
+    if ((this._watchRetries || 0) >= WATCH_RETRY_LIMIT) {
+      this.degradeToPolling();
+      return;
+    }
+
+    this._watchRetries = (this._watchRetries || 0) + 1;
+    const retry = this._watchRetries;
+    const generation = this._watchGeneration;
+    this._watchRetryTimer = setTimeout(() => {
+      this._watchRetryTimer = null;
+      if (generation !== this._watchGeneration || this._pageVisible === false) return;
+      this.setupWatcher();
+    }, 1000 * retry);
+  },
+
   closeWatcher() {
+    this._watchGeneration = (this._watchGeneration || 0) + 1;
+    if (this._watchStableTimer != null) {
+      clearTimeout(this._watchStableTimer);
+      this._watchStableTimer = null;
+    }
+    if (this._watchRetryTimer != null) {
+      clearTimeout(this._watchRetryTimer);
+      this._watchRetryTimer = null;
+    }
     if (this._reloadTimer) {
       clearTimeout(this._reloadTimer);
       this._reloadTimer = null;
@@ -198,11 +260,22 @@ Page({
 
   /**
    * 实时同步降级：watch 重试用尽后改为轮询。
-   * 原实现只打 console.warn，用户完全无感 —— 这里补上可见提示 + 自动刷新。
+   * 静默降级（SYNC-001）：数据照常自动刷新（20s 轮询 + 下拉刷新兜底），
+   * 不向用户显示「实时同步不可用」提示 —— 用户几乎无感，提示条只会制造焦虑。
+   * syncDegraded 仅作内部流转开关（onShow 恢复轮询 / setupWatcher 防重建）。
    */
   degradeToPolling() {
-    if (this._pollTimer) return;
+    if (this._watchRetryTimer != null) {
+      clearTimeout(this._watchRetryTimer);
+      this._watchRetryTimer = null;
+    }
+    if (this._watchStableTimer != null) {
+      clearTimeout(this._watchStableTimer);
+      this._watchStableTimer = null;
+    }
+    if (this._pollTimer || this._pageVisible === false) return;
     this.setData({ syncDegraded: true });
+    this.closeWatcher();
     this._pollTimer = setInterval(() => {
       // 页面不可见时不发无用请求
       if (this._pageVisible === false) return;

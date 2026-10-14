@@ -1,6 +1,6 @@
-# 文件分类清单（2026-09-29 盘点，2026-10-06 复核更新）
+# 文件分类清单（2026-09-29 盘点，2026-10-14 复核更新）
 
-> 盘点范围：git 内全部文件。10-06 复核：分享封面 TODO 已解决、空状态插画 4→5、新增品牌资产与 UI 审查截图目录、已完成的任务单 `docs/fix-orders-glm.md` 已删除。
+> 盘点范围：git 内全部文件。10-06 复核：分享封面 TODO 已解决、空状态插画 4→5、新增品牌资产与 UI 审查截图目录、已完成的任务单 `docs/fix-orders-glm.md` 已删除。10-14 复核：v1.0.1 改版（自定义 tabBar、菜单看板升级、每日文案不重样、watch 恢复实时、插画 PNG 化），测试 30 文件 / 344 用例，新增包体校验脚本。
 > 状态标记：✅ 在用（动它会影响运行/门禁）　🟢 活文档（需随代码更新）　🟡 参考（一次性，留着备查）　📦 归档（历史记录，基本不会再动）　⚠️ 过时（与现状不符，决定清理时优先看）
 >
 > 结论先行：**没有发现"纯垃圾"文件**——所有文件要么在运行/测试链路上，要么是文档和设计源。
@@ -27,7 +27,7 @@
 | `family/create` / `family/join` / `family/manage` | ✅ 建家/加入码加入/家庭管理（~~分享封面 TODO~~ 已解决：改用 `images/brand/brand-mark.png` 作分享封面） |
 | `dishes/list` / `dishes/edit` / `dishes/categories` | ✅ 菜品列表/编辑/分类管理（整页） |
 | `history` | ✅ 历史记录（含版本更新历史） |
-| `changelog` | ✅ 版本更新公告页（v1.3.0 新增） |
+| `changelog` | ✅ 版本更新记录页（数据源 `utils/changelog.js`，当前最新版本 1.0.1） |
 | `settings/theme` | ✅ 主题设置（5 套主题） |
 | `help` / `agreement/privacy` | ✅ 帮助 / 隐私协议页（跳转 URL 受 `check:routes` 保护） |
 
@@ -43,10 +43,10 @@
 |:---|:---|:---|
 | `tabbar/`（24 个 png） | 4 个灰色默认图标 + 4 图标 × 5 主题 active（warm/fresh/sky/pink/dark） | ✅ `utils/theme.js` 引用全部 5 套主题，一个都不能删 |
 | `category/`（5 svg） | 分类图标 | ✅ 与云函数 `ALLOWED_EMOJI` 两端一致性有测试锁定 |
-| `empty/`（5 svg） | 空状态插画（新增 `empty-board.svg` 菜罩，看板空态用） | ✅ |
-| `brand/`（2 文件） | `brand-mark.png` 品牌标（欢迎/角色页 + 分享封面）+ `paper-texture.jpg` 纸纹肌理（欢迎页/帮助页背景淡染） | ✅ 2026-10-06 启用；**登录页视觉经用户明确要求保持原样，未使用品牌资产，勿动** |
-| `login/`（7 svg） | 登录页蔬菜插画 | ✅ |
-| `share/` | 分享封面 | ⚠️ 已废弃该计划：分享封面改用 `images/brand/brand-mark.png`，此目录不再需要 |
+| `empty/`（5 png） | 空状态插画（AI 生成 3D 软陶风，2026-10-14 由 svg 全部替换为 png）；看板空态用 `empty-board.png`（圆形透明底饭碗） | ✅ |
+| `brand/`（3 文件） | `brand-mark.png` 品牌标（欢迎/角色页）+ `share-cover.png` 分享封面（登录页品牌区同款 5:4）+ `paper-texture.jpg` 纸纹肌理（欢迎页/帮助页背景淡染） | ✅ 2026-10-14 分享封面切换；**登录页视觉经用户明确要求保持原样，未使用品牌资产，勿动** |
+| `login/`（7 png） | 登录页蔬菜插画（2026-10-14 由 svg 替换为 png） | ✅ |
+| `share/` | 分享封面 | ⚠️ 已废弃：分享封面在 `images/brand/share-cover.png`，此目录不再需要 |
 
 ---
 
@@ -79,6 +79,8 @@
 | `scripts/check-syntax.js` | `npm run check:syntax` |
 | `scripts/check-page-urls.js` | `npm run check:routes`（查跳转静默失败） |
 | `scripts/lint.js` | JSON/密钥/版本号/资源路径检查 |
+| `scripts/check-package-size.js` | `npm run check:package`（主包 ≤2MB + 图片音频总和 ≤200KB） |
+| `scripts/check-asset-size.py` | 只读体检脚本（工作区口径，比打包范围大；手动 `python scripts/check-asset-size.py` 跑） |
 | `scripts/e2e-smoke.js` | 端到端冒烟（⚠️ 顶部写死了本机开发者工具 CLI 路径，换机器要改） |
 | `scripts/uploadCloudFunction.sh` | 部署脚本（先 cp shared 再上传） |
 | `.github/workflows/ci.yml` | CI：syntax → lint → test:unit → contracts（Node 22） |
@@ -86,14 +88,14 @@
 
 ---
 
-## 五、测试 `tests/`（23 个文件，✅ 全部在 npm test 链路上，无废弃测试）
+## 五、测试 `tests/`（30 个文件，✅ 全部在 npm test 链路上，无废弃测试）
 
 | 目录 | 内容 |
 |:---|:---|
-| `unit/`（7 个 .test.js） | 纯函数单测：category、cloud-categories、cloud-shared、date、dto、lunar、season |
+| `unit/`（10 个 .test.js） | 纯函数单测：category、cloud-categories、cloud-shared、date、dto、lunar、season、weather-map、recommend-copy、… |
 | `contracts/`（2 个） | 云函数目录结构 + 小程序工程契约（含 CLOUD-DIR-001/002、首页必须是 login） |
 | `smoke/`（1 个 + `mocks/` 2 个） | 云函数冒烟，mock 掉 wx-server-sdk 与环境 |
-| `whitebox/`（11 个 + `mocks/config-stub.js`） | 白盒测试（birthday/changelog/cloud-logic/date/dto/join-page/page-guard/profile-notify/tab-badge/util-preview/validators） |
+| `whitebox/`（17 个 + `mocks/config-stub.js`） | 白盒测试（birthday/changelog/cloud-logic/date/dto/join-page/page-guard/profile-notify/tab-badge/util-preview/validators/watch-sync/…） |
 
 ---
 
@@ -135,10 +137,11 @@
 
 | 内容 | 状态 |
 |:---|:---|
-| `svg/cat-*.svg`、`svg/empty-*.svg` | ✅ 与 `miniprogram/images/` 同源（md5 一致；仅 `cat-staple.svg` 有差异，可能后来单独改过——若以小程序内为准则此源已旧） |
-| `svg/` 里的蔬菜插画（bokchoy/chili/fish/mug/rice/soup/tomato） | ✅ 登录页插画的源文件 |
+| `svg/cat-*.svg`、`svg/empty-*.svg` | ✅ 分类图标源（`cat-*.svg` 与小程序内同源）；空态 `empty-*.svg` 已**不再同源**（小程序 2026-10-14 改用 AI 3D 软陶风 png），仅作历史设计源 |
+| `svg/` 里的蔬菜插画（bokchoy/chili/fish/mug/rice/soup/tomato） | 🟡 登录页插画的历史源文件（小程序内已用 png 版本，2026-10-14） |
 | `svg/order*、summary*、profile*`（svg+png，仅 dark/fresh/warm 三主题） | ⚠️ **过时**：停留在旧 3-tab 时代，缺 `menu` 图标和 pink/sky 主题。小程序实际用的是 `miniprogram/images/tabbar/`（由它重新导出过）。重新生成 tabBar 图标时需以它为底补齐后再导出，短期无用但别急着删 |
 | `avatar-500.png` / `avatar-960.png` / `app-icon.jpg` | 🟡 头像/小程序图标成品，代码无引用，属品牌备用资产 |
+| `brand-source/*.jpg` | 🟡 品牌素材 AI 原图（压缩 jpg；`process-brand-assets.py` 已废弃删除，未压缩 png 归档在项目外 `D:/we-chat/design-archive/`） |
 | `resize_avatar.py` | 🟡 生成上面头像的一次性 Python 小工具（标准库实现） |
 | svg 目录里混着的 `*.png` | ⚠️ 是当时导出的产物（svg 才是源），清理时可去重 |
 

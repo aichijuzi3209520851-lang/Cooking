@@ -69,6 +69,12 @@ Page({
     this.loadCategories();
   },
 
+  // 分类管理入口（CATE-ENTRY-002）：本页仅大厨可进（guardChefPage 已兜底），
+  // 无需再判角色。返回后 onShow 的 loadCategories 会自动刷新选择器
+  onManageCategories() {
+    wx.navigateTo({ url: '/pages/dishes/categories/categories' });
+  },
+
   // 分类来自家庭配置（UI-002）：先用缓存渲染，再拉云端纠偏
   async loadCategories() {
     const familyId = app.globalData.currentFamilyId;

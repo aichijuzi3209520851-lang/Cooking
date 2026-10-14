@@ -21,11 +21,6 @@
     </view>
   </view>
 
-  <!-- 实时同步降级提示（T6）：watch 重试用尽后显示，数据已自动改为轮询刷新 -->
-  <view wx:if="{{syncDegraded}}" class="sync-degraded-tip">
-    实时同步不可用，已切换为自动刷新
-  </view>
-
   <!-- 家庭生日提醒（BIRTHDAY-001）：未来 7 天内有家人生日时出现。
        纯提示、不可点击——避免制造「点了没反应」的空交互 -->
   <view class="birthday-tip" wx:if="{{birthdayNotice}}">
@@ -61,7 +56,7 @@
   <block wx:if="{{!hasFamily}}">
     <empty-state
       icon="🏠"
-      image="/images/empty/empty-family.svg"
+      image="/images/empty/empty-family.png"
       title="先加入家庭吧"
       description="创建或加入一个家庭后即可开始点菜"
     />
@@ -72,14 +67,14 @@
     <empty-state
       wx:if="{{isChef}}"
       icon="🍳"
-      image="/images/empty/empty-dishes.svg"
+      image="/images/empty/empty-dishes.png"
       title="还没有菜品"
       description="点击右下角添加菜品"
     />
     <empty-state
       wx:else
       icon="🍽️"
-      image="/images/empty/empty-dishes.svg"
+      image="/images/empty/empty-dishes.png"
       title="金牌大厨还没添加菜品"
       description="耐心等待一下吧"
     />
@@ -222,14 +217,7 @@
     </view>
   </block>
 
-  <!-- 悬浮添加按钮（仅 chef） -->
-  <view
-    wx:if="{{hasFamily && isChef}}"
-    class="fab"
-    bindtap="onAddDish"
-  >
-    <text class="fab-icon">+</text>
-  </view>
+  <!-- 中心「+」已移入自定义 tabBar（TABBAR-001），位于「汇总」与「菜单」之间 -->
 
 </view>
 

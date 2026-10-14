@@ -12,16 +12,11 @@
     </view>
   </view>
 
-  <!-- 实时同步降级提示（T6）：watch 重试用尽后显示，数据已自动改为轮询刷新 -->
-  <view wx:if="{{syncDegraded}}" class="sync-degraded-tip">
-    实时同步不可用，已切换为自动刷新
-  </view>
-
   <!-- 无家庭 -->
   <block wx:if="{{!hasFamily}}">
     <empty-state
       icon="🏠"
-      image="/images/empty/empty-family.svg"
+      image="/images/empty/empty-family.png"
       title="先加入家庭吧"
       description="创建或加入一个家庭后即可查看汇总"
     />
@@ -159,7 +154,7 @@
     <block wx:else>
       <empty-state
         icon="🍽️"
-        image="/images/empty/empty-summary.svg"
+        image="/images/empty/empty-summary.png"
         title="今天还没有人点菜"
         description="快去点几道想吃的菜吧"
       />

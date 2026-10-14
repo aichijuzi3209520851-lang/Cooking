@@ -650,6 +650,47 @@ test('W-C-V4 chefCancel 语义修正：撤菜不再隐藏菜品 + 通知受影�
   assert.ok(env.sent.some(m => m.data.thing6.value === '糖醋排骨'), '受影响成员应收到撤菜通知')
 })
 
+test('W-C-V5 看板撤菜闭环：chefCancel 同步摘除今日提交 + todaySubmissions 带头像与结构化菜品', async () => {
+  env.resetDb()
+  as('chef'); await seedUser('chef')
+  const fam = await run(familyFn, { action: 'create', name: '家' })
+  const dish = await run(dishFn, { action: 'add', familyId: fam.data.familyId, name: '可乐鸡翅', category: 'meat' })
+  as('eater'); await seedUser('eater')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+  // 给 eater 一个头像，验证看板接口透传（NOTIFY-004）
+  await env.db.collection('users').doc('eater').update({ data: { avatarUrl: 'https://cdn.test/a.png' } })
+  await run(voteFn, { action: 'add', familyId: fam.data.familyId, dishId: dish.data.dishId })
+  await run(voteFn, { action: 'submitMenu', familyId: fam.data.familyId, meal: 'lunch' })
+
+  const board0 = await run(voteFn, { action: 'todaySubmissions', familyId: fam.data.familyId })
+  assert.equal(board0.success, true)
+  assert.equal(board0.data.submissions.length, 1, '提交明细应有 1 条')
+  const sub0 = board0.data.submissions[0]
+  assert.equal(sub0.avatarUrl, 'https://cdn.test/a.png', '明细应携带提交人头像')
+  assert.equal(sub0.dishes.length, 1, '明细应返回结构化菜品（含 dishId）')
+  assert.equal(sub0.dishes[0].dishId, dish.data.dishId)
+  assert.equal(sub0.dishes[0].name, '可乐鸡翅')
+  const total0 = board0.data.totalDishes[0]
+  assert.equal(total0.name, '可乐鸡翅')
+  assert.equal(total0.voters.length, 1, '总单应携带「谁想吃」列表')
+  assert.equal(total0.voters[0].avatarUrl, 'https://cdn.test/a.png')
+
+  as('chef')
+  const cancel = await run(voteFn, {
+    action: 'chefCancel',
+    familyId: fam.data.familyId,
+    dishId: dish.data.dishId,
+    reason: '食材没了'
+  })
+  assert.equal(cancel.success, true)
+  assert.equal(cancel.data.reason, '食材没了')
+
+  // 提交快照同步摘除 → 看板不再展示已撤菜品（空提交过滤）
+  const board1 = await run(voteFn, { action: 'todaySubmissions', familyId: fam.data.familyId })
+  assert.equal(board1.data.submissions.length, 0, '全被撤空的提交不应再展示')
+  assert.equal(board1.data.totalDishes.length, 0, '总单不应再出现已撤菜品')
+})
+
 test('W-C-D6 隐藏/删除菜品 → 受影响成员收到通知（语义统一）', async () => {
   env.resetDb()
   as('chef'); await seedUser('chef')

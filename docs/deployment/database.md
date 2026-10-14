@@ -44,9 +44,9 @@
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 | `app_config` | false（仅云函数，经 `login.getAppConfig` 下发） | false |
 
-> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06）：watch 重试用尽后改为 20s 轮询 `todayList` 并在页面显示「实时同步不可用」提示条（menu/summary），下拉刷新仍是兜底。
+> ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06，2026-10-14 改为静默降级）：watch 重试用尽后改为 20s 轮询 `todayList`，`syncDegraded` 仅作内部流转开关、不向用户显示提示条，下拉刷新仍是兜底。
 
-### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-09-16 核对）
+### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-10-12 核对）
 
 | 集合 | 文档规则 | 实际生效 | 说明 |
 |:---|:---|:---|:---|
@@ -54,16 +54,26 @@
 | `families` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化：`get()` 被拒 |
 | `family_members` | 本人/同家庭（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `dishes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
-| `daily_votes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 → **前端 watcher 失效** |
+| `daily_votes` | 成员包含式（`in`） | `{"read": "auth.openid in doc.familyMembers", "write": false}` | ✅ **2026-10-12 生效**：靠文档内冗余成员清单绕过 `get()`，watch 恢复可用（见 §2.2） |
 | `vote_history` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `notify_ledger` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `rice_reports` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `menu_submissions` | （文档未列） | `{"read": false, "write": false}` | 与 `rice_reports` 一致，仅云函数 |
 | `app_config` | （文档未列） | `{"read": false, "write": false}` | 与 `notify_ledger` 一致，仅云函数（PRIV-002） |
 
-**影响**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 因无客户端读权限必然失败。
-代码已有兜底（`onError` 限次重连 → 重试用尽后**自动降级为 20s 轮询并显示提示条**，2026-10-06 起），不会崩溃，实时性降级为准实时。
-如需恢复真正的实时监听，需在控制台放开 `daily_votes` 的成员可读规则（依赖 `get()` 跨集合校验能力）。
+### 2.2 `daily_votes` 成员包含式读规则（SYNC-002，2026-10-12）
+
+`get()` 跨集合校验在本环境不可用，改用**文档内冗余成员清单**实现「家庭成员可读」：
+
+- 每条 `daily_votes` 文档带 `familyMembers: [openid, ...]`（该家庭全体成员 openid，写入时去重）；
+- 规则 `{"read": "auth.openid in doc.familyMembers", "write": false}`（`in` 表达式**不含 `get()`**，实测可通过平台校验，不再被静默回退）；
+- 维护方：`vote.addVote` 写票时全量写入；`family.joinFamily` 加入成功后对当天票 `addToSet` 补写新成员；
+  被移除/退出成员的当日票由 `removeUserTodayVotes` 直接删除，无需 `$pull`；
+- 影响范围：`menu.js` / `summary.js` 的 `watch()` 恢复实时监听；降级轮询逻辑保留作为兜底；
+- 历史票不回填（`daily_votes` 每日由 `dailyReset` 归档清空），只有 2026-10-12 之后写入的票带该字段。
+
+**影响（历史，已解决）**：`menu.js` / `summary.js` 的 `db.collection('daily_votes').watch()` 曾因无客户端读权限必然失败。
+代码兜底（`onError` 限次重连 → 重试用尽后自动降级为 20s 轮询，静默不显示提示条）保留，作为规则传播延迟或异常时的保险。
 
 ## 3. 数据库索引清单
 

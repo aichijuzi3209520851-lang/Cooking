@@ -32,7 +32,7 @@
       hover-class="role-card-press"
       hover-stay-time="60"
     >
-      <image class="role-icon-img" src="/images/login/rice.svg" mode="aspectFit" />
+      <image class="role-icon-img" src="/images/login/rice.png" mode="aspectFit" />
       <view class="role-info">
         <view class="title-sm role-name">干饭能手</view>
         <view class="role-desc">点菜就完事了，等开饭！</view>
