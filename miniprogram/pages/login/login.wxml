@@ -74,6 +74,12 @@
     </view>
 
     <view class="login-safe-note">登录后即可创建或加入家庭</view>
+
+    <!-- 游客体验（GUEST-001）：不想先建家庭的人，可以先到「体验家庭」里逛一圈。
+         同样要求勾选隐私协议 —— 小程序启动即会做云登录，个人信息处理与正式路径一致 -->
+    <view class="login-guest-row" bindtap="onGuestTap">
+      <text class="login-guest-link">先逛逛 · 游客体验</text>
+    </view>
   </view>
 </view>
 

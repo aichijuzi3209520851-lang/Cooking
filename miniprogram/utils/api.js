@@ -1,5 +1,7 @@
 // utils/api.js - 云函数调用封装
 
+const guest = require('./guest.js');
+
 /**
  * 统一 API 错误类型：携带稳定 errorCode，前端据此区分权限/网络/重复/不存在等场景。
  * 约定：本模块不做自动 toast，由页面统一通过 util.showApiError 提示，避免双重弹窗。
@@ -20,13 +22,66 @@ class ApiError extends Error {
 const logger = wx.getRealtimeLogManager ? wx.getRealtimeLogManager() : null;
 
 /**
- * 调用云函数
+ * 是否处于游客模式（GUEST-001）。
+ * 读取 globalData.isGuest；App 尚未实例化时安全返回 false（走真实链路）。
+ */
+function inGuestMode() {
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null;
+    return !!(app && app.globalData && app.globalData.isGuest);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * 游客模式下的云调用应答（GUEST-001）。
+ * 数据全部来自本地体验数据源，不发网络请求，也不弹全局 loading ——
+ * 本地是即时返回的，闪一下 loading 反而更像卡顿。
+ */
+function callGuest(name, data) {
+  return new Promise((resolve, reject) => {
+    let result;
+    try {
+      result = guest.handle(name, data);
+    } catch (err) {
+      reject(new ApiError(
+        err.errorCode || 'GUEST_MODE',
+        err.message || '体验模式不支持该操作'
+      ));
+      return;
+    }
+    if (result === undefined) {
+      // 该 action 不在体验数据内（如 login:login 需要真实 openid）→ 走真实链路
+      callCloud(name, data).then(resolve, reject);
+      return;
+    }
+    resolve(result);
+  });
+}
+
+/**
+ * 调用云函数（唯一入口：游客模式下自动改走本地体验数据）
  * @param {string} name 云函数名
  * @param {object} data 参数
  * @param {boolean} showLoading 是否显示loading
  * @returns {Promise} resolve 返回 {success:true} 的 data；reject ApiError
  */
 function call(name, data = {}, showLoading = false) {
+  if (inGuestMode()) {
+    return callGuest(name, data);
+  }
+  return callCloud(name, data, showLoading);
+}
+
+/**
+ * 真实云调用（原 call 实现）
+ * @param {string} name 云函数名
+ * @param {object} data 参数
+ * @param {boolean} showLoading 是否显示loading
+ * @returns {Promise} resolve 返回 {success:true} 的 data；reject ApiError
+ */
+function callCloud(name, data = {}, showLoading = false) {
   return new Promise((resolve, reject) => {
     if (showLoading) {
       wx.showLoading({ title: '加载中...', mask: true });
@@ -157,6 +212,8 @@ const configApi = {
 module.exports = {
   ApiError,
   call,
+  callCloud,
+  inGuestMode,
   login,
   familyApi,
   dishApi,

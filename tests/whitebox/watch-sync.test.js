@@ -1,11 +1,13 @@
-// 白盒测试：点菜/汇总页实时监听失败后的静默降级轮询（SYNC-001 方案B）
+// 白盒测试：点菜/汇总页实时监听（SYNC-003 同步信标 → users 自文档）与
+// 失败后的静默降级轮询（SYNC-001 方案B 兜底）。
 // 行为约定：首次失败立即转 20s 轮询——不再有限重试、不打 console.error，
-// 仅留一条 console.warn 供排查；重复降级幂等，迟到回调不能复活监听。
+// 仅留一条 console.warn 供排查；重复降级幂等，迟到回调不能复活监听；
+// 监听目标锁死为 users 自文档（collection + where 条件）。
 // 使用可控定时器和 CloudBase watch 桩，不依赖微信开发者工具或真实网络。
 const { test, beforeEach, after } = require('node:test')
 const assert = require('node:assert/strict')
 
-let appState = { familyId: 'f_sync', role: 'chef' }
+let appState = { familyId: 'f_sync', role: 'chef', openid: 'o_test_self' }
 let pageConfigs = {}
 let watchRecords = []
 let timers = new Map()
@@ -58,7 +60,7 @@ function runAllTimers() {
 }
 
 function resetHarness() {
-  appState = { familyId: 'f_sync', role: 'chef' }
+  appState = { familyId: 'f_sync', role: 'chef', openid: 'o_test_self' }
   watchRecords = []
   timers.clear()
   intervals.clear()
@@ -77,10 +79,13 @@ console.error = (...args) => { errorLogs.push(args) }
 console.warn = (...args) => { warnLogs.push(args) }
 
 global.getApp = () => ({
+  // getter 转发到 appState：页面在 require 时只取一次 app，
+  // 测试中途改 appState（如清空 openid）才能被 setupWatcher 读到
   globalData: {
-    currentFamilyId: appState.familyId,
-    currentRole: appState.role,
-    families: [{ familyId: appState.familyId, name: '测试家庭' }]
+    get currentFamilyId() { return appState.familyId },
+    get currentRole() { return appState.role },
+    get openid() { return appState.openid },
+    get families() { return [{ familyId: appState.familyId, name: '测试家庭' }] }
   },
   waitForLogin: () => Promise.resolve(),
   saveCache() {}
@@ -98,12 +103,15 @@ global.wx = {
   cloud: {
     database() {
       return {
-        collection() {
+        collection(name) {
           return {
-            where() {
+            where(condition) {
               return {
                 watch(options) {
                   const record = {
+                    // SYNC-003：锁监听目标为 users 自文档（collection + where 条件）
+                    collection: name,
+                    condition,
                     options,
                     closed: false,
                     close() {
@@ -254,6 +262,26 @@ test('W-SYNC-05 两页都保留 add/delete/update 变更处理，首帧快照跳
     assert.equal(page._loadCount, 2, `${kind} 应处理 delete/update 变更`)
     page.onHide()
   }
+})
+
+test('W-SYNC-06 两页监听目标锁为 users 自文档（SYNC-003 同步信标）', () => {
+  for (const kind of ['menu', 'summary']) {
+    const page = createPage(kind)
+    page.setupWatcher()
+    const record = watchRecords[watchRecords.length - 1]
+    assert.ok(record, `${kind} 应建立 watcher`)
+    assert.equal(record.collection, 'users', `${kind} 应监听 users 集合（信标载体）`)
+    assert.deepEqual(record.condition, { _id: 'o_test_self' }, `${kind} 应只监听自己的 users 文档`)
+    page.onHide()
+  }
+
+  // openid 未就绪（冷启动窗口）时不得建 watcher，也不该转轮询
+  appState.openid = ''
+  const page = createPage('menu')
+  const before = watchRecords.length
+  page.setupWatcher()
+  assert.equal(watchRecords.length, before, 'openid 为空时不应建立 watcher')
+  assert.equal(intervals.size, 0, 'openid 为空是暂态，不应触发降级轮询')
 })
 
 after(() => {

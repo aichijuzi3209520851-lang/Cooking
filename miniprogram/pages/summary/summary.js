@@ -148,10 +148,11 @@ Page({
     }
   },
 
-  // 建立实时监听（SYNC-001：最小监听范围 + 去抖 + 失败即转轮询）
+  // 建立实时监听（SYNC-003 同步信标：最小监听范围 + 去抖 + 失败即转轮询）
   setupWatcher() {
     const familyId = app.globalData.currentFamilyId;
     const date = this.data.todayDate;
+    const openid = app.globalData.openid || '';
     const contextKey = familyId && date ? familyId + '|' + date : '';
     if (this._watchContextKey !== contextKey) {
       this._watchContextKey = contextKey;
@@ -160,15 +161,23 @@ Page({
     }
 
     this.closeWatcher();
-    if (!familyId || !date || this._pageVisible === false || this.data.syncDegraded) return;
+    if (!familyId || !date || !openid || this._pageVisible === false || this.data.syncDegraded) return;
+
+    // 游客模式（GUEST-001）：体验家庭不在数据库里，监听必然失败 → 直接轮询
+    if (app.globalData.isGuest) {
+      this.degradeToPolling();
+      return;
+    }
 
     const generation = this._watchGeneration;
     try {
       const db = wx.cloud.database();
       let initialSnapshot = true;
-      const watcher = db.collection('daily_votes').where({
-        familyId,
-        date
+      // SYNC-003 同步信标：监听自己的 users 文档（规则 doc._id == auth.openid 放行；
+      // daily_votes 的「数组包含式」规则集合监听被拒，见 database.md §2.2），
+      // 云函数在点菜/撤菜/拍板/提交菜单时打 syncAt 信标，收到即重新拉取当日数据
+      const watcher = db.collection('users').where({
+        _id: openid
       }).watch({
         onChange: (snapshot) => {
           if (generation !== this._watchGeneration || this._pageVisible === false) return;

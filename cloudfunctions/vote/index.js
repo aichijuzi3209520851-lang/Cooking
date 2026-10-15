@@ -5,6 +5,7 @@ const { ApiError } = require('./shared/api-error')
 const { getOpenid, requireMember, requireChef, requireDishInFamily } = require('./shared/auth')
 const { getTodayStr } = require('./shared/date')
 const { getUserMap, getDishMap } = require('./shared/db-helpers')
+const { touchMemberSync } = require('./shared/sync')
 const season = require('./shared/season')
 const festival = require('./shared/festival')
 const weatherMap = require('./shared/weather-map')
@@ -117,6 +118,9 @@ async function addVote(data, openid) {
     throw e
   }
 
+  // 同步信标（SYNC-003）：打给全家成员，前端收到即刷新当日列表
+  await touchMemberSync(db, { familyId, members: familyMembers })
+
   // cookCount 为累计被点次数：每次点菜成功 +1，取消/撤菜/隐藏/删除均不扣减。
   // 当日当前票数一律以 daily_votes 聚合为准。
   await db.collection('dishes').doc(dishId).update({
@@ -175,6 +179,9 @@ async function cancelVote(data, openid) {
   // 删除本人投票（cookCount 为累计语义，取消不扣减）
   await db.collection('daily_votes').doc(voteId).remove()
 
+  // 同步信标（SYNC-003）
+  await touchMemberSync(db, { familyId })
+
   return { familyId, dishId, date: today }
 }
 
@@ -228,6 +235,9 @@ async function chefCancel(data, openid) {
       data: { dishIds: rest, dishCount: rest.length, updatedAt: new Date() }
     })
   }
+
+  // 同步信标（SYNC-003）
+  await touchMemberSync(db, { familyId })
 
   const normalizedReason = normalizeReason(reason)
   // 否决原因是 UGC，且会作为订阅消息正文推送给家人，必须过内容安全
@@ -318,6 +328,9 @@ async function submitMenu(data, openid) {
       throw e
     }
   }
+
+  // 同步信标（SYNC-003）：看板页的「谁提交了菜单」也走实时刷新
+  await touchMemberSync(db, { familyId })
 
   // 实时推送：提交后立即把该家庭所有未汇总提交合并成一条发给大厨。
   // 发送失败（如订阅额度耗尽）时 notifiedAt 仍为 null，
@@ -532,6 +545,9 @@ async function decideMenu(data, openid) {
   await db.collection('daily_votes')
     .where({ familyId, dishId, date: today })
     .update({ data: { decided: decided === true } })
+
+  // 同步信标（SYNC-003）
+  await touchMemberSync(db, { familyId })
 
   if (decided) {
     await safeCallNotify({

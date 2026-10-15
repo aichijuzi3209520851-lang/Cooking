@@ -840,3 +840,71 @@ test('W-C-S4 审核接口异常：默认放行，严格模式拒绝', async () =
   delete process.env.SEC_CHECK_STRICT
   env.securityResult = 'pass'
 })
+
+// ============ 同步信标（SYNC-003，W-C-B*）============
+
+test('W-C-B1 各写入口给全家成员 users 文档打 syncAt 信标', async () => {
+  env.resetDb()
+  as('chef'); await seedUser('chef')
+  const fam = await run(familyFn, { action: 'create', name: '信标家' })
+  const familyId = fam.data.familyId
+  const d1 = (await run(dishFn, { action: 'add', familyId, name: '红烧肉', category: 'meat' })).data.dishId
+  const d2 = (await run(dishFn, { action: 'add', familyId, name: '青菜', category: 'veg' })).data.dishId
+  const d3 = (await run(dishFn, { action: 'add', familyId, name: '汤', category: 'soup' })).data.dishId
+  const d4 = (await run(dishFn, { action: 'add', familyId, name: '凉菜', category: 'cold' })).data.dishId
+
+  as('member'); await seedUser('member')
+  await run(familyFn, { action: 'joinByCode', joinCode: fam.data.joinCode })
+
+  const syncOf = async (uid) => (await env.db.collection('users').doc(uid).get()).data.syncAt
+  assert.equal(await syncOf('chef'), undefined, '初始不应有信标')
+  assert.equal(await syncOf('member'), undefined, '初始不应有信标')
+
+  // 1) addVote：members 直传路径，全家都打标
+  as('member')
+  assert.equal((await run(voteFn, { action: 'add', familyId, dishId: d1 })).success, true)
+  assert.ok((await syncOf('chef')) instanceof Date, 'addVote 后 chef 应收到信标')
+  assert.ok((await syncOf('member')) instanceof Date, 'addVote 后 member 应收到信标')
+
+  // 2) cancelVote：members 未传 → family_members 回查路径
+  const beforeCancel = await syncOf('chef')
+  assert.equal((await run(voteFn, { action: 'cancel', familyId, dishId: d1 })).success, true)
+  assert.ok((await syncOf('chef')) >= beforeCancel, 'cancelVote 后信标应刷新')
+
+  // 3) submitMenu：提交菜单也打标（看板「谁提交了」实时刷新）
+  assert.equal((await run(voteFn, { action: 'add', familyId, dishId: d1 })).success, true)
+  assert.equal((await run(voteFn, { action: 'submitMenu', familyId })).success, true)
+  assert.ok(await syncOf('member'), 'submitMenu 后应打标')
+
+  // 4) decideMenu：chef 拍板
+  as('chef')
+  assert.equal((await run(voteFn, { action: 'decideMenu', familyId, dishId: d1, decided: true })).success, true)
+  assert.ok(await syncOf('member'), 'decideMenu 后应打标')
+
+  // 5) chefCancel：撤菜清票
+  as('member')
+  await run(voteFn, { action: 'add', familyId, dishId: d2 })
+  as('chef')
+  assert.equal((await run(voteFn, { action: 'chefCancel', familyId, dishId: d2, reason: '今天不做' })).success, true)
+  assert.ok(await syncOf('member'), 'chefCancel 后应打标')
+
+  // 6) toggleHidden：隐藏清票（dish）
+  as('member')
+  await run(voteFn, { action: 'add', familyId, dishId: d3 })
+  as('chef')
+  assert.equal((await run(dishFn, { action: 'toggleHidden', familyId, dishId: d3, isHidden: true })).success, true)
+  assert.ok(await syncOf('member'), '隐藏清票后应打标')
+
+  // 7) delete：删除清票（dish）
+  as('member')
+  await run(voteFn, { action: 'add', familyId, dishId: d4 })
+  as('chef')
+  assert.equal((await run(dishFn, { action: 'delete', familyId, dishId: d4 })).success, true)
+  assert.ok(await syncOf('member'), '删除清票后应打标')
+
+  // 8) never-throws：成员 users 文档缺失时业务照常、其余成员照常打标
+  await env.db.collection('users').doc('member').remove()
+  as('member')
+  assert.equal((await run(voteFn, { action: 'add', familyId, dishId: d2 })).success, true, '信标失败不得阻塞投票')
+  assert.ok(await syncOf('chef'), '缺失文档的成员被跳过，其余成员照常打标')
+})

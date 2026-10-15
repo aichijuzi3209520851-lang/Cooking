@@ -20,6 +20,7 @@ const {
   seasonEmojiOf,
   showApiError,
   showSuccess,
+  showConfirm,
   refreshSummaryBadge
 } = require('../../utils/util.js');
 const app = getApp();
@@ -79,6 +80,8 @@ Page({
     currentUserId: '',
     isChef: false,
     hasFamily: false,
+    // 游客模式（GUEST-001）：true 时展示「体验家庭」提示条与退出入口
+    isGuest: false,
     libraryEmpty: false,
     todayDate: '',
     dateText: '',
@@ -160,7 +163,8 @@ Page({
       currentFamily,
       currentRole,
       currentUserId,
-      isChef: currentRole === 'chef'
+      isChef: currentRole === 'chef',
+      isGuest: app.globalData.isGuest === true
     });
 
     // 自定义 tabBar（TABBAR-001）：同步选中项与中心「+」可见性（仅大厨）
@@ -249,11 +253,12 @@ Page({
     }
   },
 
-  // ============ 实时监听（SYNC-001） ============
+  // ============ 实时监听（SYNC-003 同步信标） ============
 
   setupWatcher() {
     const familyId = app.globalData.currentFamilyId;
     const date = this.data.todayDate;
+    const openid = app.globalData.openid || '';
     const contextKey = familyId && date ? familyId + '|' + date : '';
     if (this._watchContextKey !== contextKey) {
       this._watchContextKey = contextKey;
@@ -262,15 +267,24 @@ Page({
     }
 
     this.closeWatcher();
-    if (!familyId || !date || this._pageVisible === false || this.data.syncDegraded) return;
+    if (!familyId || !date || !openid || this._pageVisible === false || this.data.syncDegraded) return;
+
+    // 游客模式（GUEST-001）：体验家庭不存在于数据库，监听必然失败。
+    // 直接进轮询，省掉每次进页一条无意义的 -502003 告警。
+    if (app.globalData.isGuest) {
+      this.degradeToPolling();
+      return;
+    }
 
     const generation = this._watchGeneration;
     try {
       const db = wx.cloud.database();
       let initialSnapshot = true;
-      const watcher = db.collection('daily_votes').where({
-        familyId,
-        date
+      // SYNC-003 同步信标：监听自己的 users 文档（规则 doc._id == auth.openid 放行；
+      // daily_votes 的「数组包含式」规则集合监听被拒，见 database.md §2.2），
+      // 云函数在点菜/撤菜/拍板/提交菜单时打 syncAt 信标，收到即重新拉取当日数据
+      const watcher = db.collection('users').where({
+        _id: openid
       }).watch({
         onChange: (snapshot) => {
           if (generation !== this._watchGeneration || this._pageVisible === false) return;
@@ -1015,6 +1029,22 @@ Page({
   // 跳转家庭管理
   onFamilyTap() {
     wx.navigateTo({ url: '/pages/family/manage/manage' });
+  },
+
+  /**
+   * 退出游客模式（GUEST-001）：丢掉体验家庭，回到真实登录流程。
+   * 先二次确认 —— 用户在体验家庭里点的菜、加的菜都是内存态，
+   * 退出即清空，不提示一声容易让人以为「我的菜怎么没了」。
+   */
+  async onExitGuest() {
+    const confirmed = await showConfirm(
+      '退出体验',
+      '体验家庭里的点菜和菜品都是示例数据，退出后不会保存。\n\n确定要退出吗？'
+    );
+    if (!confirmed) return;
+
+    await app.exitGuestMode();
+    wx.reLaunch({ url: '/pages/welcome/welcome' });
   },
 
   // 右侧列表触底加载更多（页面已定高不再滚动，改由 scroll-view 驱动）

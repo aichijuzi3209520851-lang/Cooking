@@ -3,6 +3,7 @@ const config = require('./config.js');
 const privacy = require('./utils/privacy.js');
 const api = require('./utils/api.js');
 const changelog = require('./utils/changelog.js');
+const guest = require('./utils/guest.js');
 
 App({
   globalData: {
@@ -10,6 +11,7 @@ App({
     openid: null,
     currentFamilyId: null,
     currentRole: null, // chef / eater
+    isGuest: false, // 游客模式（GUEST-001）：使用虚拟家庭体验，不写云端
     families: [],
     themeFamily: 'system', // system / warm / fresh / dark
     resolvedTheme: 'warm', // 实际生效家族（applyTheme 运行时回写）
@@ -67,6 +69,8 @@ App({
         this.globalData.currentFamilyId = cache.currentFamilyId || null;
         this.globalData.currentRole = cache.currentRole || null;
         this.globalData.families = cache.families || [];
+        // 游客模式开关（GUEST-001）：只存开关，体验数据本身在内存里不落盘
+        this.globalData.isGuest = cache.isGuest === true;
         // 主题家族迁移：旧版 theme==='dark' 映射为夜间，其余归入跟随系统；accentColor 已废弃
         this.globalData.themeFamily = cache.themeFamily ||
           (cache.theme === 'dark' ? 'dark' : 'system');
@@ -84,6 +88,7 @@ App({
         currentFamilyId: this.globalData.currentFamilyId,
         currentRole: this.globalData.currentRole,
         families: this.globalData.families,
+        isGuest: this.globalData.isGuest === true,
         themeFamily: this.globalData.themeFamily
       });
     } catch (e) {
@@ -132,11 +137,82 @@ App({
     return this.login();
   },
 
+  /**
+   * 用体验家庭覆盖 globalData 的家庭上下文（GUEST-001）。
+   *
+   * 关键点：**只借用真实登录结果的 openid 与资料**，家庭/成员/菜品一律换成本地
+   * 体验数据。否则真实用户「还没有家庭」时，服务端返回的空 families 会把
+   * 体验家庭冲掉，页面又会弹回引导页 —— 正是我们要去掉的强制建家。
+   *
+   * @param {{openid?:string, user?:object}|null} data 真实登录结果；可为 null
+   */
+  applyGuestContext(data) {
+    const openid = (data && data.openid) || this.globalData.openid || guest.FALLBACK_OPENID;
+    const realUser = (data && data.user) || {};
+    const nickname = realUser.nickname && realUser.nickname !== '微信用户'
+      ? realUser.nickname
+      : guest.GUEST_NICKNAME;
+
+    guest.setMe(openid, {
+      nickname,
+      avatarUrl: realUser.avatarUrl || '',
+      theme: realUser.theme || 'system',
+      notifyStatus: realUser.notifyStatus || 'unknown'
+    });
+
+    this.globalData.isGuest = true;
+    this.globalData.openid = openid;
+    this.globalData.userInfo = guest.me();
+    this.globalData.families = [guest.family()];
+    this.globalData.currentFamilyId = guest.FAMILY_ID;
+    this.globalData.currentRole = guest.role();
+    this.loginFailed = false;
+    this.saveCache();
+  },
+
+  /**
+   * 进入游客模式（GUEST-001）：不创建真实家庭，直接落进「体验家庭」。
+   *
+   * 不发网络请求 —— 即便云端登录还没就绪 / 直接失败，「想先看看」这条路
+   * 也必须走得通。登录就绪后 _doLogin 会拿真实 openid 覆盖「我」的身份。
+   */
+  enterGuestMode() {
+    this.globalData.isGuest = true;
+    const alreadyLoggedIn = !this.loginFailed && !!this.globalData.openid;
+    this.applyGuestContext(alreadyLoggedIn
+      ? { openid: this.globalData.openid, user: this.globalData.userInfo || null }
+      : null);
+  },
+
+  /**
+   * 退出游客模式（GUEST-001）：丢掉体验家庭上下文，回到真实登录流程。
+   * 通常此时还没有真实家庭 → 落到 welcome 引导页自行选择创建或加入。
+   */
+  exitGuestMode() {
+    this.globalData.isGuest = false;
+    this.globalData.currentFamilyId = null;
+    this.globalData.currentRole = null;
+    this.globalData.families = [];
+    this._loginPromise = null;
+    // 体验数据退回种子状态：下次再进来又是干净的示例家庭，
+    // 与「退出后不会保存」的文案保持一致
+    guest.__reset();
+    this.saveCache();
+    return this.retryLogin();
+  },
+
   async _doLogin() {
     this.loginFailed = false;
     try {
       // 走统一入口：错误码与实时日志由 utils/api.js 统一处理
       const data = await api.login();
+
+      // 游客模式（GUEST-001）：真实登录结果只用于补 openid / 资料
+      if (this.globalData.isGuest) {
+        this.applyGuestContext(data);
+        return;
+      }
+
       this.globalData.openid = data.openid;
       this.globalData.userInfo = data.user;
       this.globalData.families = data.families || [];
@@ -163,6 +239,13 @@ App({
       this.saveCache();
       this.loginFailed = false;
     } catch (err) {
+      if (this.globalData.isGuest) {
+        // 云端不可用也要能逛 —— 用本地身份兜底，不把游客挡在登录页
+        console.warn('[游客] 云端登录不可用，已使用本地体验数据',
+          err && (err.message || err.errMsg));
+        this.applyGuestContext(null);
+        return;
+      }
       console.error('登录失败', err);
       this.loginFailed = true;
       // 优先展示服务端错误码对应的文案，其次用 ApiError.message

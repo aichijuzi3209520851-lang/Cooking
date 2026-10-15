@@ -6,6 +6,7 @@
 > 结果：**115 个用例全部通过**（单元 40 + 契约 31 + 冒烟 3 + 白盒 41），CI 已纳入
 >
 > 2026-10-14 复核：白盒 **142 例**（新增 `watch-sync` 5 例 + `cloud-logic` W-C-V5 看板撤菜闭环 1 例），`npm test` 全量 **344 例**全绿。
+> 2026-10-15 复核（SYNC-003 同步信标）：白盒 **144 例**（新增 `watch-sync` W-SYNC-06 监听目标锁 + `cloud-logic` W-C-B1 信标全链路）、单元 **163 例**（`cloud-shared` 新增 touchMemberSync 4 例），`npm test` 全量 **371 例**全绿。
 
 ---
 
@@ -120,4 +121,4 @@
 
 ## 五、纳入 CI
 
-`npm test` 已扩展为 unit + contracts + smoke + whitebox 四套件（当前 344 用例）；覆盖率命令 `npm run test:coverage`。GitHub Actions 随 `npm test` 自动执行全部用例。
+`npm test` 已扩展为 unit + contracts + smoke + whitebox 四套件（当前 371 用例）；覆盖率命令 `npm run test:coverage`。GitHub Actions 随 `npm test` 自动执行全部用例。

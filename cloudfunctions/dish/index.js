@@ -5,6 +5,7 @@ const { ApiError } = require('./shared/api-error')
 const { getOpenid, requireChef, requireCreator, requireMember, requireDishInFamily } = require('./shared/auth')
 const { getTodayStr } = require('./shared/date')
 const { safeDeleteFiles, removeTodayVotes } = require('./shared/db-helpers')
+const { touchMemberSync } = require('./shared/sync')
 const { validateImageUrl } = require('./shared/validators')
 const {
   getFamilyCategories,
@@ -255,6 +256,8 @@ async function deleteDish(data, openid) {
 
   // 清理当日投票（与 toggleHidden/chefCancel 共用同一清理逻辑）
   await removeTodayVotes(db, familyId, dishId)
+  // 同步信标（SYNC-003）
+  await touchMemberSync(db, { familyId })
 
   // 清理关联图片（尽力而为）
   await safeDeleteFiles(cloud, [oldDish.imageUrl])
@@ -305,6 +308,8 @@ async function toggleHidden(data, openid) {
       await db.collection('daily_votes')
         .where({ familyId, dishId, date: getTodayStr() })
         .remove()
+      // 同步信标（SYNC-003）
+      await touchMemberSync(db, { familyId })
       await safeCallNotify({
         action: 'sendCancelNotify',
         familyId,

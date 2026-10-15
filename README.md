@@ -836,7 +836,7 @@ users (1) ──── (N) family_members (N) ──── (1) families
 npm install            # 安装 devDependencies（无运行时依赖）
 npm run check:syntax   # 全部 JS 文件语法检查
 npm run lint           # JSON 合法性 / 密钥泄漏 / 资源引用静态检查
-npm test               # 单元 + 契约 + 冒烟 + 白盒测试（344 个用例）
+npm test               # 单元 + 契约 + 冒烟 + 白盒测试（371 个用例）
 npm run test:coverage  # 含覆盖率报告（--experimental-test-coverage）
 npm run test:e2e       # 黑盒端到端冒烟（需微信开发者工具，见下）
 ```
@@ -886,7 +886,7 @@ GitHub Actions（`.github/workflows/ci.yml`）：push 到 main / PR 时自动跑
 | 数据库集合数 | **10** 个 |
 | 后端代码量 | ~**3,580** 行 JavaScript（各云函数 `index.js` 合计） |
 | 全局样式 | **953** 行（五大主题家族变量 + 字阶/间距令牌 + 工具类） |
-| 测试 | **30** 个测试文件 / **344** 个用例（单元 141 / 契约 57 / 冒烟 4 / 白盒 142），全绿 |
+| 测试 | **31** 个测试文件 / **371** 个用例（单元 163 / 契约 60 / 冒烟 4 / 白盒 144），全绿 |
 | CI | GitHub Actions 四道检查（语法/lint/单测/契约） |
 | 插画素材 | **41** 张（空状态 5 + 分类占位 5 + 漂浮图标 7 + tabBar 图标 24）+ 品牌资产 3（brand-mark / share-cover / 纸纹） |
 | 错误码体系 | **30** 种云函数 `errorCode` + 前端 `NETWORK_ERROR` |

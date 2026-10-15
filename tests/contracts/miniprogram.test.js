@@ -165,6 +165,91 @@ test('启动顺序：公告基线先于隐私初始化与登录（新老用户�
   assert.ok(seedAt < loginAt, '公告基线必须先于 this.login()（登录写入 appCache 前区分新老用户）');
 });
 
+/**
+ * 游客模式（GUEST-001）契约：页面用到的每个云函数 action 都必须在
+ * utils/guest.js 里有本地应答，否则游客逛到那一页就会炸。
+ *
+ * ⚠️ 维护约定：新增 `xxxApi.foo()` 时同步补这张表 + 在 guest.js 加 handler，
+ * 本测试会挡住「只加调用不加 Mock」的漏改。
+ */
+const GUEST_API_KEYS = [
+  ['login', 'login'],                 // 唯一不 Mock 的：需要真实 openid
+  ['login', 'setNotifyStatus'],
+  ['login', 'updateProfile'],
+  ['login', 'getAppConfig'],
+  ['family', 'list'],
+  ['family', 'members'],
+  ['family', 'switch'],
+  ['family', 'updateRole'],
+  ['family', 'updateMemberRole'],
+  ['family', 'create'],
+  ['family', 'joinByCode'],
+  ['family', 'leave'],
+  ['family', 'removeMember'],
+  ['family', 'transferCreator'],
+  ['dish', 'list'],
+  ['dish', 'add'],
+  ['dish', 'update'],
+  ['dish', 'delete'],
+  ['dish', 'toggleHidden'],
+  ['dish', 'categories'],
+  ['dish', 'addCategory'],
+  ['dish', 'removeCategory'],
+  ['vote', 'todayList'],
+  ['vote', 'add'],
+  ['vote', 'cancel'],
+  ['vote', 'chefCancel'],
+  ['vote', 'decideMenu'],
+  ['vote', 'submitMenu'],
+  ['vote', 'todaySubmissions'],
+  ['vote', 'history'],
+  ['vote', 'recommend'],
+  ['weather', 'now'],
+  ['weather', 'future']
+];
+
+test('GUEST-001：游客模式数据源存在且暴露统一入口', () => {
+  const guestPath = path.join(ROOT, 'miniprogram/utils/guest.js');
+  assert.ok(fs.existsSync(guestPath), '缺少 miniprogram/utils/guest.js');
+  const guest = require(guestPath);
+  assert.equal(typeof guest.handle, 'function', 'guest.js 必须导出 handle');
+  assert.equal(typeof guest.setMe, 'function', 'guest.js 必须导出 setMe');
+  assert.equal(typeof guest.family, 'function', 'guest.js 必须导出 family');
+  assert.equal(typeof guest.me, 'function', 'guest.js 必须导出 me');
+  assert.equal(guest.role(), 'chef', '体验家庭默认给大厨身份，才能看到全部功能');
+});
+
+test('GUEST-002：api.call 在真实云调用之前先过游客拦截层', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'miniprogram/utils/api.js'), 'utf8');
+  assert.match(src, /require\('\.\/guest\.js'\)/, 'api.js 未引入 guest 模块');
+  assert.match(src, /function call\(name, data = \{\}, showLoading = false\) \{\s*\n\s*if \(inGuestMode\(\)\)/,
+    'call() 必须在发起云调用前判断游客模式');
+  assert.match(src, /function callCloud\(/, '真实云调用应保留独立出口 callCloud');
+});
+
+test('GUEST-003：页面用到的云函数 action 全部有游客 Mock', () => {
+  const guest = require(path.join(ROOT, 'miniprogram/utils/guest.js'));
+  const missing = [];
+  for (const [name, action] of GUEST_API_KEYS) {
+    guest.__reset();
+    let res;
+    try {
+      res = guest.handle(name, { action, familyId: guest.FAMILY_ID });
+    } catch (e) {
+      if (e.errorCode !== guest.GUEST_BLOCKED_CODE) throw e;
+      // handler 存在且**明确拒绝**（建家/加家这类云端写操作），同样算已覆盖
+      res = 'BLOCKED';
+    }
+    const isLoginEntry = name === 'login' && action === 'login';
+    if (isLoginEntry) {
+      assert.equal(res, undefined, 'login:login 不应被 Mock（需要真实 openid）');
+    } else if (res === undefined) {
+      missing.push(`${name}:${action}`);
+    }
+  }
+  assert.deepEqual(missing, [], `以下 action 缺游客 Mock：${missing.join(', ')}`);
+});
+
 test('点菜首屏默认落在「推荐」而非「全部」', () => {
   const menuJs = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/menu/menu.js'), 'utf8');
   assert.match(

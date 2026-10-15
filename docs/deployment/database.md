@@ -38,13 +38,14 @@
 | `families` | 成员可见：`get('database.family_members.m_' + doc._id + '_' + auth.openid) != null` | false |
 | `family_members` | 本人或同家庭成员可见 | false |
 | `dishes` | 家庭成员可见 | false |
-| `daily_votes` | 家庭成员可见（**实时监听 watch 依赖此读权限**，见下方风险） | false |
+| `daily_votes` | 家庭成员可见（**实时监听 watch 曾依赖此读权限**；SYNC-003 起改走 `users` 信标，见下方风险与 §2.2） | false |
 | `vote_history` | 家庭成员可见 | false |
 | `notify_ledger` | false（仅云函数） | false |
 | `rice_reports` | false（仅云函数，前端无直读需求，均走 `getRice`） | false |
 | `app_config` | false（仅云函数，经 `login.getAppConfig` 下发） | false |
 
 > ⚠️ 风险：`daily_votes` 开放"家庭成员可读"是实时监听的最小权限方案，但成员可见性依赖 `get()` 规则能力。若控制台不支持，则只能全关读取，此时前端 watcher 失效——**已实现自动降级**（2026-10-06，2026-10-14 改为静默降级，2026-10-15 起首次失败即降级）：watch 失败后改为 20s 轮询 `todayList`，`syncDegraded` 仅作内部流转开关、不向用户显示提示条，下拉刷新仍是兜底。
+> 2026-10-15 起（SYNC-003）：前端 watcher **不再监听 `daily_votes`**，实时同步改走 `users` 自文档信标（见 §2.2）；本规则只余单文档读价值，20s 轮询降级路径保留为兜底。
 
 ### 2.1 环境 `lcw-d5gfcge7b41bedd02` 实际生效的规则（2026-10-12 核对）
 
@@ -54,7 +55,7 @@
 | `families` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化：`get()` 被拒 |
 | `family_members` | 本人/同家庭（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `dishes` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
-| `daily_votes` | 成员包含式（`in`） | `{"read": "auth.openid in doc.familyMembers", "write": false}` | ⚠️ 规则已生效但**集合查询仍被拒**（见 §2.2）：watch 不可用，前端首败即转 20s 轮询 |
+| `daily_votes` | 成员包含式（`in`） | `{"read": "auth.openid in doc.familyMembers", "write": false}` | ⚠️ 规则已生效但**集合查询仍被拒**（见 §2.2）：watch 不可用；实时同步已改走 `users` 信标（SYNC-003），20s 轮询仅作兜底 |
 | `vote_history` | 成员可见（`get()`） | `{"read": false, "write": false}` | ⚠️ 退化 |
 | `notify_ledger` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
 | `rice_reports` | false / false | `{"read": false, "write": false}` | ✅ 按文档 |
@@ -79,11 +80,12 @@
 > 结论：**该环境的规则校验器不支持「数组包含式」规则的集合查询**，与集合是否有数据无关，
 > 真机行为一致（校验发生在服务端）。
 
-**现状（2026-10-15 起，方案B）**：`menu.js` / `summary.js` 的 `watch()` 仍会失败，但**首次失败即静默转 20s 轮询**
-（不再有限重试、不再打 `console.error`，只留一条 `console.warn`），页面数据始终走云函数 `vote.todayList`，
-功能不受影响；实时性降级为最坏 20s 延迟 + 下拉刷新兜底。彻底恢复实时需按**方案C**改造：
-「每成员一条同步文档」+ `doc.memberOpenid == auth.openid` 规则（该校验器支持单值相等形式）
-+ 云函数写入侧 fan-out，排期 1.0.2。
+**现状（2026-10-15 起，方案C · SYNC-003 同步信标，1.0.2）**：实时同步不再依赖 `daily_votes` 集合监听，改为「写入侧打信标 + 读取侧 watch 自己」：
+
+- **写入侧**（`shared/sync.js` 的 `touchMemberSync`）：`vote`（点菜 / 撤菜 / 撤菜一票否决 / 拍板 / 提交菜单）与 `dish`（删菜 / 隐藏清票）在业务变更后给全家每个成员自己的 `users` 文档打 `syncAt` 时间戳信标。信标**尽力而为、永不抛错**——单个成员失败只跳过，绝不阻塞业务主流程。
+- **读取侧**：`menu.js` / `summary.js` 的 `watch()` 改监听**自己的 `users` 文档**（`where({_id: openid})`）——`users` 规则 `doc._id == auth.openid` 是单值相等形式，本环境实测**查询/监听均放行**；收到变更 300ms 去抖后重拉 `vote.todayList`。
+- **兜底**：watch 失败仍**首次失败即静默转 20s 轮询**（方案B 降级路径保留，不重试、不打 `console.error`），下拉刷新仍是最后兜底。
+- **为什么不是新集合**：原方案C 设想「每成员一条 `member_sync` 同步文档」，但 tcb CLI 不管理集合规则（只能控制台配），会卡交付；`users` 自文档信标零控制台配置、零新集合，效果等价。
 
 ## 3. 数据库索引清单
 

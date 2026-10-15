@@ -68,5 +68,14 @@ Page({
     wx.navigateTo({
       url: '/pages/family/join/join'
     });
+  },
+
+  /**
+   * 游客体验（GUEST-001）：不建家、不加家，直接进虚拟家庭逛一圈。
+   * 这是「先体验后创建」的入口 —— 用户看完想留下，再从「我的」退出体验回到这儿。
+   */
+  onGuestTap() {
+    app.enterGuestMode();
+    wx.reLaunch({ url: '/pages/menu/menu' });
   }
 });

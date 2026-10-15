@@ -213,6 +213,51 @@
   font-weight: 600;
 }
 
+/* 游客模式提示条（GUEST-001）：与生日条同形，但用中性米色底 ——
+   生日是「喜事」值得强调，体验态只是「说明」，不该抢戏 */
+.guest-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
+  border: 1rpx dashed var(--color-border-strong);
+  box-sizing: border-box;
+}
+
+.guest-bar-emoji {
+  font-size: var(--text-h2);
+  line-height: 1;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+}
+
+.guest-bar-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-body-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.guest-bar-btn {
+  flex-shrink: 0;
+  margin-left: var(--space-3);
+  padding: 10rpx 24rpx;
+  border-radius: var(--radius-pill);
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-card);
+  color: var(--color-text-primary);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.guest-bar-btn:active {
+  opacity: 0.7;
+}
+
 .birthday-tip {
   flex-shrink: 0;
   display: flex;

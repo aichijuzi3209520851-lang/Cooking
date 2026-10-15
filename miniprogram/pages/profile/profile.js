@@ -12,7 +12,8 @@ const {
   getConfirmColor,
   showSuccess,
   showError,
-  showApiError
+  showApiError,
+  showConfirm
 } = require('../../utils/util.js');
 const app = getApp();
 
@@ -46,6 +47,8 @@ Page({
     roleName: '',
     isChef: false,
     hasFamily: false,
+    // 游客模式（GUEST-001）：true 时显示「退出体验家庭」入口
+    isGuest: false,
     // 生日（BIRTHDAY-001）：birthdayText 公历走数字、农历走汉字；空串=未设置
     birthday: null,
     birthdayText: '',
@@ -112,6 +115,7 @@ Page({
       roleName: getRoleName(currentRole),
     isChef: currentRole === 'chef',
     hasFamily: !!familyId,
+    isGuest: app.globalData.isGuest === true,
     // 生日展示（BIRTHDAY-001）：公历「8月15日」/ 农历「腊月廿九」
     birthday,
     birthdayText: birthdayUtil.formatBirthday(birthday),
@@ -133,6 +137,21 @@ Page({
   // 跳转家庭管理
   onFamilyManage() {
     wx.navigateTo({ url: '/pages/family/manage/manage' });
+  },
+
+  /**
+   * 退出游客模式（GUEST-001）：丢掉体验家庭上下文，回到真实登录流程。
+   * 二次确认是必须的 —— 体验家庭里的点菜/加菜都在内存，退出即清空。
+   */
+  async onExitGuest() {
+    const confirmed = await showConfirm(
+      '退出体验',
+      '体验家庭里的点菜和菜品都是示例数据，退出后不会保存。\n\n确定要退出吗？'
+    );
+    if (!confirmed) return;
+
+    await app.exitGuestMode();
+    wx.reLaunch({ url: '/pages/welcome/welcome' });
   },
 
   // 修改昵称（PROFILE-001）：微信原生可编辑弹窗

@@ -293,6 +293,13 @@
   line-height: var(--lh-tight);
 }
 
+/* 退出体验家庭（GUEST-001）：用强调色区别于同组的普通跳转行，
+   提示这是一个「离开当前状态」的动作而非进入下一层 */
+.guest-exit {
+  color: var(--color-accent-deep);
+  font-weight: var(--weight-semibold);
+}
+
 .list-item-right {
   display: flex;
   align-items: center;

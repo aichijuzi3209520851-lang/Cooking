@@ -70,6 +70,26 @@
   letter-spacing: 2rpx;
 }
 
+/* 游客体验入口（GUEST-001）：置于两个主按钮之下，作为「还不确定要不要建家」
+   的兜底路径 —— 弱化到文字链，不与主流程抢注意力 */
+.welcome-guest-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.welcome-guest-link {
+  padding: 12rpx 8rpx;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-body-sm);
+  letter-spacing: 1rpx;
+}
+
+.welcome-guest-row:active .welcome-guest-link {
+  color: var(--color-accent-deep);
+}
+
 /* 登录失败提示 + 重试 */
 .welcome-login-error {
   width: 100%;

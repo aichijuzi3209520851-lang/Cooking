@@ -126,20 +126,25 @@ Page({
   onNoop() {},
 
   /**
+   * 隐私协议闸门：未勾选则拦截并高亮提示（须用户明确同意后才可继续）。
+   * @returns {boolean} true 表示已同意、可继续
+   */
+  ensureAgreed() {
+    if (this.data.agreed) return true;
+    wx.vibrateShort({ type: 'light', fail() {} });
+    showError('请先阅读并同意《隐私协议》');
+    this.setData({ agreeWarn: true });
+    if (this._warnTimer) clearTimeout(this._warnTimer);
+    this._warnTimer = setTimeout(() => this.setData({ agreeWarn: false }), 1600);
+    return false;
+  },
+
+  /**
    * 用户主动点击「微信快捷登录」才执行登录确认与跳转。
    */
   async onLoginTap() {
     if (this.data.logging) return;
-
-    // 未勾选隐私协议则拦截登录（须用户明确同意后才可继续）
-    if (!this.data.agreed) {
-      wx.vibrateShort({ type: 'light', fail() {} });
-      showError('请先阅读并同意《隐私协议》');
-      this.setData({ agreeWarn: true });
-      if (this._warnTimer) clearTimeout(this._warnTimer);
-      this._warnTimer = setTimeout(() => this.setData({ agreeWarn: false }), 1600);
-      return;
-    }
+    if (!this.ensureAgreed()) return;
 
     this.setData({ logging: true });
     try {
@@ -168,5 +173,17 @@ Page({
     } finally {
       this.setData({ logging: false });
     }
+  },
+
+  /**
+   * 游客体验（GUEST-001）：跳过「先建/加入家庭」，直接落进虚拟家庭。
+   * 不发起网络请求 —— 云端登录尚未就绪或已失败时，这条路也必须走得通。
+   */
+  onGuestTap() {
+    if (this.data.logging) return;
+    if (!this.ensureAgreed()) return;
+
+    app.enterGuestMode();
+    wx.reLaunch({ url: '/pages/menu/menu' });
   }
 });

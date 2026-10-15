@@ -21,6 +21,14 @@
     </view>
   </view>
 
+  <!-- 游客模式提示条（GUEST-001）：进了虚拟家庭就明说是示例数据，
+       并常驻「退出体验」入口 —— 别让人逛完才发现自己没有真的家 -->
+  <view class="guest-bar" wx:if="{{isGuest}}">
+    <text class="guest-bar-emoji">👀</text>
+    <text class="guest-bar-text">体验家庭 · 示例数据，随便点</text>
+    <view class="guest-bar-btn" catchtap="onExitGuest">退出体验</view>
+  </view>
+
   <!-- 家庭生日提醒（BIRTHDAY-001）：未来 7 天内有家人生日时出现。
        纯提示、不可点击——避免制造「点了没反应」的空交互 -->
   <view class="birthday-tip" wx:if="{{birthdayNotice}}">

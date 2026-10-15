@@ -22,6 +22,11 @@
       <button class="btn btn-secondary btn-block welcome-btn" bindtap="onJoinFamily">
         加入家庭
       </button>
+
+      <!-- 游客体验（GUEST-001）：还没有家庭也能先逛 —— 落进虚拟家庭看功能全貌 -->
+      <view class="welcome-guest-row" bindtap="onGuestTap">
+        <text class="welcome-guest-link">先去体验家庭逛逛 ›</text>
+      </view>
     </block>
     <view class="welcome-footer">和家人一起决定今天的菜单</view>
   </view>

@@ -123,3 +123,61 @@ test('确定性 ID 格式：通知台账 ID 包含日期、家庭、菜品', () 
   const ledgerId = `n_2026-08-15_f1_d1`;
   assert.match(ledgerId, /^n_\d{4}-\d{2}-\d{2}_.+_.+$/);
 });
+
+// ============ 同步信标（shared/sync，SYNC-003） ============
+
+const { SYNC_FIELD, touchMemberSync } = require('../../shared/sync');
+
+// 最小 db 桩：记录 users 文档 update 轨迹，可注入单个/全部失败
+function stubDb({ memberIds = [], failUpdate = () => false } = {}) {
+  const updates = [];
+  return {
+    updates,
+    collection(name) {
+      return {
+        where() {
+          return {
+            async get() {
+              return { data: memberIds.map(userId => ({ userId })) };
+            }
+          };
+        },
+        doc(id) {
+          return {
+            async update({ data }) {
+              if (failUpdate(id)) throw new Error('update failed');
+              updates.push({ id, data });
+              return { stats: { updated: 1 } };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+test('touchMemberSync：缺 familyId 直接返回 0，不产生任何写入', async () => {
+  const db = stubDb({ memberIds: ['u1'] });
+  assert.equal(await touchMemberSync(db, {}), 0);
+  assert.equal(db.updates.length, 0);
+});
+
+test('touchMemberSync：members 已知时逐个打标，返回成功数', async () => {
+  const db = stubDb({ failUpdate: (id) => id === 'u2' });
+  const touched = await touchMemberSync(db, { familyId: 'f1', members: ['u1', 'u2', 'u3', 'u1', ''] });
+  assert.equal(touched, 2, '去重后 3 人，失败 1 人，成功 2 人');
+  assert.deepEqual(db.updates.map(u => u.id).sort(), ['u1', 'u3']);
+  assert.ok(db.updates.every(u => u.data[SYNC_FIELD] instanceof Date), '信标字段是 syncAt 时间戳');
+});
+
+test('touchMemberSync：members 未传时回查 family_members', async () => {
+  const db = stubDb({ memberIds: ['a', 'b', 'a'] });
+  const touched = await touchMemberSync(db, { familyId: 'f1' });
+  assert.equal(touched, 2, '成员按 userId 去重');
+  assert.deepEqual(db.updates.map(u => u.id).sort(), ['a', 'b']);
+});
+
+test('touchMemberSync：全部 update 失败也不抛错（尽力而为契约）', async () => {
+  const db = stubDb({ failUpdate: () => true });
+  assert.equal(await touchMemberSync(db, { familyId: 'f1', members: ['u1'] }), 0);
+});
